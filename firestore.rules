@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function isSignedIn()        { return request.auth != null; }
+    function isOwner(uid)        { return request.auth.uid == uid; }
+    function isNotDeactivated()  {
+      return !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isDeactivated;
+    }
+
+    // ── Users ────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Anyone signed-in can read public profiles
+      allow read: if isSignedIn();
+
+      // Only the owner can write their own profile
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) && isNotDeactivated()
+                    // Prevent users from self-awarding admin-only badges
+                    && !("policeCleared" in request.resource.data.badges)
+                    || isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(["badges"]) == false;
+
+      // Reviews sub-collection
+      match /reviews/{reviewId} {
+        allow read: if isSignedIn();
+        // Only the reviewer (poster or provider of completed task) can write
+        allow create: if isSignedIn()
+                      && request.resource.data.reviewerId == request.auth.uid
+                      && isNotDeactivated();
+        // Only allow provider reply update
+        allow update: if isOwner(uid)
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["providerReply"]);
+      }
+    }
+
+    // ── Tasks ────────────────────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      // Anyone signed-in can read tasks
+      allow read: if isSignedIn();
+
+      // Only authenticated users can create tasks
+      allow create: if isSignedIn()
+                    && isNotDeactivated()
+                    && request.resource.data.posterId == request.auth.uid
+                    && request.resource.data.status   == "open";
+
+      // Poster can update their own task; provider can only update status/assignedProviderId
+      allow update: if isSignedIn() && isNotDeactivated() && (
+        resource.data.posterId == request.auth.uid
+        ||
+        (resource.data.assignedProviderId == request.auth.uid
+         && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(["status", "updatedAt"]))
+      );
+
+      // Only poster can delete (cancel) their own task
+      allow delete: if isSignedIn() && resource.data.posterId == request.auth.uid;
+    }
+
+    // ── Bids ─────────────────────────────────────────────────────────────────
+    match /tasks/{taskId}/bids/{bidId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && isNotDeactivated()
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        // Provider can update their own bid
+        resource.data.providerId == request.auth.uid
+        ||
+        // Poster can update bid status (accept/reject)
+        get(/databases/$(database)/documents/tasks/$(taskId)).data.posterId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+      );
+    }
+
+    // ── Chats ────────────────────────────────────────────────────────────────
+    match /chats/{chatId} {
+      // Only participants can read/write the chat
+      allow read, write: if isSignedIn()
+                         && request.auth.uid in resource.data.participantIds;
+
+      // Allow create if caller is a participant
+      allow create: if isSignedIn()
+                    && request.auth.uid in request.resource.data.participantIds;
+
+      match /messages/{msgId} {
+        allow read: if isSignedIn()
+                    && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+        allow create: if isSignedIn()
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+      }
+    }
+
+    // ── Notifications ────────────────────────────────────────────────────────
+    match /notifications/{uid}/{notifId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ── Payments (read-only for users; write via Cloud Functions only) ───────
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+                  && (resource.data.posterId == request.auth.uid
+                      || resource.data.providerId == request.auth.uid);
+      allow write: if false;  // Cloud Functions only
+    }
+  }
+}

@@ -1,0 +1,5 @@
+package com.neighbourgo.neighbourgo
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
