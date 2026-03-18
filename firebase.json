@@ -7,17 +7,65 @@
     {
       "source": "functions",
       "codebase": "default",
-      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"]
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
     }
   ],
-  "storage": {
-    "rules": "storage.rules"
-  },
+  "storage": [
+    {
+      "bucket": "neighbourgo-sg.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ],
   "emulators": {
-    "auth":      { "port": 9099 },
-    "functions": { "port": 5001 },
-    "firestore": { "port": 8080 },
-    "storage":   { "port": 9199 },
-    "ui":        { "enabled": true, "port": 4000 }
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "neighbourgo-sg",
+          "appId": "1:375408022123:android:ffab256e0015e70206572e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "neighbourgo-sg",
+          "appId": "1:375408022123:ios:2c458463b51651fc06572e",
+          "uploadDebugSymbols": true,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "neighbourgo-sg",
+          "configurations": {
+            "android": "1:375408022123:android:ffab256e0015e70206572e",
+            "ios": "1:375408022123:ios:2c458463b51651fc06572e"
+          }
+        }
+      }
+    }
   }
 }

@@ -15,7 +15,9 @@ import '../../features/profile/presentation/screens/public_profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/photo_gallery_screen.dart';
 import '../../features/profile/presentation/screens/verification_centre_screen.dart';
+import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_thread_screen.dart';
+import '../../features/tasks/presentation/screens/task_list_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,10 +75,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (_, __, child) => MainShellScreen(child: child),
         routes: [
-          GoRoute(path: AppRoutes.home,    builder: (_, __) => const _HomeTab()),
-          GoRoute(path: AppRoutes.taskList, builder: (_, __) => const _TaskListTab()),
+          GoRoute(path: AppRoutes.home,    builder: (_, __) => const HomeScreen()),
+          GoRoute(path: AppRoutes.taskList, builder: (_, __) => const TaskListScreen()),
           GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const _MyTasksTab()),
-          GoRoute(path: AppRoutes.chatList, builder: (_, __) => const _ChatListTab()),
+          GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const _ProfileTab()),
         ],
       ),
@@ -122,10 +124,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 // Stub tab builders – replaced by real screens in their feature modules
-class _HomeTab     extends StatelessWidget { const _HomeTab();     @override Widget build(BuildContext ctx) => const _TabPlaceholder('Home'); }
-class _TaskListTab extends StatelessWidget { const _TaskListTab(); @override Widget build(BuildContext ctx) => const _TabPlaceholder('Discover Tasks'); }
 class _MyTasksTab  extends StatelessWidget { const _MyTasksTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('My Tasks'); }
-class _ChatListTab extends StatelessWidget { const _ChatListTab(); @override Widget build(BuildContext ctx) => const _TabPlaceholder('Messages'); }
 class _ProfileTab  extends StatelessWidget { const _ProfileTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('Profile'); }
 
 class _TabPlaceholder extends StatelessWidget {

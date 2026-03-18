@@ -166,7 +166,7 @@ class AppTheme {
       hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
       labelStyle: const TextStyle(color: AppColors.textSecondary),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: AppColors.bgCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
