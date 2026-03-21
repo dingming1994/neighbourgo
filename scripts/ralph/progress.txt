@@ -1,3 +1,18 @@
+## 2026-03-21 - US-005
+- Created `lib/features/profile/presentation/screens/profile_screen.dart`
+- `ProfileScreen` shows header (avatar, name, phone), My Role section, quick-links (Edit Profile, Verification Centre, Photo Gallery, Sign Out)
+- `_RoleSection` shows current role label via `UserRole.displayLabel` extension and a 'Change Role' TextButton
+- `_RolePickerSheet` bottom sheet with animated role cards matching `RoleSelectionScreen` style; calls `authRepository.createOrUpdateUser` and shows 'Role updated!' SnackBar
+- Updated `app_router.dart`: replaced `_ProfileTab` stub with `ProfileScreen` for `AppRoutes.myProfile`
+- Home shell auto-rerenders because `HomeScreen` watches `currentUserProvider` (Firestore stream)
+- Files changed: `lib/features/profile/presentation/screens/profile_screen.dart` (new), `lib/core/router/app_router.dart`
+- **Learnings for future iterations:**
+  - `_ProfileTab` stub in `app_router.dart` is the pattern for unimplemented tabs — replace stub with real screen + import
+  - `showModalBottomSheet` with `backgroundColor: Colors.transparent` + `Container` with `borderRadius` gives the floating sheet look
+  - Bottom sheet context is different from scaffold context — `ScaffoldMessenger.of(context)` must use the *parent* scaffold's context (passed from `ConsumerStatefulWidget`), not the sheet's own context; use `Navigator.pop(context)` then show snackbar on original context
+  - `UserRole` extension methods are the right pattern for display labels (keeps logic out of UI widgets)
+---
+
 ## 2026-03-21 - US-004
 - Created `lib/features/profile/presentation/widgets/provider_stats_widget.dart`
 - `ProviderStatsWidget` is a `StatefulWidget` with a show/hide toggle for earnings

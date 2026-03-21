@@ -75,7 +75,7 @@
         "The home shell re-renders automatically because it watches the auth provider",
         "flutter analyze passes with no errors"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
