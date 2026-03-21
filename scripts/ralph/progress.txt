@@ -2,7 +2,7 @@
 - Use `timeago` package (already imported in task_list_screen.dart) for human-readable timestamps
 - `AppColors`, `AppRadius`, `AppSpacing` are the design token classes in `lib/core/theme/app_theme.dart`
 - `AppRoutes` constants are in `lib/core/constants/app_constants.dart`
-- `AppCategories.all` is a `List<ServiceCategory>` with id, label, emoji, color fields
+- `AppCategories.all` is a `List<ServiceCategory>` with id, label, emoji, color fields; use `AppCategories.getById(id)` for safe lookup
 - Providers use Riverpod: `StreamProvider`, `StateNotifierProvider`, `Provider` patterns
 - `currentUserProvider` gives `AsyncValue<UserModel?>` via stream from Firestore
 - `taskRepositoryProvider` exposes `watchMyPostedTasks(uid)` (all poster tasks) and `watchOpenTasks()` (open tasks)
@@ -27,4 +27,21 @@ Started: Sat Mar 21 17:35:11 +08 2026
   - `AppCategories.all.where((c) => c.id == task.categoryId).firstOrNull` is the pattern to look up a category
   - `TaskModelExt` extension is in `task_model.dart` — `budgetDisplay`, `urgencyDisplay` are available
   - No existing `task_list_provider` method filters by poster+active; created inline StreamProvider instead
+---
+
+## 2026-03-21 - US-002
+- Created `lib/features/home/presentation/screens/provider_home_screen.dart`
+- Added `_selectedCategoryProvider` (StateProvider.autoDispose) for category filter state
+- Added `_openTasksProvider` (StreamProvider.autoDispose) calling `watchOpenTasks(categoryId, limit: 20)`
+- `ProviderHomeScreen` with SliverAppBar greeting + avgRating stars (if stats exist)
+- `_CategoryFilterRow` horizontal scrollable FilterChip list from user's serviceCategories; "All" chip clears filter
+- `_ProviderTaskCard` shows emoji, title, category chip, budget chip, neighbourhood, and timeago; taps navigate to `/tasks/:id`
+- Empty state shows '🔍 No open tasks right now. Check back soon!'
+- Files changed: `lib/features/home/presentation/screens/provider_home_screen.dart` (new)
+- **Learnings for future iterations:**
+  - `AppCategories.getById(id)` is the cleaner helper vs `.where().firstOrNull` pattern
+  - `watchOpenTasks` accepts optional `categoryId` and `limit` params — pass null to get all
+  - `StateProvider.autoDispose` is appropriate for ephemeral UI state like filter selection
+  - `FilterChip` is the standard Flutter widget for toggleable category chips
+  - `task.neighbourhood` is nullable — guard with `!= null && isNotEmpty` check
 ---
