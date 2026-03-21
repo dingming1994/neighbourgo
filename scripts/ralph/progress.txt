@@ -1,0 +1,30 @@
+## Codebase Patterns
+- Use `timeago` package (already imported in task_list_screen.dart) for human-readable timestamps
+- `AppColors`, `AppRadius`, `AppSpacing` are the design token classes in `lib/core/theme/app_theme.dart`
+- `AppRoutes` constants are in `lib/core/constants/app_constants.dart`
+- `AppCategories.all` is a `List<ServiceCategory>` with id, label, emoji, color fields
+- Providers use Riverpod: `StreamProvider`, `StateNotifierProvider`, `Provider` patterns
+- `currentUserProvider` gives `AsyncValue<UserModel?>` via stream from Firestore
+- `taskRepositoryProvider` exposes `watchMyPostedTasks(uid)` (all poster tasks) and `watchOpenTasks()` (open tasks)
+- `TaskModel.budgetDisplay` extension gives formatted "S$X–S$Y" budget string
+- Use `context.push()` for sub-routes, `context.go()` for main navigation tabs
+- `flutter analyze` passes with no errors (warnings/infos from pre-existing code are OK)
+- `withOpacity` is deprecated in this Flutter version; `.withValues(alpha: x)` is preferred, but existing code uses `withOpacity` throughout
+
+# Ralph Progress Log
+Started: Sat Mar 21 17:35:11 +08 2026
+---
+
+## 2026-03-21 - US-001
+- Created `lib/features/home/presentation/screens/poster_home_screen.dart`
+- Added `_posterActiveTasksProvider` (StreamProvider.autoDispose) that watches user's posted tasks and filters out completed/cancelled client-side
+- `PosterHomeScreen` with SliverAppBar greeting, Post a Task ElevatedButton CTA, and SliverList of task cards
+- `_PosterTaskCard` shows title, category emoji (via AppCategories.all lookup), budget display, bid count, and timeago timestamp
+- Empty state shows '📋 No active tasks. Post your first task!'
+- Files changed: `lib/features/home/presentation/screens/poster_home_screen.dart` (new)
+- **Learnings for future iterations:**
+  - `watchMyPostedTasks` in TaskRepository returns all poster tasks — filter status client-side in the provider
+  - `AppCategories.all.where((c) => c.id == task.categoryId).firstOrNull` is the pattern to look up a category
+  - `TaskModelExt` extension is in `task_model.dart` — `budgetDisplay`, `urgencyDisplay` are available
+  - No existing `task_list_provider` method filters by poster+active; created inline StreamProvider instead
+---
