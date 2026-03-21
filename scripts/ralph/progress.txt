@@ -1,3 +1,18 @@
+## 2026-03-21 - US-004
+- Created `lib/features/profile/presentation/widgets/provider_stats_widget.dart`
+- `ProviderStatsWidget` is a `StatefulWidget` with a show/hide toggle for earnings
+- Three-column card: Completed Tasks | Rating (with review count suffix) | Earnings (masked)
+- Earnings defaults to '••••••'; tapping the cell toggles visibility and swaps the eye icon
+- If `stats` is null, all cells show '--' placeholder
+- Inserted widget as `SliverToBoxAdapter` in `ProviderHomeScreen` between SliverAppBar and category chips
+- Files changed: `lib/features/profile/presentation/widgets/provider_stats_widget.dart` (new), `lib/features/home/presentation/screens/provider_home_screen.dart`
+- **Learnings for future iterations:**
+  - `ProviderStats` lives inside `UserModel.stats` (nullable) — always guard with `?.`
+  - `earningsTotal` field name in `ProviderStats` (not `earnings` or `totalEarnings`)
+  - Widget lives in `lib/features/profile/presentation/widgets/` — profile feature owns provider-specific UI atoms
+  - Used `StatefulWidget` (not `ConsumerWidget`) since the toggle is purely local UI state — no Riverpod needed
+---
+
 ## Codebase Patterns
 - Use `timeago` package (already imported in task_list_screen.dart) for human-readable timestamps
 - `AppColors`, `AppRadius`, `AppSpacing` are the design token classes in `lib/core/theme/app_theme.dart`
@@ -44,4 +59,20 @@ Started: Sat Mar 21 17:35:11 +08 2026
   - `StateProvider.autoDispose` is appropriate for ephemeral UI state like filter selection
   - `FilterChip` is the standard Flutter widget for toggleable category chips
   - `task.neighbourhood` is nullable — guard with `!= null && isNotEmpty` check
+---
+
+## 2026-03-21 - US-003
+- Updated `HomeScreen` in `main_shell_screen.dart` to be role-aware
+- Converted `HomeScreen` from `ConsumerWidget` to `ConsumerStatefulWidget` to hold a `TabController` for the `UserRole.both` case
+- `UserRole.poster` → renders `PosterHomeScreen` directly
+- `UserRole.provider` → renders `ProviderHomeScreen` directly
+- `UserRole.both` → renders a `Scaffold` with `TabBar` ('Find Help' / 'Find Work') + `TabBarView`
+- Loading/null user → shows `CircularProgressIndicator`
+- Removed old `_EarningsBanner`, `_CategoryGrid`, `_NearbyTasksList` widgets (replaced by role-specific screens)
+- Removed unused imports (`category_constants.dart`, `post_task_screen.dart`)
+- Files changed: `lib/features/home/presentation/screens/main_shell_screen.dart`
+- **Learnings for future iterations:**
+  - Do NOT call `controller.dispose()` inside `build()` — only in `dispose()`. Use `??=` to lazily init the TabController.
+  - Converting `ConsumerWidget` → `ConsumerStatefulWidget` is needed whenever you need a `TickerProvider` (e.g., for `TabController`)
+  - The `HomeScreen` class in `main_shell_screen.dart` is what the router renders for `AppRoutes.home` — it's the entry point for the home tab
 ---

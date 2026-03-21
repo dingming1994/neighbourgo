@@ -47,7 +47,7 @@
         "If user is null or role is still loading, show a centered CircularProgressIndicator",
         "flutter analyze passes with no errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-004",
@@ -56,12 +56,12 @@
       "acceptanceCriteria": [
         "Create lib/features/profile/presentation/widgets/provider_stats_widget.dart",
         "Show completedTasks, avgRating (1 decimal), and totalReviews from ProviderStats",
-        "Show earnings as 'S\$X.XX' (hidden behind a show/hide toggle icon)",
+        "Show earnings as 'SGD X.XX' (hidden behind a show/hide toggle icon)",
         "If ProviderStats is null, show placeholder dashes '--'",
         "Use the widget inside ProviderHomeScreen below the greeting",
         "flutter analyze passes with no errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-005",
