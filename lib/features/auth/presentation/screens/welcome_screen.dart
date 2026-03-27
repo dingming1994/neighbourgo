@@ -113,7 +113,16 @@ class WelcomeScreen extends StatelessWidget {
                   AppButton(
                     label: 'Get Started with Phone',
                     leading: const Text('📱', style: TextStyle(fontSize: 18)),
-                    onPressed: () => context.push(AppRoutes.phoneAuth),
+                    onPressed: const bool.fromEnvironment('dart.vm.product') == false
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('📱 Phone auth not supported on simulator. Use "Dev Login" below.'),
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        : () => context.push(AppRoutes.phoneAuth),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
