@@ -226,7 +226,7 @@
         "Add brief README section or comment in scripts/ explaining how to run integration tests",
         "No regressions in unit tests: flutter test (Sprint 4 tests) still passes"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

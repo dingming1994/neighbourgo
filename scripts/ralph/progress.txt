@@ -160,3 +160,19 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - Extracted `launchAndLogin()` and `settle()` helpers in the test to DRY up the repeated splash/onboarding/pump patterns across user switches
   - The full journey test switches users 3 times (poster → provider → poster) using signOut/signIn + re-pump of ProviderScope(child: NeighbourGoApp())
 ---
+
+## 2026-03-28 - US-037
+- Final quality gate: all integration tests compile, codebase clean, CI run script created
+- Files created:
+  - `scripts/run_integration_tests.sh` — starts Firebase emulators in background, waits for readiness, boots iOS simulator if needed, runs `flutter test integration_test/`, kills emulators on exit
+- Verification results:
+  - `flutter analyze`: 0 errors (110 pre-existing warnings/infos in Sprint 4 test files — sealed class subtyping, prefer_const)
+  - `flutter test`: 242/242 Sprint 4 unit/widget tests pass (no regressions)
+  - 9 integration test groups: app_test, auth_flow, post_task, task_discovery, bidding_flow, chat_flow, profile_flow, navigation, full_journey
+  - All integration test files have setUpAll/tearDownAll with cleanupEmulatorData()
+- **Learnings for future iterations:**
+  - The run script uses `trap cleanup EXIT` to ensure emulators are killed even if tests fail
+  - `curl -s http://localhost:4000` is a reliable readiness check for Firebase Emulator UI
+  - `xcrun simctl list devices booted -j` returns JSON that can be parsed for auto-detecting a booted simulator
+  - Sprint 5 is fully complete: 10 user stories (US-028 through US-037), all passing
+---
