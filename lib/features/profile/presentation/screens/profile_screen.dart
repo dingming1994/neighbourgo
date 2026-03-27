@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
+import '../../data/repositories/profile_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -224,8 +224,8 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
     }
     setState(() => _loading = true);
     try {
-      final repo = ref.read(authRepositoryProvider);
-      await repo.createOrUpdateUser(widget.currentUser.copyWith(role: _selected));
+      final repo = ref.read(profileRepositoryProvider);
+      await repo.updateProfile(widget.currentUser.copyWith(role: _selected));
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
