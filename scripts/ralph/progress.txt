@@ -68,3 +68,17 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - Pre-seeded user with email/password auth works well for tests that need the user already logged in
   - The test handles the case where app may land on Welcome/Role/Profile screens if the user session isn't preserved
 ---
+
+## 2026-03-28 - US-031
+- Implemented integration test for Task Discovery & Filtering
+- Files created:
+  - `integration_test/task_discovery_test.dart` — tests full flow: navigate to Discover tab → verify all 5 seeded tasks visible → filter by Home Cleaning (2 results) → filter by Tutoring (2 results) → clear filter with All → tap task card → verify TaskDetailScreen → navigate back
+- **Learnings for future iterations:**
+  - Filter chips use custom `_FilterChip` widgets (not Material Chip) — find them by label text like `find.text('Home Cleaning').first` since the same text appears in card category badges
+  - Tapping the same category chip again deselects it (toggle behavior), but tapping a different chip switches to that filter directly
+  - The "All" chip text is just `'All'` — tapping it passes `null` to the category provider to clear the filter
+  - Task cards display: category badge (emoji + label), urgency, title, neighbourhood/location, time, budget, and bid count
+  - TaskDetailScreen AppBar shows `task.title` — useful for verifying navigation to detail
+  - When seeding multiple tasks of the same type, spread the base factory and override specific fields: `{...testCleaningTask(...), 'title': 'Custom Title'}`
+  - Scroll management matters: after filtering tests, scroll back to top before tapping a card to avoid off-screen tap failures
+---

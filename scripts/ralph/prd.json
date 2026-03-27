@@ -89,7 +89,7 @@
         "Tap back button to return to Discover",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-032",
