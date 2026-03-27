@@ -140,7 +140,7 @@
         "Verify last message preview shows 'Hello, when can you start?'",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-034",

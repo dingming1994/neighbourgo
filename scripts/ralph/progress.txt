@@ -20,6 +20,8 @@ Started: Sat 28 Mar 2026 03:35:43 +08
 - Scroll before interacting with off-screen widgets: `tester.drag(find.byType(SingleChildScrollView), Offset(0, -300))`
 - Bids are a Firestore subcollection: `tasks/{taskId}/bids/{bidId}` — use `firestore.collection('tasks').doc(taskId).collection('bids')` to query
 - Multi-user integration tests: create both users in setUpAll, use `signOutTestUser()` / `signInTestUser()` + re-pump the app widget to switch users
+- Chat IDs are deterministic: `{taskId}_{sortedUid1}_{sortedUid2}` — construct manually or use `ChatRepository.buildChatId()`
+- Chat seeding requires: chat doc in `chats/`, task (status=assigned), accepted bid in `tasks/{id}/bids/`, both user docs
 
 ---
 
@@ -98,4 +100,18 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - SubmitBidSheet amount field has hint '0.00' and prefix 'S$ ', proposal field has min 20 chars validation
   - The `BidListSection` shows "Bids received (N)" as title — useful for asserting bid count in poster view
   - Provider's display name on bid card comes from `providerName` field stored in the bid document, sourced from `user.displayName` at submission time
+---
+
+## 2026-03-28 - US-033
+- Implemented integration test for Chat Messaging Flow
+- Files created:
+  - `integration_test/chat_flow_test.dart` — tests full flow: poster signs in → navigates to Messages tab → verifies chat with task title → opens ChatThreadScreen → sends message → verifies message in UI and Firestore → navigates back → verifies last message preview
+- **Learnings for future iterations:**
+  - Chat IDs are deterministic: `{taskId}_{sortedUid1}_{sortedUid2}` — use `ChatRepository.buildChatId()` or manually sort UIDs to construct
+  - Chat documents need `participants` array (sorted), `taskTitle`, `chatId`, `taskId`, `lastMessage`, `lastMessageTime`, `unreadCount`, `createdAt`
+  - Messages subcollection: `chats/{chatId}/messages/{messageId}` — fields: `messageId`, `chatId`, `senderId`, `text`, `imageUrl`, `timestamp`, `isRead`
+  - `sendMessage()` updates parent chat's `lastMessage` and `lastMessageTime` automatically
+  - ChatListScreen title is "Messages", ChatThreadScreen shows task title + "Task chat" subtitle
+  - Message input placeholder: "Type a message…" (with Unicode ellipsis \u2026), send button icon: `Icons.send_rounded`
+  - For seeding assigned tasks with chats: need task (status=assigned), accepted bid in subcollection, chat doc, and both user docs
 ---
