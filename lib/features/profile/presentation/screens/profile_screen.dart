@@ -50,7 +50,9 @@ class ProfileScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (_) {
           if (user == null) {
-            return const Center(child: CircularProgressIndicator());
+            // currentUserProvider always synthesises a fallback, so this
+            // path should be unreachable.  Show a safe placeholder anyway.
+            return const Center(child: Text('Profile unavailable'));
           }
           return ListView(
             children: [

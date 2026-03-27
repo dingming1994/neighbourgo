@@ -127,14 +127,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
 
-    // Loading / unauthenticated
-    if (userAsync.isLoading || userAsync.valueOrNull == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    final role = userAsync.value!.role;
+    // Use valueOrNull so we never spin forever — fall back to 'both' role
+    // while the Firestore doc is still loading.
+    final user = userAsync.valueOrNull;
+    final role = user?.role ?? UserRole.both;
 
     switch (role) {
       case UserRole.poster:
