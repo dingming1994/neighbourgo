@@ -116,7 +116,7 @@
         "Verify task status changes to 'assigned' and assignedProviderId = providerUser.uid in Firestore",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-033",

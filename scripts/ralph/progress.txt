@@ -18,6 +18,8 @@ Started: Sat 28 Mar 2026 03:35:43 +08
 - Use `find.widgetWithText(TextFormField, 'hint text')` to target specific form fields by their hint text
 - For dropdown selection: tap the `DropdownButtonFormField<String>`, wait for overlay, then `find.text('Option').last` to tap the overlay item
 - Scroll before interacting with off-screen widgets: `tester.drag(find.byType(SingleChildScrollView), Offset(0, -300))`
+- Bids are a Firestore subcollection: `tasks/{taskId}/bids/{bidId}` — use `firestore.collection('tasks').doc(taskId).collection('bids')` to query
+- Multi-user integration tests: create both users in setUpAll, use `signOutTestUser()` / `signInTestUser()` + re-pump the app widget to switch users
 
 ---
 
@@ -81,4 +83,19 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - TaskDetailScreen AppBar shows `task.title` — useful for verifying navigation to detail
   - When seeding multiple tasks of the same type, spread the base factory and override specific fields: `{...testCleaningTask(...), 'title': 'Custom Title'}`
   - Scroll management matters: after filtering tests, scroll back to top before tapping a card to avoid off-screen tap failures
+---
+
+## 2026-03-28 - US-032
+- Implemented integration test for Bidding Flow — Provider Submits, Poster Accepts
+- Files created:
+  - `integration_test/bidding_flow_test.dart` — tests full flow: provider signs in → discovers task → submits bid → verify Firestore → poster signs in → sees bid → accepts → verify Firestore status updates
+- **Learnings for future iterations:**
+  - Bids are stored as subcollection: `tasks/{taskId}/bids/{bidId}`, NOT as a top-level `bids` collection
+  - `submitBid()` increments `bidCount` on the task doc via `FieldValue.increment(1)`
+  - `acceptBid()` uses a batch write: sets accepted bid to 'accepted', all other pending bids to 'rejected', and updates task to status='assigned' with assignedProviderId/Name
+  - After accepting a bid, the app pushes to checkout route (`/checkout/:taskId`) — the test verifies Firestore state without following that navigation
+  - Multi-user tests: create both users in `setUpAll`, sign in/out between them; restart the app widget with `pumpWidget` after switching users
+  - SubmitBidSheet amount field has hint '0.00' and prefix 'S$ ', proposal field has min 20 chars validation
+  - The `BidListSection` shows "Bids received (N)" as title — useful for asserting bid count in poster view
+  - Provider's display name on bid card comes from `providerName` field stored in the bid document, sourced from `user.displayName` at submission time
 ---
