@@ -1,3 +1,58 @@
+## 2026-03-27 - US-009
+- Created `lib/features/payment/checkout_screen.dart`: summary card (bid + platform fee + total), escrow note, "Pay S$X.XX" button
+- Created `lib/features/payment/payment_service.dart`: wraps flutter_stripe + Cloud Functions (region: asia-southeast1); createEscrowPayment() → clientSecret; presentPaymentSheet() → bool/throws
+- Added `paymentServiceProvider` (simple Provider)
+- Added checkout GoRoute to `app_router.dart`; passes all data via state.extra Map
+- Initialised `Stripe.publishableKey` in `main.dart` (test key placeholder)
+- Added flutter_stripe ^11.1.0 + cloud_functions ^5.1.3 to pubspec.yaml
+- Files changed: `lib/features/payment/checkout_screen.dart` (new), `lib/features/payment/payment_service.dart` (new), `lib/core/router/app_router.dart`, `lib/main.dart`, `pubspec.yaml`, `pubspec.lock`
+- **Learnings for future iterations:**
+  - CheckoutScreen receives all data via GoRouter `state.extra as Map<String, dynamic>` — no path params needed for complex objects
+  - `AppRoutes.checkout = '/checkout/:taskId'`: navigate with `context.push(AppRoutes.checkout.replaceFirst(':taskId', id), extra: {...})`
+  - Cloud Function region must match deployment — hardcoded to `asia-southeast1`
+  - `StripeException` with `FailureCode.Canceled` distinguishes user cancel from real errors
+  - Platform fee constant lives in `AppConstants.platformFeePercent`
+---
+
+## 2026-03-27 - US-008
+- Chat feature (ChatListScreen, ChatThreadScreen, ChatRepository, ChatModel, MessageModel) was already committed to main in an earlier "complete core features" commit
+- Sprint 2 integration: `_MessageButton` in TaskDetailScreen calls `chatRepository.createOrGetChat()` then navigates to `/chats/:chatId`
+- `AppRoutes.chatThread = '/chats/:chatId'` already registered in router
+- No new files needed for US-008; integration lives in task_detail_screen.dart (US-006 commit)
+- **Learnings for future iterations:**
+  - `createOrGetChat(taskId, posterId, providerId)` uses deterministic chatId from sorted UIDs — idempotent, safe to call multiple times
+  - Chat path in Firestore: `chats/{chatId}/messages/{messageId}`
+  - `buildChatId(taskId, uid1, uid2)` sorts UIDs lexicographically for stable IDs
+  - Image messages: upload to `chat_media/{chatId}/{uuid}.{ext}` in Firebase Storage first, then send message with imageUrl
+---
+
+## 2026-03-27 - US-007
+- Updated `lib/features/bids/presentation/widgets/bid_list_section.dart`: BidListSection + _BidCard with accept/reject buttons; accept calls `acceptBid()` then pushes to CheckoutScreen
+- Updated `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`: form with amount, duration chips (_BidDuration enum: 1h/2h/half-day/full-day/custom), 200-char proposal textarea
+- Fixed pre-existing unused import warnings in profile_setup_screen.dart, role_selection_screen.dart, photo_gallery_screen.dart
+- Files changed: `bid_list_section.dart`, `submit_bid_sheet.dart`, 3 screens with import cleanup
+- **Learnings for future iterations:**
+  - `acceptBid()` is a batch write: sets accepted bid → accepted, all other pending bids → rejected, task → assigned
+  - `bidsStreamProvider` is a `StreamProvider.family<List<BidModel>, String>` keyed on taskId
+  - Duration chips use a local enum `_BidDuration` with `.minutes` and `.label` extensions — BidModel has no duration field yet
+---
+
+## 2026-03-27 - US-006
+- Rewrote `lib/features/tasks/presentation/screens/task_detail_screen.dart` (613 lines)
+- _PhotoCarousel: horizontal ListView of CachedNetworkImage
+- _PosterInfo: avatar + "Posted by" row
+- Poster view: _MarkCompleteButton (AlertDialog confirm → completeTask()), _MessageButton (createOrGetChat → chatThread), BidListSection
+- Provider view: Submit Bid bottom sheet, _ProviderBidView (own bid status card), _MessageButton, locked state
+- _StatusBadge for bid status (pending/accepted/rejected)
+- Fixed: removed unused bid_repository import, removed unnecessary ! on currentUser.uid (Dart flow-promotes inside isProvider branch)
+- Files changed: `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+- **Learnings for future iterations:**
+  - `isProvider = !isPoster && currentUser != null` — Dart promotes currentUser to non-null inside `else if (isProvider)` blocks, do NOT add `!`
+  - `BidListSection` consumes `bidsStreamProvider` internally — just pass taskId
+  - `showModalBottomSheet` needs `isScrollControlled: true` for forms with keyboard
+  - `taskDetailProvider` is a `StreamProvider.family<TaskModel?, String>` keyed on taskId
+---
+
 ## 2026-03-21 - US-005
 - Created `lib/features/profile/presentation/screens/profile_screen.dart`
 - `ProfileScreen` shows header (avatar, name, phone), My Role section, quick-links (Edit Profile, Verification Centre, Photo Gallery, Sign Out)

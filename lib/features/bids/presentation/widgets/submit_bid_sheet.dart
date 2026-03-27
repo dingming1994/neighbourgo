@@ -7,6 +7,21 @@ import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/bid_repository.dart';
 import '../../domain/models/bid_model.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Duration options
+// ─────────────────────────────────────────────────────────────────────────────
+enum _BidDuration {
+  oneHour('1 hour', 60),
+  twoHours('2 hours', 120),
+  halfDay('Half day', 240),
+  fullDay('Full day', 480),
+  custom('Custom', 0);
+
+  const _BidDuration(this.label, this.minutes);
+  final String label;
+  final int    minutes;
+}
+
 class SubmitBidSheet extends ConsumerStatefulWidget {
   final String       taskId;
   final VoidCallback? onSuccess;
@@ -18,15 +33,19 @@ class SubmitBidSheet extends ConsumerStatefulWidget {
 }
 
 class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
-  final _formKey     = GlobalKey<FormState>();
-  final _amountCtrl  = TextEditingController();
-  final _messageCtrl = TextEditingController();
-  bool  _isSubmitting = false;
+  final _formKey       = GlobalKey<FormState>();
+  final _amountCtrl    = TextEditingController();
+  final _messageCtrl   = TextEditingController();
+  final _customMinsCtrl = TextEditingController();
+
+  _BidDuration _selectedDuration = _BidDuration.oneHour;
+  bool         _isSubmitting     = false;
 
   @override
   void dispose() {
     _amountCtrl.dispose();
     _messageCtrl.dispose();
+    _customMinsCtrl.dispose();
     super.dispose();
   }
 
@@ -39,16 +58,14 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
     try {
       final amount = double.parse(_amountCtrl.text.trim());
       final bid = BidModel(
-        bidId:         '',
-        taskId:        widget.taskId,
-        providerId:    user.uid,
-        providerName:  user.displayName ?? 'Anonymous',
+        bidId:          '',
+        taskId:         widget.taskId,
+        providerId:     user.uid,
+        providerName:   user.displayName ?? 'Anonymous',
         providerAvatar: user.avatarUrl,
-        amount:        amount,
-        message:       _messageCtrl.text.trim().isEmpty
-                           ? null
-                           : _messageCtrl.text.trim(),
-        status:        BidStatus.pending,
+        amount:         amount,
+        message:        _messageCtrl.text.trim(),
+        status:         BidStatus.pending,
       );
       await ref.read(bidRepositoryProvider).submitBid(widget.taskId, bid);
       if (mounted) {
@@ -56,7 +73,7 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
         widget.onSuccess?.call();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('报价已提交！'),
+            content: Text('Bid submitted!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -65,7 +82,7 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('提交失败：$e'),
+            content: Text('Submit failed: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -102,11 +119,12 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
               ),
             ),
 
-            Text('提交报价', style: Theme.of(context).textTheme.headlineSmall),
+            Text('Submit Bid',
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 20),
 
-            // Amount
-            Text('报价金额 (SGD)',
+            // ── Amount ────────────────────────────────────────────────────
+            Text('Bid Amount (SGD)',
                 style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             TextFormField(
@@ -121,30 +139,109 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
                 hintText:   '0.00',
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return '请输入报价金额';
+                if (v == null || v.isEmpty) return 'Enter a bid amount';
                 final n = double.tryParse(v);
-                if (n == null || n <= 0) return '请输入有效金额';
+                if (n == null || n <= 0) return 'Enter a valid amount';
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Message
-            Text('留言（可选）',
+            // ── Estimated Duration ────────────────────────────────────────
+            Text('Estimated Duration',
                 style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _BidDuration.values.map((d) {
+                final isSelected = _selectedDuration == d;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedDuration = d),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.bgCard,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.divider,
+                      ),
+                    ),
+                    child: Text(
+                      d.label,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            // Custom duration input
+            if (_selectedDuration == _BidDuration.custom) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _customMinsCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  hintText:   'e.g. 90',
+                  suffixText: 'minutes',
+                ),
+                validator: (v) {
+                  if (_selectedDuration != _BidDuration.custom) return null;
+                  if (v == null || v.isEmpty) return 'Enter duration in minutes';
+                  final n = int.tryParse(v);
+                  if (n == null || n <= 0) return 'Enter a valid duration';
+                  return null;
+                },
+              ),
+            ],
+            const SizedBox(height: 20),
+
+            // ── Message / Proposal ────────────────────────────────────────
+            Text('Your Proposal',
+                style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 4),
+            const Text(
+              'Describe your experience and approach (min. 20 characters)',
+              style: TextStyle(fontSize: 12, color: AppColors.textHint),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _messageCtrl,
-              maxLines:   3,
+              maxLines:   4,
               maxLength:  200,
               decoration: const InputDecoration(
-                hintText: '简单介绍一下你的服务，提高接单率…',
+                hintText: 'Introduce yourself and explain why you\'re a great fit…',
               ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'A proposal is required';
+                }
+                if (v.trim().length < 20) {
+                  return 'Proposal must be at least 20 characters';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 8),
 
             AppButton(
-              label:     '提交报价',
+              label:     'Submit Bid',
               isLoading: _isSubmitting,
               onPressed: _submit,
             ),

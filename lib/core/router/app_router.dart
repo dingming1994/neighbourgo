@@ -19,6 +19,7 @@ import '../../features/profile/presentation/screens/verification_centre_screen.d
 import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_thread_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
+import '../../features/payment/checkout_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +118,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.chatThread,
         builder: (_, state) => ChatThreadScreen(chatId: state.pathParameters['chatId']!),
       ),
+
+      // ── Checkout ───────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.checkout,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return CheckoutScreen(
+            taskId:       extra['taskId']       as String,
+            bidId:        extra['bidId']        as String,
+            providerName: extra['providerName'] as String,
+            bidAmount:    extra['bidAmount']    as double,
+          );
+        },
+      ),
     ],
     errorBuilder: (_, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),
@@ -126,7 +141,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 // Stub tab builders – replaced by real screens in their feature modules
 class _MyTasksTab  extends StatelessWidget { const _MyTasksTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('My Tasks'); }
-class _ProfileTab  extends StatelessWidget { const _ProfileTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('Profile'); }
 
 class _TabPlaceholder extends StatelessWidget {
   final String label;
