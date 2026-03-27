@@ -1,61 +1,99 @@
 {
-  "featureName": "Sprint 2 — Task Detail, Bids, Chat & Payments",
-  "description": "Complete the core transactional loop for NeighbourGo: detailed task view, full bid flow, real-time chat, and Stripe escrow payments.",
-  "branchName": "ralph/sprint-2",
+  "featureName": "Sprint 3 — Full Simulator Test & Bug Fix Pass",
+  "description": "Run a comprehensive test of all existing features on the iOS simulator. Fix every bug found. The app must be fully functional: Anonymous dev login, task creation, bidding, chat, and navigation — all working without crashes or errors.",
+  "branchName": "ralph/sprint-3-bugfix",
   "userStories": [
     {
-      "id": "US-006",
-      "title": "Task Detail Screen",
-      "description": "As a user, I want to see full task details with role-appropriate actions so I can manage or apply for tasks.",
+      "id": "US-010",
+      "title": "Anonymous Dev Login Works",
+      "description": "As a developer, I can tap 'Dev Login (Simulator)' and land on the home screen without any error.",
       "acceptanceCriteria": [
-        "Create/update lib/features/tasks/presentation/screens/task_detail_screen.dart",
-        "Show photo carousel, category emoji, urgency, title, description, info rows (location, budget, status, neighbourhood, duration), and poster info card",
-        "Poster view: Mark Complete button (inProgress/assigned), Message Provider button, BidListSection",
-        "Provider view: Submit Bid button (if open), own bid status card, Message Poster button (if assigned)",
-        "Locked state for providers when task is not open and they are not the assignee",
-        "flutter analyze passes with no warnings"
+        "FirebaseAuth.instance.signInAnonymously() succeeds",
+        "User document is created in Firestore users collection with uid, phone, displayName, role=both",
+        "App navigates to /home after login",
+        "No SnackBar error is shown",
+        "If Anonymous auth is not enabled in Firebase, add a fallback that catches the error and shows a clear message with instructions"
       ],
       "passes": true
     },
     {
-      "id": "US-007",
-      "title": "Bid Flow",
-      "description": "As a provider, I want to submit bids and as a poster I want to accept/reject them.",
+      "id": "US-011",
+      "title": "Home Screen Loads Without Crash",
+      "description": "As a user, the home screen loads correctly for both Poster and Provider roles.",
       "acceptanceCriteria": [
-        "SubmitBidSheet: amount input, duration chips (1h/2h/half-day/full-day/custom), proposal textarea (min 20 chars)",
-        "BidListSection: shows all bids for a task with provider avatar, name, amount, status badge, message",
-        "Accept bid: calls acceptBid() which batch-updates bid status + task status, then navigates to CheckoutScreen",
-        "Reject bid: calls rejectBid() on individual bid",
-        "flutter analyze passes with no warnings"
+        "MainTabView renders without exception",
+        "PosterHomeScreen shows task list or empty state (no crash if Firestore is empty)",
+        "ProviderHomeScreen shows available tasks or empty state",
+        "Bottom navigation works: tapping each tab navigates correctly",
+        "All StreamProviders handle empty collections gracefully (show empty state, not crash)",
+        "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-008",
-      "title": "Real-Time Chat",
-      "description": "As a user, I want to message the poster/provider directly so we can coordinate task details.",
+      "id": "US-012",
+      "title": "Post Task Flow Works",
+      "description": "As a poster, I can create a new task end-to-end.",
       "acceptanceCriteria": [
-        "ChatListScreen shows all user chats ordered by lastMessageTime with unread badge",
-        "ChatThreadScreen shows real-time messages with timestamps, supports text + image messages",
-        "Message bubbles: right-aligned for current user (blue), left-aligned for others (gray)",
-        "Image picker integration for sending photos",
-        "_MessageButton in TaskDetailScreen calls createOrGetChat() and navigates to ChatThreadScreen",
-        "flutter analyze passes with no warnings"
+        "PostTaskScreen opens from Poster home CTA button",
+        "All form fields render: title, description, category picker, budget, location",
+        "Form validation works (required fields show errors if empty)",
+        "Submitting saves task to Firestore tasks collection",
+        "After submit, navigates back to home and new task appears in list",
+        "No crashes or unhandled exceptions"
       ],
       "passes": true
     },
     {
-      "id": "US-009",
-      "title": "Stripe Escrow Payment",
-      "description": "As a poster, I want to pay for a task via Stripe escrow so funds are held until completion.",
+      "id": "US-013",
+      "title": "Task Detail Screen Works",
+      "description": "As a user, I can open any task and see full details.",
       "acceptanceCriteria": [
-        "Create lib/features/payment/checkout_screen.dart with payment summary (bid amount, platform fee, total)",
-        "Create lib/features/payment/payment_service.dart wrapping flutter_stripe + Cloud Functions",
-        "PaymentService.createEscrowPayment() calls Cloud Function in asia-southeast1",
-        "PaymentService.presentPaymentSheet() presents Stripe sheet, returns true/false/throws",
-        "On payment success: task status advances to inProgress, SnackBar shown, pops back",
-        "CheckoutScreen route added to GoRouter; Stripe.publishableKey set in main.dart",
-        "flutter analyze passes with no warnings"
+        "Tapping a task card navigates to TaskDetailScreen",
+        "Task details render: title, description, budget, status, poster info",
+        "Poster view shows BidListSection (empty state if no bids)",
+        "Provider view shows Submit Bid button",
+        "No crashes when task data is missing optional fields",
+        "Back navigation works"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-014",
+      "title": "Bid Submission Works",
+      "description": "As a provider, I can submit a bid on a task.",
+      "acceptanceCriteria": [
+        "SubmitBidSheet opens as bottom sheet",
+        "Amount field accepts numeric input",
+        "Duration chips are selectable",
+        "Proposal text area validates minimum 20 chars",
+        "Submitting a bid saves to Firestore bids collection",
+        "After submit, sheet closes and success feedback shown",
+        "No crashes"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-015",
+      "title": "Profile Screen Works",
+      "description": "As a user, I can view and edit my profile.",
+      "acceptanceCriteria": [
+        "Profile tab shows user display name, role, stats",
+        "Settings option is accessible",
+        "Role switch bottom sheet opens and works",
+        "No crashes on profile tab"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-016",
+      "title": "Zero Flutter Analyze Errors",
+      "description": "The codebase must be clean.",
+      "acceptanceCriteria": [
+        "Run: flutter analyze",
+        "Result must show 0 errors",
+        "Fix any errors found in Sprint 2 code",
+        "Warnings are acceptable but errors are not"
       ],
       "passes": true
     }

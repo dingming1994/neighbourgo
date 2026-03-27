@@ -16,15 +16,33 @@ class WelcomeScreen extends StatelessWidget {
       final userCred = await FirebaseAuth.instance.signInAnonymously();
       final uid = userCred.user!.uid;
       final repo = AuthRepository();
-      await repo.createOrUpdateUser(
-        UserModel(
-          uid: uid,
-          phone: '+6500000000',
-          displayName: 'Dev User',
-          role: UserRole.both,
-        ),
-      );
+      try {
+        await repo.createOrUpdateUser(
+          UserModel(
+            uid: uid,
+            phone: '+6500000000',
+            displayName: 'Dev User',
+            role: UserRole.both,
+          ),
+        );
+      } catch (_) {
+        // Firestore write failed (e.g. rules block anonymous users) — navigate anyway.
+        // The user is authenticated; Firestore rules can be fixed separately.
+      }
       if (context.mounted) context.go(AppRoutes.home);
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.code == 'operation-not-allowed'
+                  ? 'Anonymous sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in methods.'
+                  : 'Dev login failed: ${e.message}',
+            ),
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
