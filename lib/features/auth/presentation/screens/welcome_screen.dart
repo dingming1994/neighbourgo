@@ -1,11 +1,39 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../data/models/user_model.dart';
+import '../../data/repositories/auth_repository.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
+
+  Future<void> _devLogin(BuildContext context) async {
+    try {
+      final repo = AuthRepository();
+      final cred = await repo.signInWithEmail('dev@neighbourgo.test', 'dev123456');
+      // Ensure user doc exists
+      if (cred.user != null) {
+        await repo.createOrUpdateUser(
+          UserModel(
+            uid: cred.user!.uid,
+            phone: '+6500000000',
+            displayName: 'Dev User',
+            role: UserRole.both,
+          ),
+        );
+      }
+      if (context.mounted) context.go(AppRoutes.home);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dev login failed: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +127,15 @@ class WelcomeScreen extends StatelessWidget {
                       );
                     },
                   ),
+                  const SizedBox(height: 12),
+                  // ── Dev bypass (simulator only) ──────────────────────────
+                  if (const bool.fromEnvironment('dart.vm.product') == false)
+                    TextButton.icon(
+                      icon: const Icon(Icons.developer_mode, size: 16),
+                      label: const Text('Dev Login (Simulator)', style: TextStyle(fontSize: 13)),
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                      onPressed: () => _devLogin(context),
+                    ),
                   const Spacer(),
                   Text(
                     'By continuing, you agree to our Terms of Service and Privacy Policy.',
