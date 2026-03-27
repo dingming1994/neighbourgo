@@ -83,9 +83,13 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
   }
 
   void _next() {
+    // Last step is the review screen — no form fields, go straight to submit
+    if (_step == _totalSteps - 1) {
+      _submit();
+      return;
+    }
     if (_formKeys[_step].currentState?.validate() ?? false) {
-      if (_step < _totalSteps - 1) setState(() => _step++);
-      else _submit();
+      setState(() => _step++);
     }
   }
 
