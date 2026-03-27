@@ -38,7 +38,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                             state.matchedLocation == AppRoutes.splash;
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.welcome;
-      if (isLoggedIn && isAuthRoute && state.matchedLocation != AppRoutes.splash) {
+      if (isLoggedIn && isAuthRoute &&
+          state.matchedLocation != AppRoutes.splash &&
+          state.matchedLocation != AppRoutes.roleSelect &&
+          state.matchedLocation != AppRoutes.profileSetup) {
         return AppRoutes.home;
       }
       return null;

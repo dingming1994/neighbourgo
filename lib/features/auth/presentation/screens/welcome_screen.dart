@@ -29,7 +29,7 @@ class WelcomeScreen extends StatelessWidget {
         // Firestore write failed (e.g. rules block anonymous users) — navigate anyway.
         // The user is authenticated; Firestore rules can be fixed separately.
       }
-      if (context.mounted) context.go(AppRoutes.home);
+      if (context.mounted) context.go(AppRoutes.roleSelect);
     } on FirebaseAuthException catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
