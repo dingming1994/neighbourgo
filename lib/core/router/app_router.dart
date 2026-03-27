@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/profile_setup_screen.dart';
 import '../../features/home/presentation/screens/main_shell_screen.dart';
 import '../../features/tasks/presentation/screens/task_detail_screen.dart';
 import '../../features/tasks/presentation/screens/post_task_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/public_profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/photo_gallery_screen.dart';
@@ -79,7 +80,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.taskList, builder: (_, __) => const TaskListScreen()),
           GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const _MyTasksTab()),
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
-          GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const _ProfileTab()),
+          GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
       ),
 

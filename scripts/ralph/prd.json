@@ -1,0 +1,81 @@
+{
+  "featureName": "Role-Based Experience",
+  "description": "Complete the role system for NeighbourGo: Poster, Provider, and Both. Each role gets a tailored home dashboard and profile experience.",
+  "branchName": "ralph/role-based-experience",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Poster Home Dashboard",
+      "description": "As a Poster, I want a home screen that shows my active tasks, quick-post button, and recent bid activity so I can manage my requests at a glance.",
+      "acceptanceCriteria": [
+        "Create lib/features/home/presentation/screens/poster_home_screen.dart",
+        "Show a greeting with user displayName",
+        "Show a 'Post a Task' primary CTA button that navigates to PostTaskScreen",
+        "Show a list of the user's own active tasks (status != completed/cancelled) fetched from Firestore via task_list_provider filtered by posterId == current user uid",
+        "Each task card shows title, category, budget, bid count, and createdAt (timeago)",
+        "If no tasks, show empty state: '📋 No active tasks. Post your first task!'",
+        "flutter analyze passes with no errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-002",
+      "title": "Provider Home Dashboard",
+      "description": "As a Provider, I want a home screen that shows available tasks near me and my active bids so I can find work and track my applications.",
+      "acceptanceCriteria": [
+        "Create lib/features/home/presentation/screens/provider_home_screen.dart",
+        "Show a greeting with user displayName and their avgRating (stars) if stats exist",
+        "Show a horizontally scrollable row of the user's serviceCategories as filter chips",
+        "Show a list of available tasks from Firestore (status == 'open') ordered by createdAt desc, limit 20",
+        "Each task card shows title, category emoji, budget range, neighbourhood, and timeago",
+        "Tapping a task card navigates to TaskDetailScreen",
+        "If no tasks found, show empty state: '🔍 No open tasks right now. Check back soon!'",
+        "flutter analyze passes with no errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-003",
+      "title": "Role-Aware Main Shell Routing",
+      "description": "The main shell screen should render the correct home dashboard based on the logged-in user's role.",
+      "acceptanceCriteria": [
+        "Update lib/features/home/presentation/screens/main_shell_screen.dart",
+        "Read current user role from auth provider",
+        "If role == UserRole.poster: show PosterHomeScreen as the home tab",
+        "If role == UserRole.provider: show ProviderHomeScreen as the home tab",
+        "If role == UserRole.both: show a TabBar with two tabs: 'Find Help' (PosterHomeScreen) and 'Find Work' (ProviderHomeScreen)",
+        "If user is null or role is still loading, show a centered CircularProgressIndicator",
+        "flutter analyze passes with no errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-004",
+      "title": "Provider Stats Widget",
+      "description": "As a Provider, I want to see my key stats (completed tasks, rating, earnings) in a compact widget on my home screen.",
+      "acceptanceCriteria": [
+        "Create lib/features/profile/presentation/widgets/provider_stats_widget.dart",
+        "Show completedTasks, avgRating (1 decimal), and totalReviews from ProviderStats",
+        "Show earnings as 'SGD X.XX' (hidden behind a show/hide toggle icon)",
+        "If ProviderStats is null, show placeholder dashes '--'",
+        "Use the widget inside ProviderHomeScreen below the greeting",
+        "flutter analyze passes with no errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-005",
+      "title": "Role Switch in Profile Screen",
+      "description": "As a user, I want to change my role from the profile screen so I can switch between poster and provider modes.",
+      "acceptanceCriteria": [
+        "Find or create lib/features/profile/presentation/screens/profile_screen.dart",
+        "Add a 'My Role' section that shows the current role as a readable label (e.g., 'Task Poster', 'Service Provider', 'Both')",
+        "Add a 'Change Role' button that opens a bottom sheet with the 3 role options (same style as RoleSelectionScreen cards)",
+        "On role selection, call authRepository.createOrUpdateUser with the new role and show a SnackBar: 'Role updated!'",
+        "The home shell re-renders automatically because it watches the auth provider",
+        "flutter analyze passes with no errors"
+      ],
+      "passes": true
+    }
+  ]
+}
