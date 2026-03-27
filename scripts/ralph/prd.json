@@ -167,7 +167,7 @@
         "Verify Home tab now shows ProviderHomeScreen (not poster or both view)",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-035",

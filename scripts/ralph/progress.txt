@@ -114,4 +114,22 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - ChatListScreen title is "Messages", ChatThreadScreen shows task title + "Task chat" subtitle
   - Message input placeholder: "Type a message…" (with Unicode ellipsis \u2026), send button icon: `Icons.send_rounded`
   - For seeding assigned tasks with chats: need task (status=assigned), accepted bid in subcollection, chat doc, and both user docs
+- Role picker in ProfileScreen was using `createOrUpdateUser()` (which only updates `lastActiveAt` for existing users) — fixed to use `profileRepository.updateProfile()` which does a proper Firestore `.update()` with all fields
+- EditProfileScreen fields use `labelText` (not hint) for identification: 'Your name', 'e.g. Trusted cleaner in Ang Mo Kio', 'Tell clients about yourself…'
+- Role picker bottom sheet: roles labeled 'Task Poster', 'Service Provider', 'Both — post & earn'; save button text is 'Save'; success snackbar is 'Role updated!'
+- When role=provider, HomeScreen shows only ProviderHomeScreen (no TabBar); 'Find Help' tab disappears
+---
+
+## 2026-03-28 - US-034
+- Implemented integration test for Profile View & Edit Flow
+- Files created:
+  - `integration_test/profile_flow_test.dart` — tests full flow: navigate to Profile tab → verify display name and role → edit profile (change headline + add bio) → verify Firestore update → change role to provider → verify Firestore + ProviderHomeScreen renders
+- Files modified:
+  - `lib/features/profile/presentation/screens/profile_screen.dart` — fixed role picker `_save()` to use `profileRepositoryProvider.updateProfile()` instead of `authRepositoryProvider.createOrUpdateUser()` (which only updated `lastActiveAt` for existing docs, never persisting the role change)
+- **Learnings for future iterations:**
+  - `createOrUpdateUser()` in `auth_repository.dart` does NOT update fields for existing users — only `lastActiveAt`. For real field updates, use `profileRepository.updateProfile()` which calls Firestore `.update()` with all fields.
+  - EditProfileScreen pre-fills controllers in `_initFromUser()` with a guard (`_initialized`) so it only happens once per screen lifecycle
+  - EditProfileScreen Save button pops the screen on success via `Navigator.of(context).pop()` — test should wait for snackbar then verify return to ProfileScreen
+  - Role change bottom sheet has transparent background (`Colors.transparent`) and a container with rounded top corners — the role cards inside are `GestureDetector` wrapped `AnimatedContainer` widgets
+  - After role change, the `currentUserProvider` re-emits and `_HomeBody` in `main_shell_screen.dart` switches between PosterHomeScreen / ProviderHomeScreen / TabBar based on `user.role`
 ---
