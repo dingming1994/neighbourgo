@@ -33,7 +33,7 @@ class BidListSection extends ConsumerWidget {
         padding: EdgeInsets.all(32),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => Center(child: Text('加载失败: $e')),
+      error: (e, _) => Center(child: Text('Failed to load bids: $e')),
       data: (bids) {
         if (bids.isEmpty) {
           return const Padding(
@@ -44,7 +44,7 @@ class BidListSection extends ConsumerWidget {
                   Icon(Icons.inbox_outlined,
                       size: 48, color: AppColors.textHint),
                   SizedBox(height: 12),
-                  Text('暂无报价',
+                  Text('No bids yet',
                       style: TextStyle(color: AppColors.textHint)),
                 ],
               ),
@@ -58,7 +58,7 @@ class BidListSection extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                '收到报价 (${bids.length})',
+                'Bids received (${bids.length})',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -131,7 +131,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('操作失败: $e'),
+            content: Text('Failed to reject bid: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -233,7 +233,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
               children: [
                 Expanded(
                   child: AppButton(
-                    label:     '接受',
+                    label:     'Accept',
                     isLoading: _isAccepting,
                     onPressed: _isRejecting ? null : _accept,
                     height:    40,
@@ -242,7 +242,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: AppButton(
-                    label:      '拒绝',
+                    label:      'Reject',
                     isLoading:  _isRejecting,
                     isOutlined: true,
                     onPressed:  _isAccepting ? null : _reject,
@@ -263,7 +263,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
                       size: 16, color: AppColors.success),
                   SizedBox(width: 4),
                   Text(
-                    '已接受',
+                    'Accepted',
                     style: TextStyle(
                       color:      AppColors.success,
                       fontWeight: FontWeight.w600,
@@ -293,13 +293,13 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case BidStatus.pending:
         color = AppColors.warning;
-        label = '待定';
+        label = 'Pending';
       case BidStatus.accepted:
         color = AppColors.success;
-        label = '已接受';
+        label = 'Accepted';
       case BidStatus.rejected:
         color = AppColors.textHint;
-        label = '已拒绝';
+        label = 'Rejected';
     }
 
     return Container(
