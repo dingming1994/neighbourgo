@@ -210,7 +210,7 @@
         "All steps pass without crashes or exceptions",
         "Test cleans up all created data from Firestore emulator after completion"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-037",

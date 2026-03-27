@@ -22,6 +22,8 @@ Started: Sat 28 Mar 2026 03:35:43 +08
 - Multi-user integration tests: create both users in setUpAll, use `signOutTestUser()` / `signInTestUser()` + re-pump the app widget to switch users
 - Chat IDs are deterministic: `{taskId}_{sortedUid1}_{sortedUid2}` — construct manually or use `ChatRepository.buildChatId()`
 - Chat seeding requires: chat doc in `chats/`, task (status=assigned), accepted bid in `tasks/{id}/bids/`, both user docs
+- Accepting a bid auto-creates a chat document — no need to manually seed chats after `acceptBid()` in end-to-end tests
+- Task completion: "Mark as Complete" button visible when poster + status is `assigned` or `inProgress`; calls `completeTask()` which sets status='completed' + completedAt
 
 ---
 
@@ -144,4 +146,17 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - The Post tab uses `context.push()` (not `context.go()`) so it layers on top of the current shell — closing returns to the previously active tab
   - Rapid tab switching (12 taps in quick succession) does not cause stack overflow or duplicate route issues — GoRouter handles this gracefully
   - The `_tabIndexProvider` StateProvider tracks the active bottom nav index — it persists across re-pumps within the same test
+---
+
+## 2026-03-28 - US-036
+- Implemented end-to-end integration test for Full User Journey (Post → Bid → Assign → Chat → Complete)
+- Files created:
+  - `integration_test/full_journey_test.dart` — master test chaining 6 steps: poster posts cleaning task → provider discovers and bids → poster accepts bid → poster sends chat message → poster marks task complete → final Firestore state verification
+- **Learnings for future iterations:**
+  - Task completion flow: poster taps "Mark as Complete" → confirmation dialog ("Mark as Complete?" / "Confirm") → `taskRepository.completeTask()` sets status='completed' + completedAt=Timestamp.now() → success snackbar "Task marked as complete!"
+  - `_MarkCompleteButton` visibility: shown when `isPoster && (status == inProgress || status == assigned)` — so it appears on assigned tasks too, not just inProgress
+  - After accepting a bid, the app auto-creates a chat document — no manual seeding needed for the chat step in the full journey test
+  - Completed tasks are filtered out of the PosterHomeScreen "Active Tasks" section
+  - Extracted `launchAndLogin()` and `settle()` helpers in the test to DRY up the repeated splash/onboarding/pump patterns across user switches
+  - The full journey test switches users 3 times (poster → provider → poster) using signOut/signIn + re-pump of ProviderScope(child: NeighbourGoApp())
 ---
