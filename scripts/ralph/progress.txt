@@ -53,3 +53,18 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - `PosterHomeScreen` greeting uses `displayName.split(' ').first` — so 'Test User' becomes 'Hi, Test! 👋'
   - The `NeighbourGoApp` widget can be pumped directly with `ProviderScope` wrapper — Stripe/Crashlytics init in `main()` is not needed for integration tests
 ---
+
+## 2026-03-28 - US-030
+- Implemented integration test for Post Task End-to-End (5-step flow)
+- Files created:
+  - `integration_test/post_task_test.dart` — tests full flow: home → post FAB → category → description → location → budget → review → post → verify Firestore → verify home active tasks
+- **Learnings for future iterations:**
+  - PostTaskScreen uses 5 steps (index 0-4): Category, Description, Location, Budget, Review
+  - Category cards display as "emoji label" (e.g. "Home Cleaning") — use the label text to find and tap
+  - Budget field has prefixText "S$ " — find it with `find.widgetWithText(TextFormField, 'S\$ ').first`
+  - Step 5 (Review) button says "Post Task" (not "Next") — calls `_submit()` directly with no form validation
+  - After successful post, app shows snackbar "Task posted! Providers will bid shortly." and navigates to `/tasks/$id` (TaskDetailScreen)
+  - `createTask()` generates a UUID for the task ID, uploads photos to Storage, then writes to Firestore with timestamps
+  - Pre-seeded user with email/password auth works well for tests that need the user already logged in
+  - The test handles the case where app may land on Welcome/Role/Profile screens if the user session isn't preserved
+---

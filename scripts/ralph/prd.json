@@ -64,7 +64,7 @@
         "Navigate back to Home and verify the new task appears in 'Active Tasks' list",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-031",
