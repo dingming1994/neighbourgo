@@ -6,7 +6,8 @@ service cloud.firestore {
     function isSignedIn()        { return request.auth != null; }
     function isOwner(uid)        { return request.auth.uid == uid; }
     function isNotDeactivated()  {
-      return !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isDeactivated;
+      let doc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return !doc.data.get('isDeactivated', false);
     }
 
     // ── Users ────────────────────────────────────────────────────────────────

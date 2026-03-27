@@ -16,7 +16,18 @@ final authStateProvider = StreamProvider<User?>((ref) {
 final currentUserProvider = StreamProvider<UserModel?>((ref) {
   final auth = ref.watch(authStateProvider).valueOrNull;
   if (auth == null) return Stream.value(null);
-  return ref.watch(authRepositoryProvider).watchCurrentUser();
+
+  // Fallback: if Firestore doc doesn't exist yet (e.g. anonymous dev login),
+  // synthesise a minimal UserModel so the app doesn't spin forever.
+  return ref.watch(authRepositoryProvider).watchCurrentUser().map((user) {
+    if (user != null) return user;
+    return UserModel(
+      uid: auth.uid,
+      phone: auth.phoneNumber ?? '+6500000000',
+      displayName: auth.displayName ?? 'User',
+      role: UserRole.both,
+    );
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
