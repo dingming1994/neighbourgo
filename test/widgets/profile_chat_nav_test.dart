@@ -199,20 +199,6 @@ ChatModel _testChat({
       unreadCount: unreadCount,
     );
 
-MessageModel _testMessage({
-  String messageId = 'msg-1',
-  String chatId = 'chat-1',
-  String senderId = 'user-1',
-  String? text = 'Hello!',
-  DateTime? timestamp,
-}) =>
-    MessageModel(
-      messageId: messageId,
-      chatId: chatId,
-      senderId: senderId,
-      text: text,
-      timestamp: timestamp ?? DateTime(2026, 3, 28, 10, 0),
-    );
 
 // =============================================================================
 // Helpers
