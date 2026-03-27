@@ -5,7 +5,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../data/models/user_model.dart';
-import '../../domain/providers/auth_provider.dart';
 import '../../../../features/auth/data/repositories/auth_repository.dart';
 
 class RoleSelectionScreen extends ConsumerStatefulWidget {
