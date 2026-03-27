@@ -12,19 +12,18 @@ class WelcomeScreen extends StatelessWidget {
 
   Future<void> _devLogin(BuildContext context) async {
     try {
+      // Use anonymous auth — works without any email/password setup
+      final userCred = await FirebaseAuth.instance.signInAnonymously();
+      final uid = userCred.user!.uid;
       final repo = AuthRepository();
-      final cred = await repo.signInWithEmail('dev@neighbourgo.test', 'dev123456');
-      // Ensure user doc exists
-      if (cred.user != null) {
-        await repo.createOrUpdateUser(
-          UserModel(
-            uid: cred.user!.uid,
-            phone: '+6500000000',
-            displayName: 'Dev User',
-            role: UserRole.both,
-          ),
-        );
-      }
+      await repo.createOrUpdateUser(
+        UserModel(
+          uid: uid,
+          phone: '+6500000000',
+          displayName: 'Dev User',
+          role: UserRole.both,
+        ),
+      );
       if (context.mounted) context.go(AppRoutes.home);
     } catch (e) {
       if (context.mounted) {
