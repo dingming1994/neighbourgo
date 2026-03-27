@@ -192,7 +192,7 @@
         "Verify no stack overflow or duplicate routes during rapid tab switching (tap each tab 3 times quickly)",
         "All tests pass without crashes"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-036",

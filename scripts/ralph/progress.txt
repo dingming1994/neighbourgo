@@ -133,3 +133,15 @@ Started: Sat 28 Mar 2026 03:35:43 +08
   - Role change bottom sheet has transparent background (`Colors.transparent`) and a container with rounded top corners — the role cards inside are `GestureDetector` wrapped `AnimatedContainer` widgets
   - After role change, the `currentUserProvider` re-emits and `_HomeBody` in `main_shell_screen.dart` switches between PosterHomeScreen / ProviderHomeScreen / TabBar based on `user.role`
 ---
+
+## 2026-03-28 - US-035
+- Implemented integration test for Bottom Navigation & Screen Transitions
+- Files created:
+  - `integration_test/navigation_test.dart` — tests all 5 bottom nav tabs, Home TabBar (Find Help/Find Work), Discover, Messages, Profile, Post Task FAB (full-screen open + close), TaskDetailScreen via Discover, EditProfileScreen via Profile, and rapid tab switching stress test
+- **Learnings for future iterations:**
+  - Post FAB button has no label text — find it via `find.byIcon(Icons.add)` (the gradient circle contains an `Icons.add` icon)
+  - PostTaskScreen step 0 shows `Icons.close` leading button that calls `context.pop()` — subsequent steps show `Icons.arrow_back` for going back to previous step
+  - The Post tab uses `context.push()` (not `context.go()`) so it layers on top of the current shell — closing returns to the previously active tab
+  - Rapid tab switching (12 taps in quick succession) does not cause stack overflow or duplicate route issues — GoRouter handles this gracefully
+  - The `_tabIndexProvider` StateProvider tracks the active bottom nav index — it persists across re-pumps within the same test
+---
