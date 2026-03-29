@@ -17,26 +17,44 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   final _phoneCtrl = TextEditingController();
   final _formKey   = GlobalKey<FormState>();
   String _countryCode = '+65';
+  bool _navigated = false;
 
   @override
   void dispose() { _phoneCtrl.dispose(); super.dispose(); }
 
-  Future<void> _sendOtp() async {
-    if (!_formKey.currentState!.validate()) return;
-    final phone = '$_countryCode${_phoneCtrl.text.trim()}';
-    await ref.read(phoneAuthProvider.notifier).sendOtp(phone);
-
-    final state = ref.read(phoneAuthProvider);
-    if (state.otpSent && mounted) {
+  void _handleStateChange(PhoneAuthState? prev, PhoneAuthState next) {
+    if (_navigated) return;
+    if (next.verificationId == '__auto_verified__') {
+      _navigated = true;
+      final user = ref.read(currentUserProvider).valueOrNull;
+      if (user == null || !user.isProfileComplete) {
+        context.go(AppRoutes.roleSelect);
+      } else {
+        context.go(AppRoutes.home);
+      }
+    } else if (next.otpSent && next.verificationId != null) {
+      _navigated = true;
+      final phone = '$_countryCode${_phoneCtrl.text.trim()}';
       context.push(
-        '${AppRoutes.otpVerify}?vid=${state.verificationId}&phone=${Uri.encodeComponent(phone)}',
+        '${AppRoutes.otpVerify}?vid=${next.verificationId}&phone=${Uri.encodeComponent(phone)}',
       );
     }
+  }
+
+  Future<void> _sendOtp() async {
+    if (!_formKey.currentState!.validate()) return;
+    _navigated = false;
+    final phone = '$_countryCode${_phoneCtrl.text.trim()}';
+    ref.read(phoneAuthProvider.notifier).sendOtp(phone);
+    // Navigation is handled by _handleStateChange via ref.listen
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(phoneAuthProvider);
+
+    // Listen for state changes to handle navigation after reCAPTCHA returns
+    ref.listen<PhoneAuthState>(phoneAuthProvider, _handleStateChange);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Enter Phone Number')),

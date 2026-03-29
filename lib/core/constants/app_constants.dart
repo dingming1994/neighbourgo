@@ -63,6 +63,7 @@ class AppRoutes {
   static const splash          = '/';
   static const welcome         = '/welcome';
   static const phoneAuth       = '/auth/phone';
+  static const emailAuth       = '/auth/email';
   static const otpVerify       = '/auth/otp';
   static const roleSelect      = '/auth/role';
   static const profileSetup    = '/auth/profile-setup';

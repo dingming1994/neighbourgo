@@ -75,7 +75,18 @@ extension TaskModelExt on TaskModel {
   bool get isOpen      => status == TaskStatus.open;
 
   static TaskModel fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = Map<String, dynamic>.from(doc.data() as Map);
+    // Convert Firestore Timestamps → ISO-8601 strings for json_serializable
+    for (final key in ['createdAt', 'updatedAt', 'completedAt', 'expiresAt', 'scheduledDate']) {
+      if (data[key] is Timestamp) {
+        data[key] = (data[key] as Timestamp).toDate().toIso8601String();
+      }
+    }
+    // Convert Firestore GeoPoint → Map for json_serializable
+    if (data['location'] is GeoPoint) {
+      final gp = data['location'] as GeoPoint;
+      data['location'] = {'lat': gp.latitude, 'lng': gp.longitude};
+    }
     return TaskModel.fromJson({...data, 'id': doc.id});
   }
   bool get isAssigned  => status == TaskStatus.assigned || status == TaskStatus.inProgress;

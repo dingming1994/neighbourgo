@@ -128,40 +128,24 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   AppButton(
-                    label: 'Get Started with Phone',
-                    leading: const Text('📱', style: TextStyle(fontSize: 18)),
-                    onPressed: const bool.fromEnvironment('dart.vm.product') == false
-                        ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('📱 Phone auth not supported on simulator. Use "Dev Login" below.'),
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        : () => context.push(AppRoutes.phoneAuth),
+                    label: 'Continue with Email',
+                    leading: const Text('📧', style: TextStyle(fontSize: 18)),
+                    onPressed: () => context.push(AppRoutes.emailAuth),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
-                    label: 'Login with SingPass',
-                    leading: const Text('🇸🇬', style: TextStyle(fontSize: 18)),
+                    label: 'Get Started with Phone',
+                    leading: const Text('📱', style: TextStyle(fontSize: 18)),
                     isOutlined: true,
-                    onPressed: () {
-                      // TODO: Integrate SingPass MyInfo OAuth
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('SingPass integration coming soon!')),
-                      );
-                    },
+                    onPressed: () => context.push(AppRoutes.phoneAuth),
                   ),
                   const SizedBox(height: 12),
-                  // ── Dev bypass (simulator only) ──────────────────────────
-                  if (const bool.fromEnvironment('dart.vm.product') == false)
-                    TextButton.icon(
-                      icon: const Icon(Icons.developer_mode, size: 16),
-                      label: const Text('Dev Login (Simulator)', style: TextStyle(fontSize: 13)),
-                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                      onPressed: () => _devLogin(context),
-                    ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.developer_mode, size: 16),
+                    label: const Text('Dev Login (Skip Auth)', style: TextStyle(fontSize: 13)),
+                    style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                    onPressed: () => _devLogin(context),
+                  ),
                   const Spacer(),
                   Text(
                     'By continuing, you agree to our Terms of Service and Privacy Policy.',

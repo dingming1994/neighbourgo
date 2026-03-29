@@ -28,7 +28,11 @@ class ReviewModel with _$ReviewModel {
 
 extension ReviewModelExt on ReviewModel {
   static ReviewModel fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = Map<String, dynamic>.from(doc.data() as Map);
+    // Convert Firestore Timestamp → ISO-8601 string for json_serializable
+    if (data['createdAt'] is Timestamp) {
+      data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+    }
     return ReviewModel.fromJson({...data, 'id': doc.id});
   }
 }

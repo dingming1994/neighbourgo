@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,26 +25,44 @@ class AuthRepository {
   // ── Phone OTP ─────────────────────────────────────────────────────────────
   /// Step 1: Send OTP to phone number (e.g. "+6591234567")
   Future<String> sendOtp(String phoneNumber) async {
-    String verificationId = '';
+    final completer = Completer<String>();
+
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 120),
       verificationCompleted: (PhoneAuthCredential cred) async {
-        // Auto-retrieval or instant verification (Android only)
-        await _auth.signInWithCredential(cred);
+        // Auto-retrieval on Android / instant verify on iOS test numbers.
+        // Sign in and signal with a special marker so the notifier skips OTP.
+        try {
+          await _auth.signInWithCredential(cred);
+          if (!completer.isCompleted) completer.complete('__auto_verified__');
+        } catch (_) {
+          // ignore — codeSent will follow on failure
+        }
       },
       verificationFailed: (FirebaseAuthException e) {
-        throw Exception('OTP send failed: ${e.message}');
+        if (!completer.isCompleted) {
+          completer.completeError(Exception('OTP send failed: ${e.message}'));
+        }
       },
       codeSent: (String vid, int? resendToken) {
-        verificationId = vid;
+        if (!completer.isCompleted) {
+          completer.complete(vid);
+        }
       },
-      codeAutoRetrievalTimeout: (_) {},
+      codeAutoRetrievalTimeout: (String vid) {
+        // Timeout — if we still don't have a result, complete with the vid
+        if (!completer.isCompleted) {
+          if (vid.isNotEmpty) {
+            completer.complete(vid);
+          } else {
+            completer.completeError(Exception('Verification timed out'));
+          }
+        }
+      },
     );
-    // Wait briefly for verificationId to be set (codeSent fires async)
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (verificationId.isEmpty) throw Exception('Failed to get verificationId');
-    return verificationId;
+
+    return completer.future;
   }
 
   /// Step 2: Verify OTP code

@@ -17,11 +17,15 @@ Future<void> main() async {
   );
 
   // Initialise Stripe (publishable key — safe to embed in client)
-  Stripe.publishableKey = const String.fromEnvironment(
-    'STRIPE_PUBLISHABLE_KEY',
-    defaultValue: 'pk_test_placeholder',
-  );
-  await Stripe.instance.applySettings();
+  try {
+    Stripe.publishableKey = const String.fromEnvironment(
+      'STRIPE_PUBLISHABLE_KEY',
+      defaultValue: 'pk_test_placeholder',
+    );
+    await Stripe.instance.applySettings();
+  } catch (e) {
+    debugPrint('Stripe init failed (non-fatal): $e');
+  }
 
   // Crashlytics — capture Flutter errors in release mode
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;

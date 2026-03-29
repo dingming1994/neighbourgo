@@ -68,7 +68,13 @@ class PhoneAuthNotifier extends StateNotifier<PhoneAuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final vid = await _repo.sendOtp(phoneNumber);
-      state = state.copyWith(isLoading: false, verificationId: vid, otpSent: true);
+      if (vid == '__auto_verified__') {
+        // iOS test number or Android instant-verify — user is already signed in.
+        // Signal auto-verified so the UI can skip OTP screen.
+        state = state.copyWith(isLoading: false, otpSent: false, verificationId: vid);
+      } else {
+        state = state.copyWith(isLoading: false, verificationId: vid, otpSent: true);
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

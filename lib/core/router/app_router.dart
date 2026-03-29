@@ -5,6 +5,7 @@ import '../../features/auth/domain/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_auth_screen.dart';
+import '../../features/auth/presentation/screens/email_auth_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/auth/presentation/screens/profile_setup_screen.dart';
@@ -32,6 +33,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) {
+      // While auth state is still loading, don't redirect — avoids flash to welcome
+      if (authState.isLoading) return null;
+
       final isLoggedIn    = authState.valueOrNull != null;
       final isAuthRoute   = state.matchedLocation.startsWith('/auth') ||
                             state.matchedLocation == AppRoutes.welcome ||
@@ -59,6 +63,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.phoneAuth,
         builder: (_, __) => const PhoneAuthScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.emailAuth,
+        builder: (_, __) => const EmailAuthScreen(),
       ),
       GoRoute(
         path: AppRoutes.otpVerify,

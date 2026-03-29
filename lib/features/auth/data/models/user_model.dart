@@ -157,8 +157,28 @@ extension UserModelExt on UserModel {
 
   /// Deserialise from a Firestore DocumentSnapshot.
   static UserModel fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = Map<String, dynamic>.from(doc.data() as Map);
+    // Convert Firestore Timestamps → ISO-8601 strings for json_serializable
+    _convertTimestamp(data, 'createdAt');
+    _convertTimestamp(data, 'lastActiveAt');
+    // Convert nested ProfilePhoto timestamps
+    if (data['photos'] is List) {
+      data['photos'] = (data['photos'] as List).map((p) {
+        if (p is Map<String, dynamic>) {
+          final photo = Map<String, dynamic>.from(p);
+          _convertTimestamp(photo, 'uploadedAt');
+          return photo;
+        }
+        return p;
+      }).toList();
+    }
     return UserModel.fromJson({...data, 'uid': doc.id});
+  }
+
+  static void _convertTimestamp(Map<String, dynamic> map, String key) {
+    if (map[key] is Timestamp) {
+      map[key] = (map[key] as Timestamp).toDate().toIso8601String();
+    }
   }
 
   ProfilePhoto? get coverPhoto {
