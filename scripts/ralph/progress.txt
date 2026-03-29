@@ -13,6 +13,9 @@ Started: Mon 30 Mar 2026 01:44:53 +08
 - Welcome screen has 'Continue with Email' button → EmailAuthScreen with email/password fields → role selection → profile setup
 - `settle(tester, seconds: N)` pattern: pump N seconds then pumpAndSettle with 15s timeout
 - Existing unit tests have 2 pre-existing failures in auth_screens_test.dart — not caused by integration test changes
+- SubmitBidSheet shows two 'Submit Bid' texts (title + button) — use `.last` to tap the button
+- Task detail role logic: `isPoster = currentUser.uid == task.posterId`, `isProvider = !isPoster` — not based on user role field
+- After programmatically updating Firestore (seeding acceptance/completion), navigate away and back to force UI refresh
 
 ## 2026-03-30 - US-038
 - Implemented: Job Poster Full Journey Integration Test
@@ -38,4 +41,35 @@ Started: Mon 30 Mar 2026 01:44:53 +08
   - When seeding bids programmatically, must also `update({'bidCount': N})` on the task doc — the BidRepository.submitBid() does this automatically but manual seeding doesn't
   - Task detail screen for poster shows: Mark as Complete (when assigned), Message Provider (when assigned/completed), BidListSection (always)
   - The 2 pre-existing test failures are in auth_screens_test.dart widget tests (WelcomeScreen), not related to integration tests
+---
+
+## 2026-03-30 - US-039
+- Implemented: Job Seeker (Provider) Full Journey Integration Test
+- Created `integration_test/provider_journey_test.dart` covering complete provider lifecycle:
+  1. App launch → splash → welcome screen verification
+  2. Register via email auth (provider-test@neighbourgo.com)
+  3. Role selection (provider / "I want to earn")
+  4. Profile setup (Ben Lim, Bedok)
+  5. Browse tasks: find seeded task 'Deep clean 3-room HDB' in Open Tasks
+  6. Verify provider task detail: Submit Bid visible, no Mark as Complete, poster info shows Alice Tan
+  7. Submit bid: amount S$65, 2 hours duration, proposal with 20+ chars
+  8. Verify bid in Firestore: amount=65, status=pending
+  9. Verify own bid view: 'Your Bid' section with S$65 and 'Pending' badge
+  10. Seed acceptance: bid status=accepted, task status=assigned, assignedProviderId set
+  11. Verify accepted state: 'Accepted' badge, 'Message Poster' button visible
+  12. Chat: Message Poster → send message → Firestore verification
+  13. Seed completion: task status=completed, completedAt set
+  14. Verify completed state: Firestore checks, UI check if task still visible
+  15. Final state: profile shows Ben Lim, Firestore consistency checks
+- Files changed:
+  - `integration_test/provider_journey_test.dart` (new)
+  - `scripts/ralph/prd.json` (US-039 passes: true)
+  - `scripts/ralph/progress.txt` (this entry)
+- **Learnings for future iterations:**
+  - Provider journey test seeds both a poster user AND an open task in setUpAll, unlike the poster test which only seeds a provider user
+  - The SubmitBidSheet is a bottom sheet modal — after tapping 'Submit Bid' there are TWO widgets with that text (title + button), use `.last` to hit the button
+  - Success snackbar text is 'Bid submitted!' (exact match)
+  - Provider task detail uses isPoster/isProvider logic based on `task.posterId == currentUser.uid`, not the user's role field
+  - After seeding acceptance/completion in Firestore, must navigate away and back to refresh the UI state
+  - Completed tasks may not appear in provider Open Tasks list (filtered by status=open), so verify Firestore directly for completion state
 ---

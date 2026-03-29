@@ -52,7 +52,7 @@
         "Teardown: sign out, cleanup emulator data",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-040",
