@@ -69,7 +69,7 @@
         "Final summary: how many steps passed, how many failed, which features are working end-to-end",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

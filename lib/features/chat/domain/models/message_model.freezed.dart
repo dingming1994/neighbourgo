@@ -238,8 +238,8 @@ class _$MessageModelImpl implements _MessageModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, messageId, chatId, senderId, text, imageUrl, timestamp, isRead);
+  int get hashCode => Object.hash(runtimeType, messageId, chatId, senderId,
+      text, imageUrl, timestamp, isRead);
 
   /// Create a copy of MessageModel
   /// with the given fields replaced by the non-null parameter values.

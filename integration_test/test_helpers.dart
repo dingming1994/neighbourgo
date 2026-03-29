@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io' show HttpClient, ContentType;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -126,4 +129,88 @@ Future<void> pumpAndSettle(
     EnginePhase.sendSemanticsUpdate,
     timeout,
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Emulator REST API helpers — bypass security rules for cross-user seeding
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _projectId = 'neighbourgo-sg';
+
+/// Convert a Dart map to Firestore REST API field format.
+Map<String, dynamic> _toFirestoreFields(Map<String, dynamic> data) {
+  final fields = <String, dynamic>{};
+  for (final entry in data.entries) {
+    fields[entry.key] = _toFirestoreValue(entry.value);
+  }
+  return fields;
+}
+
+Map<String, dynamic> _toFirestoreValue(dynamic value) {
+  if (value is String) return {'stringValue': value};
+  if (value is int) return {'integerValue': '$value'};
+  if (value is double) return {'doubleValue': value};
+  if (value is bool) return {'booleanValue': value};
+  if (value is List) {
+    return {'arrayValue': {'values': value.map(_toFirestoreValue).toList()}};
+  }
+  if (value == null) return {'nullValue': null};
+  return {'stringValue': value.toString()};
+}
+
+/// Seed a bid document via the Firestore emulator REST API,
+/// bypassing security rules with the `Authorization: Bearer owner` header.
+Future<void> seedBidViaRest({
+  required String taskId,
+  required String bidId,
+  required Map<String, dynamic> data,
+}) async {
+  final url = Uri.parse(
+    'http://$emulatorHost:$firestoreEmulatorPort'
+    '/v1/projects/$_projectId/databases/(default)/documents'
+    '/tasks/$taskId/bids/$bidId',
+  );
+
+  final body = jsonEncode({'fields': _toFirestoreFields(data)});
+
+  final client = HttpClient();
+  final request = await client.patchUrl(url);
+  request.headers.set('Authorization', 'Bearer owner');
+  request.headers.contentType = ContentType.json;
+  request.write(body);
+  final response = await request.close();
+  final responseBody = await response.transform(utf8.decoder).join();
+  if (response.statusCode != 200) {
+    throw Exception('seedBidViaRest failed (${response.statusCode}): $responseBody');
+  }
+  client.close();
+}
+
+/// Seed any document via the Firestore emulator REST API.
+/// Uses updateMask to only update the specified fields (partial update).
+Future<void> seedDocViaRest({
+  required String path,
+  required Map<String, dynamic> data,
+}) async {
+  // Build updateMask query parameter for partial updates
+  final updateMask = data.keys.map((k) => 'updateMask.fieldPaths=$k').join('&');
+  final url = Uri.parse(
+    'http://$emulatorHost:$firestoreEmulatorPort'
+    '/v1/projects/$_projectId/databases/(default)/documents'
+    '/$path?$updateMask',
+  );
+
+  final body = jsonEncode({'fields': _toFirestoreFields(data)});
+
+  final client = HttpClient();
+  final request = await client.patchUrl(url);
+  request.headers.set('Authorization', 'Bearer owner');
+  request.headers.contentType = ContentType.json;
+  request.write(body);
+  final response = await request.close();
+  final responseBody = await response.transform(utf8.decoder).join();
+  if (response.statusCode != 200) {
+    throw Exception('seedDocViaRest failed (${response.statusCode}): $responseBody');
+  }
+  client.close();
 }

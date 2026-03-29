@@ -45,7 +45,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isLoggedIn && isAuthRoute &&
           state.matchedLocation != AppRoutes.splash &&
           state.matchedLocation != AppRoutes.roleSelect &&
-          state.matchedLocation != AppRoutes.profileSetup) {
+          state.matchedLocation != AppRoutes.profileSetup &&
+          state.matchedLocation != AppRoutes.emailAuth &&
+          state.matchedLocation != AppRoutes.phoneAuth &&
+          state.matchedLocation != AppRoutes.otpVerify) {
         return AppRoutes.home;
       }
       return null;
@@ -97,13 +100,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Task screens (full-screen, outside shell) ──────────────────────────
-      GoRoute(
-        path: AppRoutes.taskDetail,
-        builder: (_, state) => TaskDetailScreen(taskId: state.pathParameters['taskId']!),
-      ),
+      // postTask must come before taskDetail to avoid /tasks/post matching /tasks/:taskId
       GoRoute(
         path: AppRoutes.postTask,
         builder: (_, __) => const PostTaskScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.taskDetail,
+        builder: (_, state) => TaskDetailScreen(taskId: state.pathParameters['taskId']!),
       ),
 
       // ── Profile screens ────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,9 +24,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     setState(() => _loading = true);
     try {
       final repo = ref.read(authRepositoryProvider);
-      final user = await repo.fetchCurrentUser();
-      if (user != null) {
-        await repo.createOrUpdateUser(user.copyWith(role: _selected!));
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await repo.updateUserRole(uid, _selected!.name);
       }
       if (mounted) context.go(AppRoutes.profileSetup);
     } finally {

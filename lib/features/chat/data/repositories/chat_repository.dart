@@ -51,7 +51,7 @@ class ChatRepository {
   // ── Stream all chats for a user ───────────────────────────────────────────
   Stream<List<ChatModel>> getChatsStream(String userId) {
     return _chats
-        .where('participants', arrayContains: userId)
+        .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(_chatFromFirestore).toList());
@@ -113,32 +113,38 @@ class ChatRepository {
       String taskId, String posterId, String providerId) async {
     final chatId = buildChatId(taskId, posterId, providerId);
     final chatRef = _chats.doc(chatId);
-    final existing = await chatRef.get();
 
-    if (!existing.exists) {
-      String taskTitle = 'Task';
-      try {
-        final taskSnap =
-            await _db.collection(AppConstants.tasksCol).doc(taskId).get();
-        if (taskSnap.exists) {
-          taskTitle = (taskSnap.data() as Map<String, dynamic>)['title']
-                  as String? ??
-              'Task';
-        }
-      } catch (_) {}
-
-      final sorted = [posterId, providerId]..sort();
-      await chatRef.set({
-        'chatId': chatId,
-        'taskId': taskId,
-        'taskTitle': taskTitle,
-        'participants': sorted,
-        'lastMessage': null,
-        'lastMessageTime': null,
-        'unreadCount': 0,
-        'createdAt': Timestamp.now(),
-      });
+    // Try reading first — if it exists and user is a participant, just return.
+    // If get fails (permission-denied for non-existent doc), create it.
+    try {
+      final existing = await chatRef.get();
+      if (existing.exists) return chatId;
+    } catch (_) {
+      // Permission denied — doc likely doesn't exist yet.
     }
+
+    String taskTitle = 'Task';
+    try {
+      final taskSnap =
+          await _db.collection(AppConstants.tasksCol).doc(taskId).get();
+      if (taskSnap.exists) {
+        taskTitle = (taskSnap.data() as Map<String, dynamic>)['title']
+                as String? ??
+            'Task';
+      }
+    } catch (_) {}
+
+    final sorted = [posterId, providerId]..sort();
+    await chatRef.set({
+      'chatId': chatId,
+      'taskId': taskId,
+      'taskTitle': taskTitle,
+      'participantIds': sorted,
+      'lastMessage': null,
+      'lastMessageTime': null,
+      'unreadCount': 0,
+      'createdAt': Timestamp.now(),
+    });
 
     return chatId;
   }

@@ -16,6 +16,10 @@ Started: Mon 30 Mar 2026 01:44:53 +08
 - SubmitBidSheet shows two 'Submit Bid' texts (title + button) — use `.last` to tap the button
 - Task detail role logic: `isPoster = currentUser.uid == task.posterId`, `isProvider = !isPoster` — not based on user role field
 - After programmatically updating Firestore (seeding acceptance/completion), navigate away and back to force UI refresh
+- Cross-user Firestore writes in tests: use `seedBidViaRest()` / `seedDocViaRest()` with `Authorization: Bearer owner` header
+- GoRouter route order matters: specific routes (`/tasks/post`) must come before parameterized routes (`/tasks/:taskId`)
+- Chat field name in Firestore is `participantIds` (matches security rules), not `participants`
+- Emulator data clear: use project ID `neighbourgo-sg`, e.g. `curl -X DELETE "http://localhost:8080/emulator/v1/projects/neighbourgo-sg/databases/(default)/documents"`
 
 ## 2026-03-30 - US-038
 - Implemented: Job Poster Full Journey Integration Test
@@ -72,4 +76,21 @@ Started: Mon 30 Mar 2026 01:44:53 +08
   - Provider task detail uses isPoster/isProvider logic based on `task.posterId == currentUser.uid`, not the user's role field
   - After seeding acceptance/completion in Firestore, must navigate away and back to refresh the UI state
   - Completed tasks may not appear in provider Open Tasks list (filtered by status=open), so verify Firestore directly for completion state
+---
+
+## 2026-03-30 - US-040
+- Implemented: Run Tests & Document All Bugs Found
+- Executed both journey tests on iOS simulator (iPhone 17 Pro Max) with Firebase emulators
+- Found and fixed 9 bugs (3 CRITICAL, 4 MAJOR, 2 MINOR) — see scripts/ralph/bug_report.md
+- Results: Poster 12/12 steps pass, Provider 15/15 steps pass, 240 unit tests pass (2 pre-existing failures)
+- Files changed: 19 files — integration tests, app router, auth screens, chat repository, models, unit tests
+- **Learnings for future iterations:**
+  - Firebase emulators require Java — install via `brew install openjdk`
+  - Emulator REST API with `Authorization: Bearer owner` bypasses security rules for cross-user seeding
+  - GoRouter recreates on auth state changes — SplashScreen must check `isProfileComplete`
+  - Define specific routes before parameterized routes in GoRouter
+  - Firestore security rules block `get()` on non-existent docs — wrap in try-catch
+  - `FirebaseFirestore.instance` must not be accessed before `initializeTestApp()`
+  - Chat field name must be `participantIds` (not `participants`) to match security rules
+  - Emulator clear needs project ID `neighbourgo-sg` (not `demo-no-project`)
 ---

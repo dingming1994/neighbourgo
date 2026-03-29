@@ -74,6 +74,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       if (mounted) {
         // Check if profile is complete
         final user = await repo.fetchCurrentUser();
+        if (!mounted) return;
         if (user == null || !user.isProfileComplete) {
           context.go(AppRoutes.roleSelect);
         } else {
@@ -82,6 +83,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: code=${e.code} message=${e.message}');
+      if (!mounted) return;
       setState(() {
         _error = switch (e.code) {
           'invalid-email'       => 'Invalid email address.',
@@ -94,6 +96,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       });
     } catch (e, st) {
       debugPrint('Email auth error: $e\n$st');
+      if (!mounted) return;
       setState(() { _error = e.toString(); });
     } finally {
       if (mounted) setState(() { _isLoading = false; });

@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../features/profile/data/repositories/profile_repository.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../domain/providers/auth_provider.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
@@ -52,7 +53,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     setState(() => _loading = true);
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
-      final currentUser = ref.read(currentUserProvider).valueOrNull;
+      // Try Riverpod provider first, fall back to direct Firestore fetch
+      var currentUser = ref.read(currentUserProvider).valueOrNull;
+      currentUser ??= await AuthRepository().fetchCurrentUser();
       if (currentUser == null) return;
 
       String? avatarUrl;

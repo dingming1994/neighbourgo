@@ -23,6 +23,7 @@ mixin _$ChatModel {
   String get chatId => throw _privateConstructorUsedError;
   String get taskId => throw _privateConstructorUsedError;
   String get taskTitle => throw _privateConstructorUsedError;
+  @JsonKey(name: 'participantIds')
   List<String> get participants => throw _privateConstructorUsedError;
   String? get lastMessage => throw _privateConstructorUsedError;
   DateTime? get lastMessageTime => throw _privateConstructorUsedError;
@@ -47,7 +48,7 @@ abstract class $ChatModelCopyWith<$Res> {
       {String chatId,
       String taskId,
       String taskTitle,
-      List<String> participants,
+      @JsonKey(name: 'participantIds') List<String> participants,
       String? lastMessage,
       DateTime? lastMessageTime,
       int unreadCount});
@@ -121,7 +122,7 @@ abstract class _$$ChatModelImplCopyWith<$Res>
       {String chatId,
       String taskId,
       String taskTitle,
-      List<String> participants,
+      @JsonKey(name: 'participantIds') List<String> participants,
       String? lastMessage,
       DateTime? lastMessageTime,
       int unreadCount});
@@ -188,6 +189,7 @@ class _$ChatModelImpl implements _ChatModel {
       {required this.chatId,
       required this.taskId,
       required this.taskTitle,
+      @JsonKey(name: 'participantIds')
       final List<String> participants = const [],
       this.lastMessage,
       this.lastMessageTime,
@@ -205,7 +207,7 @@ class _$ChatModelImpl implements _ChatModel {
   final String taskTitle;
   final List<String> _participants;
   @override
-  @JsonKey()
+  @JsonKey(name: 'participantIds')
   List<String> get participants {
     if (_participants is EqualUnmodifiableListView) return _participants;
     // ignore: implicit_dynamic_type
@@ -277,7 +279,7 @@ abstract class _ChatModel implements ChatModel {
       {required final String chatId,
       required final String taskId,
       required final String taskTitle,
-      final List<String> participants,
+      @JsonKey(name: 'participantIds') final List<String> participants,
       final String? lastMessage,
       final DateTime? lastMessageTime,
       final int unreadCount}) = _$ChatModelImpl;
@@ -292,6 +294,7 @@ abstract class _ChatModel implements ChatModel {
   @override
   String get taskTitle;
   @override
+  @JsonKey(name: 'participantIds')
   List<String> get participants;
   @override
   String? get lastMessage;

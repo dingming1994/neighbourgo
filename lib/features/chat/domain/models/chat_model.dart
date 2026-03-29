@@ -9,7 +9,7 @@ class ChatModel with _$ChatModel {
     required String chatId,
     required String taskId,
     required String taskTitle,
-    @Default([]) List<String> participants,
+    @JsonKey(name: 'participantIds') @Default([]) List<String> participants,
     String? lastMessage,
     DateTime? lastMessageTime,
     @Default(0) int unreadCount,

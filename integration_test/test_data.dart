@@ -154,7 +154,7 @@ Map<String, dynamic> testTutoringTask({
 // Firestore seeding helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _firestore = FirebaseFirestore.instance;
+FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
 /// Write a user document to the `users` collection.
 Future<void> seedUser(String uid, Map<String, dynamic> data) =>

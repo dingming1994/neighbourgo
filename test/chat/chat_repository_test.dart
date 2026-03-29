@@ -324,7 +324,7 @@ void main() {
         expect(chatDoc.lastSetData!['chatId'], chatId);
         expect(chatDoc.lastSetData!['taskId'], 'task-1');
         expect(chatDoc.lastSetData!['taskTitle'], 'Fix my sink');
-        expect(chatDoc.lastSetData!['participants'],
+        expect(chatDoc.lastSetData!['participantIds'],
             ['poster-1', 'provider-1']);
         expect(chatDoc.lastSetData!['lastMessage'], null);
         expect(chatDoc.lastSetData!['unreadCount'], 0);
@@ -341,7 +341,7 @@ void main() {
               'chatId': chatId,
               'taskId': 'task-1',
               'taskTitle': 'Fix my sink',
-              'participants': ['poster-1', 'provider-1'],
+              'participantIds': ['poster-1', 'provider-1'],
             },
             exists: true);
 
@@ -367,7 +367,7 @@ void main() {
 
         final chatId = ChatRepository.buildChatId('task-1', 'zUser', 'aUser');
         final chatDoc = db.getCollection('chats').docs[chatId]!;
-        expect(chatDoc.lastSetData!['participants'], ['aUser', 'zUser']);
+        expect(chatDoc.lastSetData!['participantIds'], ['aUser', 'zUser']);
       });
     });
 
@@ -466,7 +466,7 @@ void main() {
           'chatId': 'chat-1',
           'taskId': 'task-1',
           'taskTitle': 'Fix sink',
-          'participants': ['user-1', 'user-2'],
+          'participantIds': ['user-1', 'user-2'],
           'lastMessage': 'Hello',
           'lastMessageTime': now.toIso8601String(),
           'unreadCount': 0,
@@ -475,7 +475,7 @@ void main() {
           'chatId': 'chat-2',
           'taskId': 'task-2',
           'taskTitle': 'Mow lawn',
-          'participants': ['user-1', 'user-3'],
+          'participantIds': ['user-1', 'user-3'],
           'lastMessage': 'Hi',
           'lastMessageTime': now.toIso8601String(),
           'unreadCount': 1,
@@ -495,7 +495,7 @@ void main() {
         expect(chats[1].chatId, 'chat-2');
 
         // Verify where and orderBy were called
-        expect(chatsCol.query.lastWhereField, 'participants');
+        expect(chatsCol.query.lastWhereField, 'participantIds');
         expect(chatsCol.query.lastWhereValue, 'user-1');
         expect(chatsCol.query.lastOrderByField, 'lastMessageTime');
         expect(chatsCol.query.lastDescending, true);

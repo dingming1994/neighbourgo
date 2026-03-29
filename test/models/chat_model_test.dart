@@ -7,7 +7,7 @@ void main() {
       'chatId': 'chat1',
       'taskId': 'task1',
       'taskTitle': 'Clean my house',
-      'participants': ['userA', 'userB'],
+      'participantIds': ['userA', 'userB'],
       'lastMessage': 'Hello!',
       'lastMessageTime': '2026-03-28T12:00:00.000',
       'unreadCount': 2,

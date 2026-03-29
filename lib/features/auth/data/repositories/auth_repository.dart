@@ -94,6 +94,14 @@ class AuthRepository {
     }
   }
 
+  /// Update the role field on an existing user document.
+  Future<void> updateUserRole(String uid, String role) async {
+    await _db.collection(AppConstants.usersCol).doc(uid).update({
+      'role': role,
+      'lastActiveAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
   /// Fetch current user document
   Future<UserModel?> fetchCurrentUser() async {
     final uid = _auth.currentUser?.uid;

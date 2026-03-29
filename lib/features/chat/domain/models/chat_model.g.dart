@@ -11,7 +11,7 @@ _$ChatModelImpl _$$ChatModelImplFromJson(Map<String, dynamic> json) =>
       chatId: json['chatId'] as String,
       taskId: json['taskId'] as String,
       taskTitle: json['taskTitle'] as String,
-      participants: (json['participants'] as List<dynamic>?)
+      participants: (json['participantIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
@@ -27,7 +27,7 @@ Map<String, dynamic> _$$ChatModelImplToJson(_$ChatModelImpl instance) =>
       'chatId': instance.chatId,
       'taskId': instance.taskId,
       'taskTitle': instance.taskTitle,
-      'participants': instance.participants,
+      'participantIds': instance.participants,
       'lastMessage': instance.lastMessage,
       'lastMessageTime': instance.lastMessageTime?.toIso8601String(),
       'unreadCount': instance.unreadCount,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../domain/providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -33,9 +34,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    final user = ref.read(authStateProvider).valueOrNull;
-    if (user != null) {
-      context.go(AppRoutes.home);
+    final firebaseUser = ref.read(authStateProvider).valueOrNull;
+    if (firebaseUser != null) {
+      // Check if the user has completed onboarding (role + profile)
+      final userModel = await AuthRepository().fetchCurrentUser();
+      if (!mounted) return;
+      if (userModel == null || !userModel.isProfileComplete) {
+        context.go(AppRoutes.roleSelect);
+      } else {
+        context.go(AppRoutes.home);
+      }
     } else {
       context.go(AppRoutes.welcome);
     }
