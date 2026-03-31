@@ -153,3 +153,18 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - The `_isDirectHire` getter pattern keeps the check DRY across submit, build, and banner
   - Manual browser verification needed for UI changes
 ---
+
+## 2026-04-01 - US-057
+- **What was implemented:** Integration test for Flow 1: Task-Based Bidding End-to-End covering Alice posts task → Ben bids → Alice messages Ben via bid card → Alice accepts bid → Ben starts work → Alice marks complete → Both leave mutual reviews → Firestore verification
+- **Files changed:**
+  - `integration_test/flow1_task_bidding_test.dart` — New: Full E2E test with 9 steps (post task, submit bid, message via bid card, accept bid, start work, mark complete, Alice reviews Ben 4 stars, Ben reviews Alice 5 stars, verify reviews in Firestore)
+- **Learnings for future iterations:**
+  - Integration tests follow launchAndLogin pattern from full_journey_test.dart — same splash wait, dev login, role selection, profile setup helpers
+  - Reviews are stored under `users/{reviewedUserId}/reviews/{docId}` subcollection — query with reviewerId + taskId to verify
+  - Star rating in SubmitReviewScreen uses `Icons.star_rounded` — tap by index (0-based) for specific star count
+  - Chat ID for task-scoped chats is `{taskId}_{sorted_uids}` — use this deterministic format for Firestore verification
+  - Multi-user tests require sign out/sign in cycles with launchAndLogin between each user switch
+  - The "Accept" button text on bid cards is how poster accepts bids in the UI
+  - Start Work confirmation dialog has "Start Work?" title and "Confirm" button
+  - Integration tests can only be run on simulator/device, not in CI without emulators: `flutter test integration_test/flow1_task_bidding_test.dart -d <simulator_id>`
+---
