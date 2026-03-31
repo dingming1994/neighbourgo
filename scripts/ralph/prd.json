@@ -111,7 +111,7 @@
         "Verify app builds for iOS simulator without errors",
         "Create a summary of all features completed across Sprint 1-7"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

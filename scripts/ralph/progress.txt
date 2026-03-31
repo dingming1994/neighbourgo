@@ -98,3 +98,46 @@ Started: Tue 31 Mar 2026 20:41:10 +08
   - `user.neighbourhood` is a nullable String like "Ang Mo Kio"
   - Recommendations are computed client-side from the same open tasks stream (avoids complex Firestore compound queries)
 ---
+
+## 2026-03-31 21:45 +08 - US-047
+- Merged `ralph/sprint-7-feature-completion` into `main` (fast-forward)
+- Fixed 2 broken tests: auth_screens_test ("Dev Login" text mismatch), profile_chat_nav_test ("Open Tasks" → "All Open Tasks")
+- Added new routes to app_constants_test route list
+- `flutter analyze`: 0 errors (112 infos/warnings — all pre-existing)
+- `flutter test`: 242/242 tests passing
+- iOS build verification: not available without Xcode simulator, but flutter analyze and tests pass
+
+### Sprint 1-7 Feature Summary
+
+**Sprint 1-3: Foundation**
+- Firebase Auth (phone, email, dev login)
+- User profiles with Firestore CRUD
+- Task posting & discovery with category filtering
+- GoRouter navigation with auth guards
+
+**Sprint 4: Bidding & Chat**
+- Bid system (submit, accept, reject)
+- Real-time chat with Firestore
+- Task status lifecycle (open → assigned → inProgress → completed)
+
+**Sprint 5: Payments & Profile**
+- Stripe escrow payments (hold → capture on completion)
+- Profile completeness scoring
+- Photo gallery with Firebase Storage
+- Verification centre & badges
+- Category showcases on profiles
+
+**Sprint 6: Testing & Polish**
+- 242 unit/widget tests
+- Integration test suite (10 test files)
+- Bug fixes: GoRouter auth rebuild, Firebase config
+
+**Sprint 7: Feature Completion (this sprint)**
+- US-041: Audited all 8 Cloud Functions — all correct
+- US-042: Submit Review screen with 5-star rating, comments, skill endorsements
+- US-043: Review display with ReviewCard, RatingSummary (distribution bars), provider stats on ProfileScreen
+- US-044: Notification list screen with badge counts, type-based icons, mark-as-read
+- US-045: Chat image full-screen view, mark-as-read on open, unread badge on Messages tab
+- US-046: Provider task recommendations based on serviceCategories + neighbourhood
+- US-047: Merged to main, all tests passing
+---
