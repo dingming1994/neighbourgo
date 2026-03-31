@@ -124,7 +124,7 @@
         "Add Firestore index for tasks(assignedProviderId, isDirectHire, status)",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-056",

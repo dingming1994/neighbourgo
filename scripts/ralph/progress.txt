@@ -113,9 +113,29 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — Added `embedded` parameter to skip Scaffold/AppBar when embedded in DiscoverScreen
   - `lib/core/router/app_router.dart` — Changed /tasks route from TaskListScreen to DiscoverScreen, added import
 - **Learnings for future iterations:**
-  - The `embedded` pattern (bool param that skips Scaffold wrapper) allows screens to be reused both standalone and embedded inside wrapper screens
+  - Direct hire tasks use `isDirectHire=true` on TaskModel; provider sees Accept/Decline instead of bid flow when `isDirectHire && status==assigned`
+- The `embedded` pattern (bool param that skips Scaffold wrapper) allows screens to be reused both standalone and embedded inside wrapper screens
   - DiscoverScreen provides the shared AppBar ("Discover") when toggle is shown; when provider-only, it delegates directly to TaskListScreen which uses its own AppBar
   - The segmented toggle uses AppColors.bgCard/bgLight for the pill-style iOS-like appearance, matching the app's theme
   - When user is null (still loading), showToggle is false so TaskListScreen is shown by default — avoids flash of wrong UI
+  - Manual browser verification needed for UI changes
+---
+
+## 2026-04-01 - US-055
+- **What was implemented:** Added `isDirectHire` field to TaskModel, `watchDirectHireOffers` and `declineDirectHire` methods to TaskRepository, Job Offers section on ProviderHomeScreen, Accept/Decline buttons on TaskDetailScreen for direct hire tasks, Firestore composite index for direct hire queries
+- **Files changed:**
+  - `lib/features/tasks/data/models/task_model.dart` — Added `isDirectHire` (bool, default false) field
+  - `lib/features/tasks/data/models/task_model.freezed.dart` — Regenerated
+  - `lib/features/tasks/data/models/task_model.g.dart` — Regenerated
+  - `lib/features/tasks/data/repositories/task_repository.dart` — Added `watchDirectHireOffers(providerId)` stream query and `declineDirectHire(taskId)` method
+  - `lib/features/home/presentation/widgets/job_offers_section.dart` — New: `directHireOffersProvider`, `JobOffersSection` sliver widget, `_JobOfferCard` with Direct Hire badge
+  - `lib/features/home/presentation/screens/provider_home_screen.dart` — Added JobOffersSection at top of slivers (before Pending Reviews)
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — Added `_DirectHireResponseButtons` widget (Accept Job / Decline), conditional rendering for direct hire vs normal bid flow; fixed duplicate import
+  - `firestore.indexes.json` — Added composite index for tasks(assignedProviderId, isDirectHire, status, createdAt)
+- **Learnings for future iterations:**
+  - Direct hire tasks bypass the bidding flow entirely — when `isDirectHire && status==assigned`, the provider view shows Accept/Decline instead of Submit Bid + ProviderBidView + Start Work
+  - `declineDirectHire` uses `FieldValue.delete()` to clear assignedProviderId/Name fields (not set to null) — Firestore convention for removing fields
+  - The JobOffersSection follows the same self-hiding sliver pattern as PendingReviewsSection — returns SizedBox.shrink() when empty
+  - TaskDetailScreen had a pre-existing duplicate import of app_constants.dart which was cleaned up
   - Manual browser verification needed for UI changes
 ---
