@@ -119,7 +119,23 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Continue'));
-      await settle(tester, seconds: 2);
+
+      // Wait longer for auth + navigation — the router needs time to process
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await settle(tester, seconds: 5);
+
+      // Debug: print what's on screen
+      debugPrint('=== WIDGETS AFTER EMAIL REGISTER ===');
+      debugPrint('Role select? ${find.text("How will you use NeighbourGo?").evaluate().length}');
+      debugPrint('Welcome? ${find.text("Continue with Email").evaluate().length}');
+      debugPrint('Home? ${find.text("Home").evaluate().length}');
+      debugPrint('Splash? ${find.text("NeighbourGo").evaluate().length}');
+      debugPrint('Profile setup? ${find.text("Set Up Profile").evaluate().length}');
+      debugPrint('Email login? ${find.text("Email Login").evaluate().length}');
 
       // ════════════════════════════════════════════════════════════════════════
       // STEP 3 — Select Role: poster ("I need help")

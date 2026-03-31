@@ -26,13 +26,24 @@ import '../constants/app_constants.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Router Provider
 // ─────────────────────────────────────────────────────────────────────────────
+// Notifier that fires when Firebase auth state changes — used by GoRouter
+// to re-evaluate redirects without rebuilding the entire router.
+class _AuthNotifier extends ChangeNotifier {
+  _AuthNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authNotifier = _AuthNotifier(ref);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: authNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
+
       // While auth state is still loading, don't redirect — avoids flash to welcome
       if (authState.isLoading) return null;
 
