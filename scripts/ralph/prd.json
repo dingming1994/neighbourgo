@@ -48,7 +48,7 @@
         "Empty state when no reviews: 'No reviews yet'",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-044",

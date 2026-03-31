@@ -60,6 +60,11 @@ class ProfileScreen extends ConsumerWidget {
               _ProfileHeader(user: user),
               const Divider(height: 1),
 
+              // ── Provider stats ─────────────────────────────────────────────
+              if (user.stats != null &&
+                  (user.role == UserRole.provider || user.role == UserRole.both))
+                _ProviderStatsSection(stats: user.stats!),
+
               // ── My Role ───────────────────────────────────────────────────
               _RoleSection(user: user),
               const Divider(height: 1),
@@ -95,6 +100,46 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider Stats
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProviderStatsSection extends StatelessWidget {
+  final ProviderStats stats;
+  const _ProviderStatsSection({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.bgCard,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatColumn(value: stats.completedTasks.toString(), label: 'Tasks Done'),
+          _StatColumn(value: stats.avgRating.toStringAsFixed(1), label: 'Avg Rating'),
+          _StatColumn(value: stats.totalReviews.toString(), label: 'Reviews'),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatColumn extends StatelessWidget {
+  final String value;
+  final String label;
+  const _StatColumn({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
+      const SizedBox(height: 2),
+      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+    ],
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
