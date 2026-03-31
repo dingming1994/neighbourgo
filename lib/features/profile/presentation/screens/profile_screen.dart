@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -269,12 +270,18 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
     }
     setState(() => _loading = true);
     try {
-      final repo = ref.read(profileRepositoryProvider);
-      await repo.updateProfile(widget.currentUser.copyWith(role: _selected));
+      final authRepo = AuthRepository();
+      await authRepo.updateUserRole(widget.currentUser.uid, _selected.name);
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Role updated!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update role: $e')),
         );
       }
     } finally {

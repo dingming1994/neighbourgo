@@ -23,6 +23,7 @@ import '../../features/tasks/presentation/screens/task_list_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/payment/checkout_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
+import '../../features/providers/presentation/screens/provider_directory_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,6 +111,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
+      ),
+
+      // ── Provider directory ──────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.providers,
+        builder: (_, __) => const ProviderDirectoryScreen(),
       ),
 
       // ── Task screens (full-screen, outside shell) ──────────────────────────

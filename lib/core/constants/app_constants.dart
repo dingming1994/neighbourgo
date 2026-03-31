@@ -97,6 +97,9 @@ class AppRoutes {
   // Notifications
   static const notificationList = '/notifications';
 
+  // Providers
+  static const providers       = '/providers';
+
   // Settings
   static const settings        = '/settings';
   static const notifications   = '/settings/notifications';
