@@ -15,7 +15,7 @@
         "ChatListScreen: handle chats with null taskId gracefully (show other user's name instead of task title)",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-049",
@@ -29,7 +29,7 @@
         "Navigate to ChatThreadScreen after chat creation",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-050",
