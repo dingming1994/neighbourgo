@@ -42,3 +42,14 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - Chat between poster and bidder uses `createOrGetChat(taskId, posterId, bidderId)` which is task-scoped (not direct chat)
   - Manual browser verification needed for UI changes
 ---
+
+## 2026-04-01 - US-050
+- **What was implemented:** Start Work button for assigned providers + Work in Progress banner/indicator on TaskDetailScreen
+- **Files changed:**
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — Added _StartWorkButton widget (with confirmation dialog, calls updateStatus to inProgress), _WorkInProgressBanner widget (shown when status is inProgress for both poster and provider views), Start Work button appears only when assigned provider views task with status==assigned
+- **Learnings for future iterations:**
+  - The existing `isInProgress` variable combines both `assigned` and `inProgress` statuses — for provider-specific actions, check `task.status == TaskStatus.assigned` directly
+  - TaskRepository.updateStatus is the generic method for status transitions; completeTask is a specialized version that also sets completedAt
+  - The Work in Progress banner is placed BEFORE the role-based section so both poster and provider see it
+  - Manual browser verification needed for UI changes
+---

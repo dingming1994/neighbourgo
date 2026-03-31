@@ -43,7 +43,7 @@
         "Provider view: replace 'Start Work' with 'Work in Progress' indicator when status is inProgress",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-051",
