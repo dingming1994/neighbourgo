@@ -24,3 +24,19 @@ Started: Tue 31 Mar 2026 20:41:10 +08
   - No test script exists in functions/package.json — only build verification is possible
   - Pre-existing test failure in auth_screens_test.dart (unrelated to functions)
 ---
+
+## 2026-03-31 20:55 +08 - US-042
+- Created `lib/features/reviews/presentation/screens/submit_review_screen.dart`
+  - 5-star rating with RatingBar.builder, comment field (max 500 chars), category-based skill endorsement chips
+  - Writes to Firestore `users/{reviewedUserId}/reviews` subcollection
+  - Success snackbar + context.pop() on submit
+- Added `submitReview = '/reviews/submit'` to AppRoutes
+- Added GoRoute with extra params in app_router.dart
+- Added `_LeaveReviewCard` widget to TaskDetailScreen — shows for both poster and provider when task is completed
+- Files changed: `submit_review_screen.dart` (new), `app_constants.dart`, `app_router.dart`, `task_detail_screen.dart`
+- **Learnings for future iterations:**
+  - Routes using `extra` params follow the pattern in CheckoutScreen — pass Map<String, dynamic>
+  - ReviewModel already exists in `lib/features/profile/data/models/profile_model.dart` (with freezed)
+  - flutter_rating_bar is already a dependency — use `RatingBar.builder` for star ratings
+  - Skill endorsement chips use the existing `AppChip` widget from `core/widgets/app_button.dart`
+---

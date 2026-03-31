@@ -91,6 +91,9 @@ class AppRoutes {
   static const wallet          = '/wallet';
   static const checkout        = '/checkout/:taskId';
 
+  // Reviews
+  static const submitReview    = '/reviews/submit';
+
   // Settings
   static const settings        = '/settings';
   static const notifications   = '/settings/notifications';

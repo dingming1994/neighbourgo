@@ -21,6 +21,7 @@ import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_thread_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
 import '../../features/payment/checkout_screen.dart';
+import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,6 +156,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             bidId:        extra['bidId']        as String,
             providerName: extra['providerName'] as String,
             bidAmount:    extra['bidAmount']    as double,
+          );
+        },
+      ),
+
+      // ── Reviews ────────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.submitReview,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return SubmitReviewScreen(
+            taskId:           extra['taskId']           as String,
+            reviewedUserId:   extra['reviewedUserId']   as String,
+            reviewedUserName: extra['reviewedUserName'] as String,
+            taskCategory:     extra['taskCategory']     as String,
           );
         },
       ),

@@ -115,6 +115,27 @@ class TaskDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: 28),
 
+                // ── Leave a Review prompt (completed tasks) ─────────────
+                if (task.status == TaskStatus.completed && currentUser != null) ...[
+                  if (isPoster && task.assignedProviderId != null) ...[
+                    _LeaveReviewCard(
+                      taskId:           taskId,
+                      reviewedUserId:   task.assignedProviderId!,
+                      reviewedUserName: task.assignedProviderName ?? 'Provider',
+                      taskCategory:     task.categoryId,
+                    ),
+                    const SizedBox(height: 16),
+                  ] else if (isProvider) ...[
+                    _LeaveReviewCard(
+                      taskId:           taskId,
+                      reviewedUserId:   task.posterId,
+                      reviewedUserName: task.posterName ?? 'Poster',
+                      taskCategory:     task.categoryId,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ],
+
                 // ── Role-based section ────────────────────────────────────
                 if (isPoster) ...[
                   // Mark Complete button (when inProgress/assigned)
@@ -586,6 +607,70 @@ class _PhotoCarousel extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _LeaveReviewCard
+// ─────────────────────────────────────────────────────────────────────────────
+class _LeaveReviewCard extends StatelessWidget {
+  final String taskId;
+  final String reviewedUserId;
+  final String reviewedUserName;
+  final String taskCategory;
+  const _LeaveReviewCard({
+    required this.taskId,
+    required this.reviewedUserId,
+    required this.reviewedUserName,
+    required this.taskCategory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star_rounded, color: AppColors.warning, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Leave a Review',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Rate your experience with $reviewedUserName',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push(
+              AppRoutes.submitReview,
+              extra: {
+                'taskId': taskId,
+                'reviewedUserId': reviewedUserId,
+                'reviewedUserName': reviewedUserName,
+                'taskCategory': taskCategory,
+              },
+            ),
+            child: const Text('Review'),
+          ),
+        ],
       ),
     );
   }

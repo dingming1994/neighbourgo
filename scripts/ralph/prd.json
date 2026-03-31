@@ -33,7 +33,7 @@
         "Show 'Leave a Review' prompt on TaskDetailScreen when task is completed (for both poster and provider)",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-043",
