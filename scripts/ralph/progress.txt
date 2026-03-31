@@ -13,6 +13,7 @@ Started: Wed  1 Apr 2026 01:50:12 +08
 - Reusable sliver widgets can be shared across home screens via `lib/features/home/presentation/widgets/`
 - BidListSection requires both `taskId` and `posterId` params; posterId is needed for chat creation between poster and bidder
 - Use `FutureProvider.family` for lightweight one-off data fetches (e.g., provider rating) rather than streaming full profiles
+- Provider directory queries users collection with `role whereIn [provider, both]` and `serviceCategories arrayContains categoryId` for filtering
 
 ---
 
@@ -84,5 +85,21 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - Rate controllers are lazily created via `putIfAbsent` when categories are selected, so adding/removing categories in the same session works seamlessly
   - The Rates section on EditProfileScreen is conditionally shown only when `_selectedCategories.isNotEmpty`
   - PublicProfileScreen checks `user.isProvider` (from UserModelExt) to gate the Rates & Availability section
+  - Manual browser verification needed for UI changes
+---
+
+## 2026-04-01 - US-053
+- **What was implemented:** Provider Directory Screen with category filtering, provider cards (avatar, name, headline, neighbourhood, rating, completed tasks, category chips, starting rate), infinite scroll pagination, and Firestore query for providers
+- **Files changed:**
+  - `lib/features/providers/data/repositories/provider_repository.dart` — New: ProviderRepository with watchProviders query (role in [provider, both], optional arrayContains categoryId, ordered by lastActiveAt desc)
+  - `lib/features/providers/domain/providers/provider_list_provider.dart` — New: ProviderListState, ProviderListNotifier (StateNotifier with pagination, category filtering), providerDirectoryCategoryProvider, providerListNotifierProvider
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — New: Full screen with category filter bar, provider cards, shimmer loading, empty/error states
+  - `lib/core/constants/app_constants.dart` — Added `providers = '/providers'` route constant
+  - `lib/core/router/app_router.dart` — Added /providers route pointing to ProviderDirectoryScreen
+- **Learnings for future iterations:**
+  - The ProviderRepository queries users collection with `role whereIn [provider, both]` — this is a different pattern from TaskRepository which queries its own collection
+  - Category filtering for providers uses `serviceCategories arrayContains categoryId` (not `isEqualTo` like tasks)
+  - The ProviderListNotifier follows the exact same StateNotifier pattern as TaskListNotifier — pagination via increasing `_currentLimit` and re-subscribing
+  - Provider cards compute starting rate by finding the lowest hourlyRate across all serviceRates entries
   - Manual browser verification needed for UI changes
 ---

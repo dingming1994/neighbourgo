@@ -90,7 +90,7 @@
         "Add route /providers to AppRoutes and app_router.dart",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-054",
