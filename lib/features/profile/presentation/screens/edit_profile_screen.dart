@@ -26,6 +26,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   List<String> _selectedCategories = [];
   List<String> _skillTags = [];
+  Map<String, TextEditingController> _rateControllers = {};
+  List<String> _availableDays = [];
+  final _availableHoursCtrl = TextEditingController();
   File? _pickedAvatar;
   bool _isLoading = false;
   bool _initialized = false;
@@ -37,6 +40,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _bioCtrl.dispose();
     _neighbourhoodCtrl.dispose();
     _tagCtrl.dispose();
+    _availableHoursCtrl.dispose();
+    for (final c in _rateControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -49,6 +56,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _neighbourhoodCtrl.text = user.neighbourhood ?? '';
     _selectedCategories = List.from(user.serviceCategories);
     _skillTags = List.from(user.skillTags);
+    _availableDays = List.from(user.availableDays);
+    _availableHoursCtrl.text = user.availableHours ?? '';
+    // Init rate controllers for each existing service category
+    for (final catId in user.serviceCategories) {
+      final rateData = user.serviceRates[catId];
+      final hourlyRate = rateData is Map ? (rateData['hourlyRate'] ?? '') : '';
+      _rateControllers[catId] = TextEditingController(text: hourlyRate.toString());
+    }
   }
 
   Future<void> _pickAvatar() async {
@@ -74,6 +89,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         avatarUrl = await repo.uploadAvatar(user.uid, _pickedAvatar!);
       }
 
+      // Build serviceRates map from controllers
+      final Map<String, dynamic> rates = {};
+      for (final catId in _selectedCategories) {
+        final ctrl = _rateControllers[catId];
+        final rateText = ctrl?.text.trim() ?? '';
+        if (rateText.isNotEmpty) {
+          rates[catId] = {'hourlyRate': rateText};
+        }
+      }
+
       final updated = user.copyWith(
         displayName: _nameCtrl.text.trim(),
         headline: _headlineCtrl.text.trim().isEmpty
@@ -86,6 +111,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         serviceCategories: _selectedCategories,
         skillTags: _skillTags,
         avatarUrl: avatarUrl,
+        serviceRates: rates,
+        availableDays: _availableDays,
+        availableHours: _availableHoursCtrl.text.trim().isEmpty
+            ? null
+            : _availableHoursCtrl.text.trim(),
       );
       await repo.updateProfile(updated);
 
@@ -320,6 +350,125 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         .toList(),
                   ),
                 ],
+                const SizedBox(height: 24),
+
+                // ── Rates ────────────────────────────────────────────
+                if (_selectedCategories.isNotEmpty) ...[
+                  _SectionHeader('Rates'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Set your hourly rate per service category (S\$)',
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  ..._selectedCategories.map((catId) {
+                    final cat = AppCategories.getById(catId);
+                    _rateControllers.putIfAbsent(
+                        catId, () => TextEditingController());
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Text(cat?.emoji ?? '',
+                              style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: Text(cat?.label ?? catId,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _rateControllers[catId],
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                prefixText: 'S\$ ',
+                                hintText: '0',
+                                suffixText: '/hr',
+                                filled: true,
+                                fillColor: AppColors.bgCard,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.border),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.border),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 24),
+                ],
+
+                // ── Availability ─────────────────────────────────────
+                _SectionHeader('Availability'),
+                const SizedBox(height: 4),
+                const Text(
+                  'Select which days you are available',
+                  style: TextStyle(
+                      fontSize: 13, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                      .map((day) {
+                    final selected = _availableDays.contains(day);
+                    return FilterChip(
+                      label: Text(day),
+                      selected: selected,
+                      onSelected: (val) {
+                        setState(() {
+                          if (val) {
+                            _availableDays.add(day);
+                          } else {
+                            _availableDays.remove(day);
+                          }
+                        });
+                      },
+                      selectedColor: AppColors.primary.withOpacity(0.15),
+                      checkmarkColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                      backgroundColor: AppColors.bgCard,
+                      side: BorderSide(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.border,
+                      ),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                _Field(
+                  controller: _availableHoursCtrl,
+                  label: 'Available Hours',
+                  hint: 'e.g. 9am - 6pm',
+                ),
                 const SizedBox(height: 40),
               ],
             ),

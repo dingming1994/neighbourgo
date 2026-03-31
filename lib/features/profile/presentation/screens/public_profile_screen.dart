@@ -170,6 +170,12 @@ class PublicProfileScreen extends ConsumerWidget {
                         _StatsBar(stats: user.stats!),
                       ],
 
+                      // ── Rates & Availability ────────────────────────────
+                      if (user.isProvider && (user.serviceRates.isNotEmpty || user.availableDays.isNotEmpty)) ...[
+                        const SizedBox(height: 20),
+                        _RatesAvailabilitySection(user: user),
+                      ],
+
                       // ── Action buttons ────────────────────────────────────
                       if (!isMyProfile) ...[
                         const SizedBox(height: 20),
@@ -477,6 +483,95 @@ class _PhotoGrid extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _RatesAvailabilitySection extends StatelessWidget {
+  final UserModel user;
+  const _RatesAvailabilitySection({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Rates & Availability',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          if (user.serviceRates.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...user.serviceRates.entries.map((entry) {
+              final cat = AppCategories.getById(entry.key);
+              final rateData = entry.value;
+              final hourlyRate = rateData is Map ? rateData['hourlyRate'] : null;
+              if (hourlyRate == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Text(cat?.emoji ?? '', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(cat?.label ?? entry.key,
+                          style: const TextStyle(fontSize: 14)),
+                    ),
+                    Text('From S\$$hourlyRate/hr',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary)),
+                  ],
+                ),
+              );
+            }),
+          ],
+          if (user.availableDays.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: user.availableDays
+                  .map((day) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgMint,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3)),
+                        ),
+                        child: Text(day,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary)),
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (user.availableHours != null &&
+              user.availableHours!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.schedule,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(user.availableHours!,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

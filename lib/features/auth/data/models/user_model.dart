@@ -124,6 +124,11 @@ class UserModel with _$UserModel {
     @Default([]) List<String>         skillTags,         // e.g. #DogWalking
     @Default([]) List<CategoryShowcase> categoryShowcases,
 
+    // Rates & Availability
+    @Default({}) Map<String, dynamic> serviceRates,      // categoryId → {hourlyRate, fixedRate, rateNote}
+    @Default([]) List<String>         availableDays,      // e.g. ['Mon', 'Tue', 'Wed']
+    String?                           availableHours,     // e.g. '9am - 6pm'
+
     // Media
     @Default([]) List<ProfilePhoto>   photos,
     String?                           introVideoUrl,
