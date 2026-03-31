@@ -17,7 +17,7 @@
         "Deploy functions to emulator and verify onUserCreate no longer crashes",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-042",
