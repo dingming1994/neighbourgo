@@ -11,6 +11,7 @@ import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../profile/presentation/widgets/provider_stats_widget.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
+import '../widgets/pending_reviews_section.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: selected category filter
@@ -126,6 +127,9 @@ class ProviderHomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: ProviderStatsWidget(stats: user?.stats),
           ),
+
+          // ── Pending Reviews ────────────────────────────────────────────
+          PendingReviewsSection(provider: providerPendingReviewsProvider),
 
           // ── Recommended for You ─────────────────────────────────────────────
           if (user != null && user.serviceCategories.isEmpty)

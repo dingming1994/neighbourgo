@@ -72,6 +72,20 @@ class TaskRepository {
           .snapshots()
           .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
 
+  Stream<List<TaskModel>> watchMyCompletedPostTasks(String uid) =>
+      _col.where('posterId', isEqualTo: uid)
+          .where('status', isEqualTo: TaskStatus.completed.name)
+          .orderBy('completedAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
+
+  Stream<List<TaskModel>> watchMyCompletedProviderTasks(String uid) =>
+      _col.where('assignedProviderId', isEqualTo: uid)
+          .where('status', isEqualTo: TaskStatus.completed.name)
+          .orderBy('completedAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
+
   Stream<TaskModel?> watchTask(String taskId) =>
       _col.doc(taskId).snapshots().map(
         (s) => s.exists ? TaskModelExt.fromFirestore(s) : null,
