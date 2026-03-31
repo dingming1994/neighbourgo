@@ -145,6 +145,12 @@ class TaskDetailScreen extends ConsumerWidget {
                   ],
                 ],
 
+                // ── Work in Progress banner ───────────────────────────────
+                if (task.status == TaskStatus.inProgress) ...[
+                  _WorkInProgressBanner(),
+                  const SizedBox(height: 16),
+                ],
+
                 // ── Role-based section ────────────────────────────────────
                 if (isPoster) ...[
                   // Mark Complete button (when inProgress/assigned)
@@ -197,6 +203,13 @@ class TaskDetailScreen extends ConsumerWidget {
                     posterId:   task.posterId,
                     taskStatus: task.status,
                   ),
+
+                  // Start Work button (when assigned to this provider, status == assigned)
+                  if (task.assignedProviderId == currentUser.uid &&
+                      task.status == TaskStatus.assigned) ...[
+                    const SizedBox(height: 12),
+                    _StartWorkButton(taskId: taskId),
+                  ],
 
                   // Message poster button (when assigned to this provider)
                   if (task.assignedProviderId == currentUser.uid) ...[
@@ -373,6 +386,113 @@ class _MarkCompleteButtonState extends ConsumerState<_MarkCompleteButton> {
       label:     'Mark as Complete',
       isLoading: _isLoading,
       onPressed: _markComplete,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _StartWorkButton
+// ─────────────────────────────────────────────────────────────────────────────
+class _StartWorkButton extends ConsumerStatefulWidget {
+  final String taskId;
+  const _StartWorkButton({required this.taskId});
+
+  @override
+  ConsumerState<_StartWorkButton> createState() => _StartWorkButtonState();
+}
+
+class _StartWorkButtonState extends ConsumerState<_StartWorkButton> {
+  bool _isLoading = false;
+
+  Future<void> _startWork() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Start Work?'),
+        content: const Text(
+            'Confirm that you are starting work on this task. The poster will be notified.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref
+          .read(taskRepositoryProvider)
+          .updateStatus(widget.taskId, TaskStatus.inProgress);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Work started! Good luck!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppButton(
+      label:     'Start Work',
+      isLoading: _isLoading,
+      onPressed: _startWork,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _WorkInProgressBanner
+// ─────────────────────────────────────────────────────────────────────────────
+class _WorkInProgressBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.construction_rounded,
+              color: AppColors.primary, size: 22),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Work in Progress',
+              style: TextStyle(
+                color:      AppColors.primary,
+                fontWeight: FontWeight.w600,
+                fontSize:   15,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
