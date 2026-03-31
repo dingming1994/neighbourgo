@@ -75,6 +75,8 @@ void main() {
         AppRoutes.chatThread,
         AppRoutes.wallet,
         AppRoutes.checkout,
+        AppRoutes.submitReview,
+        AppRoutes.notificationList,
         AppRoutes.settings,
         AppRoutes.notifications,
         AppRoutes.helpSupport,

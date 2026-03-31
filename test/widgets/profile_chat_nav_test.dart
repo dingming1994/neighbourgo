@@ -527,9 +527,9 @@ void main() {
         ],
       ));
       await tester.pumpAndSettle();
-      // ProviderHomeScreen shows 'Find Work' and 'Open Tasks'
+      // ProviderHomeScreen shows 'Find Work' and 'All Open Tasks'
       expect(find.text('Find Work'), findsOneWidget);
-      expect(find.text('Open Tasks'), findsOneWidget);
+      expect(find.text('All Open Tasks'), findsOneWidget);
     });
 
     testScreen(

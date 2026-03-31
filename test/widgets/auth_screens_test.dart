@@ -171,12 +171,12 @@ void main() {
 
     testPhone('renders Dev Login button in non-production', (tester) async {
       await tester.pumpWidget(buildTestWidget(const WelcomeScreen()));
-      expect(find.text('Dev Login (Simulator)'), findsOneWidget);
+      expect(find.text('Dev Login (Skip Auth)'), findsOneWidget);
     });
 
     testPhone('Dev Login button is tappable', (tester) async {
       await tester.pumpWidget(buildTestWidget(const WelcomeScreen()));
-      final devButton = find.text('Dev Login (Simulator)');
+      final devButton = find.text('Dev Login (Skip Auth)');
       expect(devButton, findsOneWidget);
       expect(tester.widget<TextButton>(find.ancestor(
         of: devButton,
