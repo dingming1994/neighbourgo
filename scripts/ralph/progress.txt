@@ -70,3 +70,19 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - The Pending Reviews section is self-hiding: returns SizedBox.shrink() when empty, so no conditional logic needed in home screens
   - Manual browser verification needed for UI changes
 ---
+
+## 2026-04-01 - US-052
+- **What was implemented:** Added serviceRates, availableDays, availableHours fields to UserModel; Rates section on EditProfileScreen (hourly rate per selected service category); Availability section on EditProfileScreen (day-of-week chips + hours text field); Rates & Availability display section on PublicProfileScreen (only shown for providers)
+- **Files changed:**
+  - `lib/features/auth/data/models/user_model.dart` — Added serviceRates (Map<String, dynamic>), availableDays (List<String>), availableHours (String?) fields
+  - `lib/features/auth/data/models/user_model.freezed.dart` — Regenerated
+  - `lib/features/auth/data/models/user_model.g.dart` — Regenerated
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart` — Added rate controllers per category, available day chips, hours field; save logic builds serviceRates map from controllers
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart` — Added _RatesAvailabilitySection widget between stats and action buttons; shows "From S$XX/hr" per category, day chips, and hours
+- **Learnings for future iterations:**
+  - serviceRates is stored as Map<String, dynamic> where keys are categoryIds and values are maps with `hourlyRate` key — keep the structure flat for Firestore compatibility
+  - Rate controllers are lazily created via `putIfAbsent` when categories are selected, so adding/removing categories in the same session works seamlessly
+  - The Rates section on EditProfileScreen is conditionally shown only when `_selectedCategories.isNotEmpty`
+  - PublicProfileScreen checks `user.isProvider` (from UserModelExt) to gate the Rates & Availability section
+  - Manual browser verification needed for UI changes
+---

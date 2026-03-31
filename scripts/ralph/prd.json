@@ -73,7 +73,7 @@
         "Display format: 'From S$XX/hr' for each category, available days as chips",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-053",
