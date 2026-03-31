@@ -124,7 +124,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // postTask must come before taskDetail to avoid /tasks/post matching /tasks/:taskId
       GoRoute(
         path: AppRoutes.postTask,
-        builder: (_, __) => const PostTaskScreen(),
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PostTaskScreen(
+            directHireProviderId: extra?['directHireProviderId'] as String?,
+            directHireProviderName: extra?['directHireProviderName'] as String?,
+            preSelectedCategory: extra?['preSelectedCategory'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.taskDetail,

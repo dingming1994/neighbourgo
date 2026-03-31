@@ -184,7 +184,16 @@ class PublicProfileScreen extends ConsumerWidget {
                             Expanded(
                               child: AppButton(
                                 label: 'Hire ${user.displayName?.split(' ').first ?? "Them"}',
-                                onPressed: () => context.push(AppRoutes.postTask),
+                                onPressed: () => context.push(
+                                  AppRoutes.postTask,
+                                  extra: {
+                                    'directHireProviderId': userId,
+                                    'directHireProviderName': user.displayName ?? 'Provider',
+                                    'preSelectedCategory': user.serviceCategories.isNotEmpty
+                                        ? user.serviceCategories.first
+                                        : null,
+                                  },
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
