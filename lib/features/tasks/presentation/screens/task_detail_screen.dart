@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../data/models/task_model.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -178,37 +177,45 @@ class TaskDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   BidListSection(taskId: taskId, posterId: task.posterId),
                 ] else if (isProvider) ...[
-                  // Provider view
-                  if (isOpen) ...[
-                    AppButton(
-                      label: 'Submit Bid',
-                      onPressed: () => showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20)),
-                        ),
-                        builder: (_) =>
-                            SubmitBidSheet(taskId: taskId),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // Show provider's own bid if any
-                  _ProviderBidView(
-                    taskId:     taskId,
-                    providerId: currentUser.uid,
-                    posterId:   task.posterId,
-                    taskStatus: task.status,
-                  ),
-
-                  // Start Work button (when assigned to this provider, status == assigned)
-                  if (task.assignedProviderId == currentUser.uid &&
+                  // Provider view — Direct Hire Accept/Decline
+                  if (task.isDirectHire &&
+                      task.assignedProviderId == currentUser.uid &&
                       task.status == TaskStatus.assigned) ...[
+                    _DirectHireResponseButtons(taskId: taskId),
                     const SizedBox(height: 12),
-                    _StartWorkButton(taskId: taskId),
+                  ] else ...[
+                    // Normal bid-based flow
+                    if (isOpen) ...[
+                      AppButton(
+                        label: 'Submit Bid',
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                          ),
+                          builder: (_) =>
+                              SubmitBidSheet(taskId: taskId),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Show provider's own bid if any
+                    _ProviderBidView(
+                      taskId:     taskId,
+                      providerId: currentUser.uid,
+                      posterId:   task.posterId,
+                      taskStatus: task.status,
+                    ),
+
+                    // Start Work button (when assigned to this provider, status == assigned)
+                    if (task.assignedProviderId == currentUser.uid &&
+                        task.status == TaskStatus.assigned) ...[
+                      const SizedBox(height: 12),
+                      _StartWorkButton(taskId: taskId),
+                    ],
                   ],
 
                   // Message poster button (when assigned to this provider)
@@ -459,6 +466,169 @@ class _StartWorkButtonState extends ConsumerState<_StartWorkButton> {
       label:     'Start Work',
       isLoading: _isLoading,
       onPressed: _startWork,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _DirectHireResponseButtons — Accept / Decline for direct hire offers
+// ─────────────────────────────────────────────────────────────────────────────
+class _DirectHireResponseButtons extends ConsumerStatefulWidget {
+  final String taskId;
+  const _DirectHireResponseButtons({required this.taskId});
+
+  @override
+  ConsumerState<_DirectHireResponseButtons> createState() =>
+      _DirectHireResponseButtonsState();
+}
+
+class _DirectHireResponseButtonsState
+    extends ConsumerState<_DirectHireResponseButtons> {
+  bool _isLoading = false;
+
+  Future<void> _acceptJob() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Accept Job?'),
+        content: const Text(
+            'You will start working on this task immediately.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref
+          .read(taskRepositoryProvider)
+          .updateStatus(widget.taskId, TaskStatus.inProgress);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Job accepted! Work started.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _declineJob() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Decline Job?'),
+        content: const Text(
+            'This will cancel the task and notify the client.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Decline'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref
+          .read(taskRepositoryProvider)
+          .declineDirectHire(widget.taskId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Job declined.'),
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: AppRadius.card,
+            border:
+                Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.work_outline, color: AppColors.primary, size: 22),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'You have been hired directly for this task',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          label: 'Accept Job',
+          isLoading: _isLoading,
+          onPressed: _acceptJob,
+        ),
+        const SizedBox(height: 8),
+        AppButton(
+          label: 'Decline',
+          isOutlined: true,
+          isLoading: _isLoading,
+          onPressed: _declineJob,
+        ),
+      ],
     );
   }
 }

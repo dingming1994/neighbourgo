@@ -214,7 +214,8 @@ mixin _$TaskModel {
   DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
   DateTime? get completedAt => throw _privateConstructorUsedError;
-  DateTime? get expiresAt => throw _privateConstructorUsedError; // Payment
+  DateTime? get expiresAt => throw _privateConstructorUsedError; // Direct Hire
+  bool get isDirectHire => throw _privateConstructorUsedError; // Payment
   String? get paymentIntentId => throw _privateConstructorUsedError;
   bool get isPaid => throw _privateConstructorUsedError;
   bool get isEscrowReleased => throw _privateConstructorUsedError;
@@ -262,6 +263,7 @@ abstract class $TaskModelCopyWith<$Res> {
       DateTime? updatedAt,
       DateTime? completedAt,
       DateTime? expiresAt,
+      bool isDirectHire,
       String? paymentIntentId,
       bool isPaid,
       bool isEscrowReleased});
@@ -311,6 +313,7 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? updatedAt = freezed,
     Object? completedAt = freezed,
     Object? expiresAt = freezed,
+    Object? isDirectHire = null,
     Object? paymentIntentId = freezed,
     Object? isPaid = null,
     Object? isEscrowReleased = null,
@@ -424,6 +427,10 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      isDirectHire: null == isDirectHire
+          ? _value.isDirectHire
+          : isDirectHire // ignore: cast_nullable_to_non_nullable
+              as bool,
       paymentIntentId: freezed == paymentIntentId
           ? _value.paymentIntentId
           : paymentIntentId // ignore: cast_nullable_to_non_nullable
@@ -490,6 +497,7 @@ abstract class _$$TaskModelImplCopyWith<$Res>
       DateTime? updatedAt,
       DateTime? completedAt,
       DateTime? expiresAt,
+      bool isDirectHire,
       String? paymentIntentId,
       bool isPaid,
       bool isEscrowReleased});
@@ -538,6 +546,7 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? updatedAt = freezed,
     Object? completedAt = freezed,
     Object? expiresAt = freezed,
+    Object? isDirectHire = null,
     Object? paymentIntentId = freezed,
     Object? isPaid = null,
     Object? isEscrowReleased = null,
@@ -651,6 +660,10 @@ class __$$TaskModelImplCopyWithImpl<$Res>
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      isDirectHire: null == isDirectHire
+          ? _value.isDirectHire
+          : isDirectHire // ignore: cast_nullable_to_non_nullable
+              as bool,
       paymentIntentId: freezed == paymentIntentId
           ? _value.paymentIntentId
           : paymentIntentId // ignore: cast_nullable_to_non_nullable
@@ -698,6 +711,7 @@ class _$TaskModelImpl implements _TaskModel {
       this.updatedAt,
       this.completedAt,
       this.expiresAt,
+      this.isDirectHire = false,
       this.paymentIntentId,
       this.isPaid = false,
       this.isEscrowReleased = false})
@@ -787,6 +801,10 @@ class _$TaskModelImpl implements _TaskModel {
   final DateTime? completedAt;
   @override
   final DateTime? expiresAt;
+// Direct Hire
+  @override
+  @JsonKey()
+  final bool isDirectHire;
 // Payment
   @override
   final String? paymentIntentId;
@@ -799,7 +817,7 @@ class _$TaskModelImpl implements _TaskModel {
 
   @override
   String toString() {
-    return 'TaskModel(id: $id, posterId: $posterId, posterName: $posterName, posterAvatarUrl: $posterAvatarUrl, title: $title, description: $description, categoryId: $categoryId, photoUrls: $photoUrls, tags: $tags, locationLabel: $locationLabel, neighbourhood: $neighbourhood, location: $location, budgetMin: $budgetMin, budgetMax: $budgetMax, currency: $currency, urgency: $urgency, scheduledDate: $scheduledDate, estimatedDurationMins: $estimatedDurationMins, status: $status, assignedProviderId: $assignedProviderId, assignedProviderName: $assignedProviderName, bidCount: $bidCount, viewCount: $viewCount, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, expiresAt: $expiresAt, paymentIntentId: $paymentIntentId, isPaid: $isPaid, isEscrowReleased: $isEscrowReleased)';
+    return 'TaskModel(id: $id, posterId: $posterId, posterName: $posterName, posterAvatarUrl: $posterAvatarUrl, title: $title, description: $description, categoryId: $categoryId, photoUrls: $photoUrls, tags: $tags, locationLabel: $locationLabel, neighbourhood: $neighbourhood, location: $location, budgetMin: $budgetMin, budgetMax: $budgetMax, currency: $currency, urgency: $urgency, scheduledDate: $scheduledDate, estimatedDurationMins: $estimatedDurationMins, status: $status, assignedProviderId: $assignedProviderId, assignedProviderName: $assignedProviderName, bidCount: $bidCount, viewCount: $viewCount, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, expiresAt: $expiresAt, isDirectHire: $isDirectHire, paymentIntentId: $paymentIntentId, isPaid: $isPaid, isEscrowReleased: $isEscrowReleased)';
   }
 
   @override
@@ -856,6 +874,8 @@ class _$TaskModelImpl implements _TaskModel {
                 other.completedAt == completedAt) &&
             (identical(other.expiresAt, expiresAt) ||
                 other.expiresAt == expiresAt) &&
+            (identical(other.isDirectHire, isDirectHire) ||
+                other.isDirectHire == isDirectHire) &&
             (identical(other.paymentIntentId, paymentIntentId) ||
                 other.paymentIntentId == paymentIntentId) &&
             (identical(other.isPaid, isPaid) || other.isPaid == isPaid) &&
@@ -894,6 +914,7 @@ class _$TaskModelImpl implements _TaskModel {
         updatedAt,
         completedAt,
         expiresAt,
+        isDirectHire,
         paymentIntentId,
         isPaid,
         isEscrowReleased
@@ -944,6 +965,7 @@ abstract class _TaskModel implements TaskModel {
       final DateTime? updatedAt,
       final DateTime? completedAt,
       final DateTime? expiresAt,
+      final bool isDirectHire,
       final String? paymentIntentId,
       final bool isPaid,
       final bool isEscrowReleased}) = _$TaskModelImpl;
@@ -1004,7 +1026,9 @@ abstract class _TaskModel implements TaskModel {
   @override
   DateTime? get completedAt;
   @override
-  DateTime? get expiresAt; // Payment
+  DateTime? get expiresAt; // Direct Hire
+  @override
+  bool get isDirectHire; // Payment
   @override
   String? get paymentIntentId;
   @override

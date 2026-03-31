@@ -62,6 +62,9 @@ class TaskModel with _$TaskModel {
     DateTime? completedAt,
     DateTime? expiresAt,
 
+    // Direct Hire
+    @Default(false) bool isDirectHire,
+
     // Payment
     String?  paymentIntentId,
     @Default(false) bool isPaid,

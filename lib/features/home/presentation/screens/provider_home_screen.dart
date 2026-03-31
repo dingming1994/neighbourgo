@@ -11,6 +11,7 @@ import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../profile/presentation/widgets/provider_stats_widget.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
+import '../widgets/job_offers_section.dart';
 import '../widgets/pending_reviews_section.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,6 +128,9 @@ class ProviderHomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: ProviderStatsWidget(stats: user?.stats),
           ),
+
+          // ── Job Offers (Direct Hire) ────────────────────────────────────
+          const JobOffersSection(),
 
           // ── Pending Reviews ────────────────────────────────────────────
           PendingReviewsSection(provider: providerPendingReviewsProvider),

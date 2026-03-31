@@ -86,6 +86,14 @@ class TaskRepository {
           .snapshots()
           .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
 
+  Stream<List<TaskModel>> watchDirectHireOffers(String providerId) =>
+      _col.where('assignedProviderId', isEqualTo: providerId)
+          .where('isDirectHire', isEqualTo: true)
+          .where('status', isEqualTo: TaskStatus.assigned.name)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
+
   Stream<TaskModel?> watchTask(String taskId) =>
       _col.doc(taskId).snapshots().map(
         (s) => s.exists ? TaskModelExt.fromFirestore(s) : null,
@@ -113,6 +121,15 @@ class TaskRepository {
       'status':      TaskStatus.completed.name,
       'completedAt': Timestamp.now(),
       'updatedAt':   Timestamp.now(),
+    });
+  }
+
+  Future<void> declineDirectHire(String taskId) async {
+    await _col.doc(taskId).update({
+      'status':               TaskStatus.cancelled.name,
+      'assignedProviderId':   FieldValue.delete(),
+      'assignedProviderName': FieldValue.delete(),
+      'updatedAt':            Timestamp.now(),
     });
   }
 
