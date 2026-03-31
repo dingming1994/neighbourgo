@@ -14,6 +14,7 @@ Started: Wed  1 Apr 2026 01:50:12 +08
 - BidListSection requires both `taskId` and `posterId` params; posterId is needed for chat creation between poster and bidder
 - Use `FutureProvider.family` for lightweight one-off data fetches (e.g., provider rating) rather than streaming full profiles
 - Provider directory queries users collection with `role whereIn [provider, both]` and `serviceCategories arrayContains categoryId` for filtering
+- Screens that need to work both standalone and embedded use an `embedded` bool param — when true, skip Scaffold/AppBar and return body content in a ColoredBox
 
 ---
 
@@ -101,5 +102,20 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - Category filtering for providers uses `serviceCategories arrayContains categoryId` (not `isEqualTo` like tasks)
   - The ProviderListNotifier follows the exact same StateNotifier pattern as TaskListNotifier — pagination via increasing `_currentLimit` and re-subscribing
   - Provider cards compute starting rate by finding the lowest hourlyRate across all serviceRates entries
+  - Manual browser verification needed for UI changes
+---
+
+## 2026-04-01 - US-054
+- **What was implemented:** DiscoverScreen wrapper with segmented control toggle (Tasks | Providers), role-based visibility, session-persisted toggle state via StateProvider, updated router to use DiscoverScreen for /tasks route
+- **Files changed:**
+  - `lib/features/discover/presentation/screens/discover_screen.dart` — New: DiscoverScreen with segmented toggle, discoverSegmentProvider StateProvider, role-based logic (provider-only users see no toggle)
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart` — Added `embedded` parameter to skip Scaffold/AppBar when embedded in DiscoverScreen
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — Added `embedded` parameter to skip Scaffold/AppBar when embedded in DiscoverScreen
+  - `lib/core/router/app_router.dart` — Changed /tasks route from TaskListScreen to DiscoverScreen, added import
+- **Learnings for future iterations:**
+  - The `embedded` pattern (bool param that skips Scaffold wrapper) allows screens to be reused both standalone and embedded inside wrapper screens
+  - DiscoverScreen provides the shared AppBar ("Discover") when toggle is shown; when provider-only, it delegates directly to TaskListScreen which uses its own AppBar
+  - The segmented toggle uses AppColors.bgCard/bgLight for the pill-style iOS-like appearance, matching the app's theme
+  - When user is null (still loading), showToggle is false so TaskListScreen is shown by default — avoids flash of wrong UI
   - Manual browser verification needed for UI changes
 ---
