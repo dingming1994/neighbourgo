@@ -139,3 +139,17 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - TaskDetailScreen had a pre-existing duplicate import of app_constants.dart which was cleaned up
   - Manual browser verification needed for UI changes
 ---
+
+## 2026-04-01 - US-056
+- **What was implemented:** Hire This Provider direct hire flow — PublicProfileScreen 'Hire' button passes directHireProviderId, directHireProviderName, preSelectedCategory to PostTaskScreen via GoRouter extras; PostTaskScreen supports direct hire mode with "Hiring: [Name]" banner, pre-selected category, and creates task with status=assigned, isDirectHire=true; sends in-app notification to provider about new direct hire offer
+- **Files changed:**
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart` — Hire button now passes extra params (directHireProviderId, directHireProviderName, preSelectedCategory from user.serviceCategories.first)
+  - `lib/features/tasks/presentation/screens/post_task_screen.dart` — Added directHireProviderId/Name/preSelectedCategory constructor params, _isDirectHire getter, initState for pre-selecting category, direct hire banner in build, submit creates task with assigned status + isDirectHire=true, sends notification to provider
+  - `lib/core/router/app_router.dart` — PostTask route reads state.extra and passes direct hire params to PostTaskScreen
+- **Learnings for future iterations:**
+  - GoRouter extras are passed as `state.extra` and cast to `Map<String, dynamic>?` — null-safe access needed since normal PostTask navigation doesn't pass extras
+  - Notifications are stored at `notifications/{userId}/items/{docId}` — just add a doc with type/title/body/isRead/createdAt/data fields
+  - PostTaskScreen uses constructor params for direct hire state rather than reading GoRouter extras inside build — cleaner since the router extracts them
+  - The `_isDirectHire` getter pattern keeps the check DRY across submit, build, and banner
+  - Manual browser verification needed for UI changes
+---

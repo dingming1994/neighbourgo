@@ -139,7 +139,7 @@
         "Send notification to provider about new direct hire offer",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-057",
