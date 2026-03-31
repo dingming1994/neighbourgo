@@ -9,6 +9,8 @@ Started: Wed  1 Apr 2026 01:50:12 +08
 - Navigation uses GoRouter with `context.push(AppRoutes.chatThread.replaceFirst(':chatId', chatId))`
 - PublicProfileScreen gets userId from GoRouter path params, current user from `currentUserProvider`
 - Pre-existing warnings/infos in `flutter analyze` are acceptable; only errors block commits
+- Pending reviews pattern: query completed tasks, then check `users/{otherUserId}/reviews` for reviewerId+taskId match to determine if review exists
+- Reusable sliver widgets can be shared across home screens via `lib/features/home/presentation/widgets/`
 - BidListSection requires both `taskId` and `posterId` params; posterId is needed for chat creation between poster and bidder
 - Use `FutureProvider.family` for lightweight one-off data fetches (e.g., provider rating) rather than streaming full profiles
 
@@ -51,5 +53,20 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - The existing `isInProgress` variable combines both `assigned` and `inProgress` statuses — for provider-specific actions, check `task.status == TaskStatus.assigned` directly
   - TaskRepository.updateStatus is the generic method for status transitions; completeTask is a specialized version that also sets completedAt
   - The Work in Progress banner is placed BEFORE the role-based section so both poster and provider see it
+  - Manual browser verification needed for UI changes
+---
+
+## 2026-04-01 - US-051
+- **What was implemented:** Pending Reviews section on both PosterHomeScreen and ProviderHomeScreen showing completed tasks where user hasn't yet left a review
+- **Files changed:**
+  - `lib/features/tasks/data/repositories/task_repository.dart` — Added watchMyCompletedPostTasks and watchMyCompletedProviderTasks methods
+  - `lib/features/home/presentation/widgets/pending_reviews_section.dart` — New file: PendingReview data class, posterPendingReviewsProvider, providerPendingReviewsProvider, PendingReviewsSection sliver widget, _PendingReviewCard widget
+  - `lib/features/home/presentation/screens/poster_home_screen.dart` — Added PendingReviewsSection between Post a Task button and Active Tasks
+  - `lib/features/home/presentation/screens/provider_home_screen.dart` — Added PendingReviewsSection after provider stats, before Recommended section
+- **Learnings for future iterations:**
+  - Reviews are stored in subcollection `users/{uid}/reviews/{reviewId}` — checking if a review exists requires querying by taskId+reviewerId
+  - StreamProvider.asyncMap is useful for combining a stream (completed tasks) with one-off Firestore queries (review existence checks)
+  - SliverMainAxisGroup allows grouping a header + list into a single sliver that can be hidden entirely when empty
+  - The Pending Reviews section is self-hiding: returns SizedBox.shrink() when empty, so no conditional logic needed in home screens
   - Manual browser verification needed for UI changes
 ---

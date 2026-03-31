@@ -58,7 +58,7 @@
         "Section hidden when no pending reviews",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-052",
