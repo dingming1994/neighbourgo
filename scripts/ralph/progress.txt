@@ -84,3 +84,17 @@ Started: Tue 31 Mar 2026 20:41:10 +08
   - `photo_view` package is already in pubspec.yaml — use `PhotoView` widget for full-screen images
   - Avoid parameter name `sum` as it conflicts with Dart's `Sum` type
 ---
+
+## 2026-03-31 21:35 +08 - US-046
+- Added `_recommendedTasksProvider` with `RecommendedTask` class — client-side filtering + scoring of open tasks
+- Added "Recommended for You" section with up to 5 scored recommendations
+- Match reasons: "In your neighbourhood" > "Matches your skills" > "Near you"
+- Added `_NoServiceCategoriesPrompt` widget with link to Edit Profile
+- Added `_RecommendedTaskCard` with match reason badge
+- Renamed existing "Open Tasks" header to "All Open Tasks"
+- Files changed: `provider_home_screen.dart`
+- **Learnings for future iterations:**
+  - `user.serviceCategories` is a `List<String>` of category IDs
+  - `user.neighbourhood` is a nullable String like "Ang Mo Kio"
+  - Recommendations are computed client-side from the same open tasks stream (avoids complex Firestore compound queries)
+---

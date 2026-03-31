@@ -98,7 +98,7 @@
         "Each recommendation card shows: match reason ('Matches your skills', 'In your neighbourhood', 'Near you')",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-047",

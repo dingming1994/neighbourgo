@@ -29,6 +29,48 @@ final _openTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref) {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Provider: recommended tasks (matching provider's categories + neighbourhood)
+// ─────────────────────────────────────────────────────────────────────────────
+class RecommendedTask {
+  final TaskModel task;
+  final String matchReason;
+  RecommendedTask({required this.task, required this.matchReason});
+}
+
+final _recommendedTasksProvider = StreamProvider.autoDispose<List<RecommendedTask>>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null || user.serviceCategories.isEmpty) return Stream.value([]);
+
+  // Watch all open tasks (unfiltered) and score them client-side
+  return ref.watch(taskRepositoryProvider).watchOpenTasks(limit: 50).map((tasks) {
+    final recommended = <RecommendedTask>[];
+
+    for (final task in tasks) {
+      final matchesCategory = user.serviceCategories.contains(task.categoryId);
+      final matchesNeighbourhood = user.neighbourhood != null &&
+          user.neighbourhood!.isNotEmpty &&
+          task.neighbourhood == user.neighbourhood;
+
+      if (matchesCategory && matchesNeighbourhood) {
+        recommended.add(RecommendedTask(task: task, matchReason: 'In your neighbourhood'));
+      } else if (matchesCategory) {
+        recommended.add(RecommendedTask(task: task, matchReason: 'Matches your skills'));
+      } else if (matchesNeighbourhood) {
+        recommended.add(RecommendedTask(task: task, matchReason: 'Near you'));
+      }
+    }
+
+    // Sort: neighbourhood+category first, then category, then neighbourhood
+    recommended.sort((a, b) {
+      int score(RecommendedTask r) => r.matchReason == 'In your neighbourhood' ? 0 : r.matchReason == 'Matches your skills' ? 1 : 2;
+      return score(a).compareTo(score(b));
+    });
+
+    return recommended.take(5).toList();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 class ProviderHomeScreen extends ConsumerWidget {
@@ -85,6 +127,21 @@ class ProviderHomeScreen extends ConsumerWidget {
             child: ProviderStatsWidget(stats: user?.stats),
           ),
 
+          // ── Recommended for You ─────────────────────────────────────────────
+          if (user != null && user.serviceCategories.isEmpty)
+            const SliverToBoxAdapter(
+              child: _NoServiceCategoriesPrompt(),
+            )
+          else if (user != null && user.serviceCategories.isNotEmpty) ...[
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text('Recommended for You', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            _RecommendedSection(),
+          ],
+
           // ── Category filter chips ──────────────────────────────────────────
           if (user != null && user.serviceCategories.isNotEmpty)
             SliverToBoxAdapter(
@@ -95,7 +152,7 @@ class ProviderHomeScreen extends ConsumerWidget {
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('Open Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              child: Text('All Open Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             ),
           ),
 
@@ -128,6 +185,178 @@ class ProviderHomeScreen extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recommended section
+// ─────────────────────────────────────────────────────────────────────────────
+class _RecommendedSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recAsync = ref.watch(_recommendedTasksProvider);
+
+    return recAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      data: (recommended) {
+        if (recommended.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'No recommended tasks right now. Try browsing all open tasks below.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (_, i) => _RecommendedTaskCard(
+              task: recommended[i].task,
+              matchReason: recommended[i].matchReason,
+            ),
+            childCount: recommended.length,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NoServiceCategoriesPrompt extends StatelessWidget {
+  const _NoServiceCategoriesPrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.bgMint,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.tips_and_updates_outlined, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Get personalized recommendations',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Add your service categories in profile to get task recommendations.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => context.push(AppRoutes.editProfile),
+                    child: const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecommendedTaskCard extends StatelessWidget {
+  final TaskModel task;
+  final String matchReason;
+  const _RecommendedTaskCard({required this.task, required this.matchReason});
+
+  @override
+  Widget build(BuildContext context) {
+    final category = AppCategories.getById(task.categoryId);
+    final emoji    = category?.emoji ?? '📌';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: GestureDetector(
+        onTap: () => context.push('/tasks/${task.id}'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Match reason badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  matchReason,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+              ),
+              // Title + emoji
+              Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Category + budget
+              Row(
+                children: [
+                  _Chip(label: category?.label ?? task.categoryId, color: AppColors.primaryLight.withValues(alpha: 0.15)),
+                  const SizedBox(width: 8),
+                  _Chip(label: task.budgetDisplay, color: AppColors.primary.withValues(alpha: 0.1)),
+                ],
+              ),
+              if (task.neighbourhood != null && task.neighbourhood!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(task.neighbourhood!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                ]),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
