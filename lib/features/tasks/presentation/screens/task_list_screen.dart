@@ -14,7 +14,9 @@ import '../../../../core/theme/app_theme.dart';
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 class TaskListScreen extends ConsumerStatefulWidget {
-  const TaskListScreen({super.key});
+  final bool embedded;
+
+  const TaskListScreen({super.key, this.embedded = false});
 
   @override
   ConsumerState<TaskListScreen> createState() => _TaskListScreenState();
@@ -47,6 +49,26 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
     final state = ref.watch(taskListNotifierProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
 
+    final body = Column(
+      children: [
+        _CategoryFilterBar(
+          selected: selectedCategory,
+          onSelect: (id) {
+            ref.read(selectedCategoryProvider.notifier).state = id;
+            ref.read(taskListNotifierProvider.notifier).selectCategory(id);
+          },
+        ),
+        Expanded(child: _buildBody(state)),
+      ],
+    );
+
+    if (widget.embedded) {
+      return ColoredBox(
+        color: AppColors.bgLight,
+        child: body,
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgLight,
       appBar: AppBar(
@@ -59,18 +81,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _CategoryFilterBar(
-            selected: selectedCategory,
-            onSelect: (id) {
-              ref.read(selectedCategoryProvider.notifier).state = id;
-              ref.read(taskListNotifierProvider.notifier).selectCategory(id);
-            },
-          ),
-          Expanded(child: _buildBody(state)),
-        ],
-      ),
+      body: body,
     );
   }
 

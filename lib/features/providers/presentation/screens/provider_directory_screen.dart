@@ -14,7 +14,9 @@ import '../../../../core/theme/app_theme.dart';
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 class ProviderDirectoryScreen extends ConsumerStatefulWidget {
-  const ProviderDirectoryScreen({super.key});
+  final bool embedded;
+
+  const ProviderDirectoryScreen({super.key, this.embedded = false});
 
   @override
   ConsumerState<ProviderDirectoryScreen> createState() =>
@@ -49,21 +51,30 @@ class _ProviderDirectoryScreenState
     final state = ref.watch(providerListNotifierProvider);
     final selectedCategory = ref.watch(providerDirectoryCategoryProvider);
 
+    final body = Column(
+      children: [
+        _CategoryFilterBar(
+          selected: selectedCategory,
+          onSelect: (id) {
+            ref.read(providerDirectoryCategoryProvider.notifier).state = id;
+            ref.read(providerListNotifierProvider.notifier).selectCategory(id);
+          },
+        ),
+        Expanded(child: _buildBody(state)),
+      ],
+    );
+
+    if (widget.embedded) {
+      return ColoredBox(
+        color: AppColors.bgLight,
+        child: body,
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgLight,
       appBar: AppBar(title: const Text('Browse Providers')),
-      body: Column(
-        children: [
-          _CategoryFilterBar(
-            selected: selectedCategory,
-            onSelect: (id) {
-              ref.read(providerDirectoryCategoryProvider.notifier).state = id;
-              ref.read(providerListNotifierProvider.notifier).selectCategory(id);
-            },
-          ),
-          Expanded(child: _buildBody(state)),
-        ],
-      ),
+      body: body,
     );
   }
 
