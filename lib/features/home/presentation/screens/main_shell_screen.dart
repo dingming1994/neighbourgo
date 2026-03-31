@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
 
 import 'poster_home_screen.dart';
 import 'provider_home_screen.dart';
@@ -30,6 +31,7 @@ class MainShellScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final idx = ref.watch(_tabIndexProvider);
+    final unreadChats = ref.watch(unreadChatsCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
       body: child,
@@ -47,6 +49,7 @@ class MainShellScreen extends ConsumerWidget {
                 final tab = _tabs[i];
                 final isPost    = tab.route.isEmpty;
                 final selected  = idx == i;
+                final isMessages = tab.label == 'Messages';
 
                 return Expanded(
                   child: GestureDetector(
@@ -74,10 +77,37 @@ class MainShellScreen extends ConsumerWidget {
                                 ),
                                 child: const Icon(Icons.add, color: Colors.white, size: 26),
                               )
-                            : Icon(
-                                selected ? tab.activeIcon : tab.icon,
-                                color: selected ? AppColors.primary : AppColors.textHint,
-                                size: 24,
+                            : Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    selected ? tab.activeIcon : tab.icon,
+                                    color: selected ? AppColors.primary : AppColors.textHint,
+                                    size: 24,
+                                  ),
+                                  if (isMessages && unreadChats > 0)
+                                    Positioned(
+                                      top: -4,
+                                      right: -8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.error,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                        child: Text(
+                                          unreadChats > 99 ? '99+' : '$unreadChats',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                         if (!isPost) ...[
                           const SizedBox(height: 2),

@@ -83,7 +83,7 @@
         "ChatListScreen: show unread count badge on each chat tile",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-046",

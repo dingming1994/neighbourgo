@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/models/chat_model.dart';
 import '../../domain/models/message_model.dart';
 
@@ -108,6 +109,30 @@ class ChatRepository {
     return task.ref.getDownloadURL();
   }
 
+  // ── Mark all messages in a chat as read ────────────────────────────────────
+  Future<void> markMessagesAsRead(String chatId, String currentUserId) async {
+    final batch = _db.batch();
+
+    // Get unread messages NOT sent by the current user
+    final unread = await _chats
+        .doc(chatId)
+        .collection(AppConstants.messagesCol)
+        .where('isRead', isEqualTo: false)
+        .where('senderId', isNotEqualTo: currentUserId)
+        .get();
+
+    for (final doc in unread.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+
+    // Reset unread count on the chat document
+    batch.update(_chats.doc(chatId), {'unreadCount': 0});
+
+    if (unread.docs.isNotEmpty) {
+      await batch.commit();
+    }
+  }
+
   // ── Create or get existing chat ───────────────────────────────────────────
   Future<String> createOrGetChat(
       String taskId, String posterId, String providerId) async {
@@ -170,4 +195,12 @@ final messagesStreamProvider =
 final chatStreamProvider =
     StreamProvider.family<ChatModel?, String>((ref, chatId) {
   return ref.watch(chatRepositoryProvider).getChatStream(chatId);
+});
+
+final unreadChatsCountProvider = StreamProvider.autoDispose<int>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return Stream.value(0);
+  return ref.watch(chatRepositoryProvider).getChatsStream(user.uid).map(
+    (chats) => chats.fold<int>(0, (total, c) => total + c.unreadCount),
+  );
 });

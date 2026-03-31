@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -21,6 +22,18 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mark messages as read when opening the chat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(currentUserProvider).valueOrNull;
+      if (user != null) {
+        ref.read(chatRepositoryProvider).markMessagesAsRead(widget.chatId, user.uid);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -242,25 +255,28 @@ class _MessageBubble extends StatelessWidget {
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             if (message.imageUrl != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: message.imageUrl!,
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
+              GestureDetector(
+                onTap: () => _openFullScreenImage(context, message.imageUrl!),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: message.imageUrl!,
                     width: 200,
                     height: 200,
-                    color: AppColors.border,
-                    child: const Center(
-                        child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    width: 200,
-                    height: 200,
-                    color: AppColors.border,
-                    child: const Icon(Icons.broken_image),
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      width: 200,
+                      height: 200,
+                      color: AppColors.border,
+                      child: const Center(
+                          child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      width: 200,
+                      height: 200,
+                      color: AppColors.border,
+                      child: const Icon(Icons.broken_image),
+                    ),
                   ),
                 ),
               ),
@@ -323,6 +339,24 @@ class _MessageBubble extends StatelessWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  static void _openFullScreenImage(BuildContext context, String url) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: PhotoView(
+          imageProvider: CachedNetworkImageProvider(url),
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 3,
+        ),
+      ),
+    ));
   }
 }
 
