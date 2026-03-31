@@ -6,23 +6,34 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 import '../../data/repositories/bid_repository.dart';
 import '../../domain/models/bid_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Provider
+// Providers
 // ─────────────────────────────────────────────────────────────────────────────
 final bidsStreamProvider =
     StreamProvider.family<List<BidModel>, String>(
   (ref, taskId) => ref.watch(bidRepositoryProvider).getBidsStream(taskId),
 );
 
+/// Fetches provider's average rating from their profile stats.
+final providerRatingProvider =
+    FutureProvider.family<double, String>((ref, providerId) async {
+  final profile =
+      await ref.watch(profileRepositoryProvider).fetchProfile(providerId);
+  return profile?.stats?.avgRating ?? 0.0;
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BidListSection  (Poster view)
 // ─────────────────────────────────────────────────────────────────────────────
 class BidListSection extends ConsumerWidget {
   final String taskId;
-  const BidListSection({super.key, required this.taskId});
+  final String posterId;
+  const BidListSection({super.key, required this.taskId, required this.posterId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,7 +73,7 @@ class BidListSection extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            ...bids.map((bid) => _BidCard(taskId: taskId, bid: bid)),
+            ...bids.map((bid) => _BidCard(taskId: taskId, posterId: posterId, bid: bid)),
           ],
         );
       },
@@ -75,16 +86,46 @@ class BidListSection extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _BidCard extends ConsumerStatefulWidget {
   final String   taskId;
+  final String   posterId;
   final BidModel bid;
-  const _BidCard({required this.taskId, required this.bid});
+  const _BidCard({required this.taskId, required this.posterId, required this.bid});
 
   @override
   ConsumerState<_BidCard> createState() => _BidCardState();
 }
 
 class _BidCardState extends ConsumerState<_BidCard> {
-  bool _isAccepting = false;
-  bool _isRejecting = false;
+  bool _isAccepting  = false;
+  bool _isRejecting  = false;
+  bool _isMessaging  = false;
+
+  void _viewProfile() {
+    context.push(
+      AppRoutes.publicProfile.replaceFirst(':userId', widget.bid.providerId),
+    );
+  }
+
+  Future<void> _messageBidder() async {
+    setState(() => _isMessaging = true);
+    try {
+      final chatId = await ref
+          .read(chatRepositoryProvider)
+          .createOrGetChat(
+              widget.taskId, widget.posterId, widget.bid.providerId);
+      if (mounted) {
+        context.push(
+            AppRoutes.chatThread.replaceFirst(':chatId', chatId));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open chat: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isMessaging = false);
+    }
+  }
 
   Future<void> _accept() async {
     setState(() => _isAccepting = true);
@@ -164,40 +205,76 @@ class _BidCardState extends ConsumerState<_BidCard> {
           // Header row: avatar + name/time + amount/status
           Row(
             children: [
-              // Avatar
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: AppColors.bgMint,
-                backgroundImage: bid.providerAvatar != null
-                    ? CachedNetworkImageProvider(bid.providerAvatar!)
-                    : null,
-                child: bid.providerAvatar == null
-                    ? Text(
-                        bid.providerName.isNotEmpty
-                            ? bid.providerName[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          color:      AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
+              // Avatar (tappable)
+              GestureDetector(
+                onTap: _viewProfile,
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.bgMint,
+                  backgroundImage: bid.providerAvatar != null
+                      ? CachedNetworkImageProvider(bid.providerAvatar!)
+                      : null,
+                  child: bid.providerAvatar == null
+                      ? Text(
+                          bid.providerName.isNotEmpty
+                              ? bid.providerName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color:      AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
               ),
               const SizedBox(width: 12),
 
-              // Name + time
+              // Name + rating + time (tappable)
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(bid.providerName,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    if (bid.createdAt != null)
-                      Text(
-                        timeago.format(bid.createdAt!),
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                  ],
+                child: GestureDetector(
+                  onTap: _viewProfile,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(bid.providerName,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      // Provider average rating
+                      Consumer(builder: (context, ref, _) {
+                        final ratingAsync =
+                            ref.watch(providerRatingProvider(bid.providerId));
+                        return ratingAsync.when(
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (rating) {
+                            if (rating <= 0) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star_rounded,
+                                      size: 14, color: AppColors.warning),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    rating.toStringAsFixed(1),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }),
+                      if (bid.createdAt != null)
+                        Text(
+                          timeago.format(bid.createdAt!),
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -231,6 +308,23 @@ class _BidCardState extends ConsumerState<_BidCard> {
             const SizedBox(height: 12),
             Row(
               children: [
+                // Message bidder button
+                IconButton(
+                  onPressed: _isMessaging ? null : _messageBidder,
+                  icon: _isMessaging
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.chat_bubble_outline),
+                  tooltip: 'Message',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.bgMint,
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: AppButton(
                     label:     'Accept',

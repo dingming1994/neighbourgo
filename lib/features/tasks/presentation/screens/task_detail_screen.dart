@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../data/models/task_model.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -52,7 +53,15 @@ class TaskDetailScreen extends ConsumerWidget {
             task.status == TaskStatus.assigned;
 
         return Scaffold(
-          appBar: AppBar(title: Text(task.title)),
+          appBar: AppBar(
+            title: Text(task.title),
+            leading: Navigator.canPop(context)
+                ? null  // default back button
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.go(AppRoutes.home),
+                  ),
+          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -161,7 +170,7 @@ class TaskDetailScreen extends ConsumerWidget {
 
                   const Divider(),
                   const SizedBox(height: 16),
-                  BidListSection(taskId: taskId),
+                  BidListSection(taskId: taskId, posterId: task.posterId),
                 ] else if (isProvider) ...[
                   // Provider view
                   if (isOpen) ...[
