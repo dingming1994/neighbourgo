@@ -94,6 +94,9 @@ class AppRoutes {
   // Reviews
   static const submitReview    = '/reviews/submit';
 
+  // Notifications
+  static const notificationList = '/notifications';
+
   // Settings
   static const settings        = '/settings';
   static const notifications   = '/settings/notifications';

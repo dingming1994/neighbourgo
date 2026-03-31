@@ -52,3 +52,16 @@ Started: Tue 31 Mar 2026 20:41:10 +08
   - `ProviderStats` model is in `user_model.dart` and available via `user.stats`
   - When removing code from a screen, check for unused imports (timeago, flutter_rating_bar)
 ---
+
+## 2026-03-31 21:15 +08 - US-044
+- Created notification infrastructure: `notification_providers.dart` (AppNotification model, notificationsProvider, unreadNotificationCountProvider)
+- Created `notification_list_screen.dart` with type-based icons, read/unread state, navigation on tap, mark-as-read on tap
+- Created `notification_bell.dart` reusable widget with unread badge count
+- Added `notificationList = '/notifications'` route to AppRoutes and app_router.dart
+- Replaced empty notification IconButton in PosterHomeScreen and ProviderHomeScreen with NotificationBell widget
+- Files: 4 new files in notifications feature, updated app_constants.dart, app_router.dart, poster_home_screen.dart, provider_home_screen.dart
+- **Learnings for future iterations:**
+  - Notifications stored at `notifications/{uid}/items/{notifId}` subcollection
+  - Both home screens had placeholder `IconButton(onPressed: () {})` for notifications
+  - Use `notificationList` route (not `notifications` which is settings path)
+---

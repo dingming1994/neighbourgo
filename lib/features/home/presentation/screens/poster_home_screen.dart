@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
+import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
 
@@ -58,8 +59,8 @@ class PosterHomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            actions: [
-              IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
+            actions: const [
+              NotificationBell(),
             ],
           ),
 

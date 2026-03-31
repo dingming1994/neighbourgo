@@ -67,7 +67,7 @@
         "Create notificationsProvider (StreamProvider) that watches unread count",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-045",
