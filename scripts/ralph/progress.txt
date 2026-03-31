@@ -168,3 +168,16 @@ Started: Wed  1 Apr 2026 01:50:12 +08
   - Start Work confirmation dialog has "Start Work?" title and "Confirm" button
   - Integration tests can only be run on simulator/device, not in CI without emulators: `flutter test integration_test/flow1_task_bidding_test.dart -d <simulator_id>`
 ---
+
+## 2026-04-01 - US-058
+- **What was implemented:** Integration test for Flow 2: Direct Hire End-to-End covering Ben profile setup → Alice browses provider directory → Alice hires Ben directly → Ben accepts job → Chat messages exchanged → Alice marks complete → Both leave mutual reviews → Firestore verification
+- **Files changed:**
+  - `integration_test/flow2_direct_hire_test.dart` — New: Full E2E test with 10 steps (verify provider profile, discover providers toggle, browse directory, hire from profile, verify direct hire task, job offers section, accept job, chat exchange, mark complete, mutual reviews)
+- **Learnings for future iterations:**
+  - Direct hire flow uses "Send Hire Request" as submit button text (not "Post Task") and "Hire [FirstName]" on PublicProfileScreen
+  - Accept Job dialog uses "Accept" as confirm button text (not "Confirm" like Start Work dialog)
+  - Job Offers section on ProviderHomeScreen shows "Direct Hire" badge and task title — tappable to navigate to task detail
+  - Provider directory appears via Discover → Providers toggle; provider cards are tappable by display name
+  - Test provider users need serviceRates, availableDays, availableHours fields seeded for the directory to show rate info
+  - Chat in direct hire flow uses same deterministic ID format as task-scoped chats: `{taskId}_{sorted_uids}`
+---
