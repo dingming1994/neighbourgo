@@ -133,6 +133,33 @@ class ChatRepository {
     }
   }
 
+  // ── Create or get a direct (non-task) chat ─────────────────────────────────
+  Future<String> createDirectChat(
+      String uid1, String uid2, String otherUserName) async {
+    final sorted = [uid1, uid2]..sort();
+    final chatId = 'direct_${sorted.join('_')}';
+    final chatRef = _chats.doc(chatId);
+
+    try {
+      final existing = await chatRef.get();
+      if (existing.exists) return chatId;
+    } catch (_) {}
+
+    await chatRef.set({
+      'chatId': chatId,
+      'taskId': null,
+      'taskTitle': null,
+      'otherUserName': otherUserName,
+      'participantIds': sorted,
+      'lastMessage': null,
+      'lastMessageTime': null,
+      'unreadCount': 0,
+      'createdAt': Timestamp.now(),
+    });
+
+    return chatId;
+  }
+
   // ── Create or get existing chat ───────────────────────────────────────────
   Future<String> createOrGetChat(
       String taskId, String posterId, String providerId) async {

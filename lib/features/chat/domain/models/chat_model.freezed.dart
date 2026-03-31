@@ -21,8 +21,9 @@ ChatModel _$ChatModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ChatModel {
   String get chatId => throw _privateConstructorUsedError;
-  String get taskId => throw _privateConstructorUsedError;
-  String get taskTitle => throw _privateConstructorUsedError;
+  String? get taskId => throw _privateConstructorUsedError;
+  String? get taskTitle => throw _privateConstructorUsedError;
+  String? get otherUserName => throw _privateConstructorUsedError;
   @JsonKey(name: 'participantIds')
   List<String> get participants => throw _privateConstructorUsedError;
   String? get lastMessage => throw _privateConstructorUsedError;
@@ -46,8 +47,9 @@ abstract class $ChatModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String chatId,
-      String taskId,
-      String taskTitle,
+      String? taskId,
+      String? taskTitle,
+      String? otherUserName,
       @JsonKey(name: 'participantIds') List<String> participants,
       String? lastMessage,
       DateTime? lastMessageTime,
@@ -70,8 +72,9 @@ class _$ChatModelCopyWithImpl<$Res, $Val extends ChatModel>
   @override
   $Res call({
     Object? chatId = null,
-    Object? taskId = null,
-    Object? taskTitle = null,
+    Object? taskId = freezed,
+    Object? taskTitle = freezed,
+    Object? otherUserName = freezed,
     Object? participants = null,
     Object? lastMessage = freezed,
     Object? lastMessageTime = freezed,
@@ -82,14 +85,18 @@ class _$ChatModelCopyWithImpl<$Res, $Val extends ChatModel>
           ? _value.chatId
           : chatId // ignore: cast_nullable_to_non_nullable
               as String,
-      taskId: null == taskId
+      taskId: freezed == taskId
           ? _value.taskId
           : taskId // ignore: cast_nullable_to_non_nullable
-              as String,
-      taskTitle: null == taskTitle
+              as String?,
+      taskTitle: freezed == taskTitle
           ? _value.taskTitle
           : taskTitle // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
+      otherUserName: freezed == otherUserName
+          ? _value.otherUserName
+          : otherUserName // ignore: cast_nullable_to_non_nullable
+              as String?,
       participants: null == participants
           ? _value.participants
           : participants // ignore: cast_nullable_to_non_nullable
@@ -120,8 +127,9 @@ abstract class _$$ChatModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {String chatId,
-      String taskId,
-      String taskTitle,
+      String? taskId,
+      String? taskTitle,
+      String? otherUserName,
       @JsonKey(name: 'participantIds') List<String> participants,
       String? lastMessage,
       DateTime? lastMessageTime,
@@ -142,8 +150,9 @@ class __$$ChatModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? chatId = null,
-    Object? taskId = null,
-    Object? taskTitle = null,
+    Object? taskId = freezed,
+    Object? taskTitle = freezed,
+    Object? otherUserName = freezed,
     Object? participants = null,
     Object? lastMessage = freezed,
     Object? lastMessageTime = freezed,
@@ -154,14 +163,18 @@ class __$$ChatModelImplCopyWithImpl<$Res>
           ? _value.chatId
           : chatId // ignore: cast_nullable_to_non_nullable
               as String,
-      taskId: null == taskId
+      taskId: freezed == taskId
           ? _value.taskId
           : taskId // ignore: cast_nullable_to_non_nullable
-              as String,
-      taskTitle: null == taskTitle
+              as String?,
+      taskTitle: freezed == taskTitle
           ? _value.taskTitle
           : taskTitle // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
+      otherUserName: freezed == otherUserName
+          ? _value.otherUserName
+          : otherUserName // ignore: cast_nullable_to_non_nullable
+              as String?,
       participants: null == participants
           ? _value._participants
           : participants // ignore: cast_nullable_to_non_nullable
@@ -187,8 +200,9 @@ class __$$ChatModelImplCopyWithImpl<$Res>
 class _$ChatModelImpl implements _ChatModel {
   const _$ChatModelImpl(
       {required this.chatId,
-      required this.taskId,
-      required this.taskTitle,
+      this.taskId,
+      this.taskTitle,
+      this.otherUserName,
       @JsonKey(name: 'participantIds')
       final List<String> participants = const [],
       this.lastMessage,
@@ -202,9 +216,11 @@ class _$ChatModelImpl implements _ChatModel {
   @override
   final String chatId;
   @override
-  final String taskId;
+  final String? taskId;
   @override
-  final String taskTitle;
+  final String? taskTitle;
+  @override
+  final String? otherUserName;
   final List<String> _participants;
   @override
   @JsonKey(name: 'participantIds')
@@ -224,7 +240,7 @@ class _$ChatModelImpl implements _ChatModel {
 
   @override
   String toString() {
-    return 'ChatModel(chatId: $chatId, taskId: $taskId, taskTitle: $taskTitle, participants: $participants, lastMessage: $lastMessage, lastMessageTime: $lastMessageTime, unreadCount: $unreadCount)';
+    return 'ChatModel(chatId: $chatId, taskId: $taskId, taskTitle: $taskTitle, otherUserName: $otherUserName, participants: $participants, lastMessage: $lastMessage, lastMessageTime: $lastMessageTime, unreadCount: $unreadCount)';
   }
 
   @override
@@ -236,6 +252,8 @@ class _$ChatModelImpl implements _ChatModel {
             (identical(other.taskId, taskId) || other.taskId == taskId) &&
             (identical(other.taskTitle, taskTitle) ||
                 other.taskTitle == taskTitle) &&
+            (identical(other.otherUserName, otherUserName) ||
+                other.otherUserName == otherUserName) &&
             const DeepCollectionEquality()
                 .equals(other._participants, _participants) &&
             (identical(other.lastMessage, lastMessage) ||
@@ -253,6 +271,7 @@ class _$ChatModelImpl implements _ChatModel {
       chatId,
       taskId,
       taskTitle,
+      otherUserName,
       const DeepCollectionEquality().hash(_participants),
       lastMessage,
       lastMessageTime,
@@ -277,8 +296,9 @@ class _$ChatModelImpl implements _ChatModel {
 abstract class _ChatModel implements ChatModel {
   const factory _ChatModel(
       {required final String chatId,
-      required final String taskId,
-      required final String taskTitle,
+      final String? taskId,
+      final String? taskTitle,
+      final String? otherUserName,
       @JsonKey(name: 'participantIds') final List<String> participants,
       final String? lastMessage,
       final DateTime? lastMessageTime,
@@ -290,9 +310,11 @@ abstract class _ChatModel implements ChatModel {
   @override
   String get chatId;
   @override
-  String get taskId;
+  String? get taskId;
   @override
-  String get taskTitle;
+  String? get taskTitle;
+  @override
+  String? get otherUserName;
   @override
   @JsonKey(name: 'participantIds')
   List<String> get participants;

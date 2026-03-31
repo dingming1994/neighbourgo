@@ -127,7 +127,12 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     final messagesAsync = ref.watch(messagesStreamProvider(widget.chatId));
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
 
-    final title = chatAsync.valueOrNull?.taskTitle ?? 'Chat';
+    final chat = chatAsync.valueOrNull;
+    final isDirectChat = chat?.taskId == null;
+    final title = isDirectChat
+        ? (chat?.otherUserName ?? 'Chat')
+        : (chat?.taskTitle ?? 'Chat');
+    final subtitle = isDirectChat ? 'Direct message' : 'Task chat';
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
@@ -142,8 +147,8 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
             Text(title,
                 style: const TextStyle(
                     fontWeight: FontWeight.w700, fontSize: 16)),
-            const Text('Task chat',
-                style: TextStyle(
+            Text(subtitle,
+                style: const TextStyle(
                     fontSize: 12, color: AppColors.textSecondary)),
           ],
         ),

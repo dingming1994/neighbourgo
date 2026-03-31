@@ -11,6 +11,7 @@ import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../reviews/presentation/widgets/rating_summary.dart';
 import '../../../reviews/presentation/widgets/review_card.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
 import '../../data/models/profile_model.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -186,8 +187,19 @@ class PublicProfileScreen extends ConsumerWidget {
                                 label: 'Message',
                                 isOutlined: true,
                                 leading: const Icon(Icons.chat_bubble_outline, size: 18),
-                                onPressed: () {
-                                  // TODO: create/navigate to chat
+                                onPressed: () async {
+                                  if (me == null) return;
+                                  final chatRepo = ref.read(chatRepositoryProvider);
+                                  final chatId = await chatRepo.createDirectChat(
+                                    me.uid,
+                                    userId,
+                                    user.displayName ?? 'Neighbour',
+                                  );
+                                  if (context.mounted) {
+                                    context.push(
+                                      AppRoutes.chatThread.replaceFirst(':chatId', chatId),
+                                    );
+                                  }
                                 },
                               ),
                             ),

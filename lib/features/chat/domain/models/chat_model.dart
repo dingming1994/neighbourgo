@@ -7,8 +7,9 @@ part 'chat_model.g.dart';
 class ChatModel with _$ChatModel {
   const factory ChatModel({
     required String chatId,
-    required String taskId,
-    required String taskTitle,
+    String? taskId,
+    String? taskTitle,
+    String? otherUserName,
     @JsonKey(name: 'participantIds') @Default([]) List<String> participants,
     String? lastMessage,
     DateTime? lastMessageTime,

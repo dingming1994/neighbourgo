@@ -100,26 +100,30 @@ class _ChatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasUnread = chat.unreadCount > 0;
+    final isDirectChat = chat.taskId == null;
+    final displayTitle = isDirectChat
+        ? (chat.otherUserName ?? 'Direct Message')
+        : (chat.taskTitle ?? 'Task');
 
     return ListTile(
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
         radius: 26,
-        backgroundColor: AppColors.primary.withOpacity(0.12),
-        child: Text(
-          chat.taskTitle.isNotEmpty ? chat.taskTitle[0].toUpperCase() : '?',
-          style: const TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-              fontSize: 18),
+        backgroundColor: isDirectChat
+            ? AppColors.accent.withOpacity(0.12)
+            : AppColors.primary.withOpacity(0.12),
+        child: Icon(
+          isDirectChat ? Icons.person : Icons.task_alt,
+          color: isDirectChat ? AppColors.accent : AppColors.primary,
+          size: 22,
         ),
       ),
       title: Row(
         children: [
           Expanded(
             child: Text(
-              chat.taskTitle,
+              displayTitle,
               style: TextStyle(
                 fontWeight:
                     hasUnread ? FontWeight.w700 : FontWeight.w600,
