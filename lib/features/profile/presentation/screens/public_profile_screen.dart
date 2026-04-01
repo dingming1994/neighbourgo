@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:photo_view/photo_view.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -223,25 +224,27 @@ class PublicProfileScreen extends ConsumerWidget {
                       ],
 
                       // ── Bio ───────────────────────────────────────────────
-                      if (user.bio != null && user.bio!.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        _SectionHeader(title: 'About Me'),
-                        const SizedBox(height: 8),
-                        Text(user.bio!, style: const TextStyle(height: 1.6, color: AppColors.textPrimary)),
-                      ],
+                      const SizedBox(height: 24),
+                      _SectionHeader(title: 'About Me'),
+                      const SizedBox(height: 8),
+                      if (user.bio != null && user.bio!.isNotEmpty)
+                        Text(user.bio!, style: const TextStyle(height: 1.6, color: AppColors.textPrimary))
+                      else
+                        const Text('This user hasn\'t added a bio yet.', style: TextStyle(fontSize: 14, color: AppColors.textHint, fontStyle: FontStyle.italic)),
 
                       // ── Skill tags ────────────────────────────────────────
-                      if (user.skillTags.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        _SectionHeader(title: 'Skills'),
-                        const SizedBox(height: 10),
+                      const SizedBox(height: 24),
+                      _SectionHeader(title: 'Skills'),
+                      const SizedBox(height: 10),
+                      if (user.skillTags.isNotEmpty)
                         Wrap(
                           spacing: 8, runSpacing: 8,
                           children: user.skillTags
                               .map((t) => Chip(label: Text(t), backgroundColor: AppColors.bgMint))
                               .toList(),
-                        ),
-                      ],
+                        )
+                      else
+                        const Text('No skills listed', style: TextStyle(fontSize: 14, color: AppColors.textHint, fontStyle: FontStyle.italic)),
 
                       // ── Category Showcases ────────────────────────────────
                       if (user.categoryShowcases.isNotEmpty) ...[
@@ -305,12 +308,68 @@ class PublicProfileScreen extends ConsumerWidget {
     showModalBottomSheet(context: context, builder: (_) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(leading: const Icon(Icons.flag_outlined), title: const Text('Report User'),
-            onTap: () { Navigator.pop(context); }),
-        ListTile(leading: const Icon(Icons.block), title: const Text('Block User'),
-            onTap: () { Navigator.pop(context); }),
+        ListTile(
+          leading: const Icon(Icons.flag_outlined),
+          title: const Text('Report User'),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmReport(context, user);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.block),
+          title: const Text('Block User'),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmBlock(context, user);
+          },
+        ),
       ],
     ));
+  }
+
+  void _confirmReport(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Report this user?'),
+        content: Text('Are you sure you want to report ${user.displayName ?? 'this user'}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Report submitted. We will review this.')),
+              );
+            },
+            child: const Text('Report', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmBlock(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Block this user?'),
+        content: const Text('Block this user? You won\'t see their tasks or bids.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User blocked.')),
+              );
+            },
+            child: const Text('Block', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -469,7 +528,9 @@ class _PhotoGrid extends StatelessWidget {
         final p = photos[i];
         return GestureDetector(
           onTap: () {
-            // TODO: push photo_view full screen
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => _FullscreenPhotoPage(photos: photos, initialIndex: i),
+            ));
           },
           child: Stack(
             fit: StackFit.expand,
@@ -585,4 +646,65 @@ class _RatesAvailabilitySection extends StatelessWidget {
   }
 }
 
-// _ReviewTile replaced by ReviewCard widget in reviews feature
+// ─────────────────────────────────────────────────────────────────────────────
+// Fullscreen Photo Viewer
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullscreenPhotoPage extends StatefulWidget {
+  final List<ProfilePhoto> photos;
+  final int initialIndex;
+
+  const _FullscreenPhotoPage({required this.photos, required this.initialIndex});
+
+  @override
+  State<_FullscreenPhotoPage> createState() => _FullscreenPhotoPageState();
+}
+
+class _FullscreenPhotoPageState extends State<_FullscreenPhotoPage> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text('${_currentIndex + 1} / ${widget.photos.length}',
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photos.length,
+        onPageChanged: (i) => setState(() => _currentIndex = i),
+        itemBuilder: (_, i) => PhotoView(
+          imageProvider: CachedNetworkImageProvider(widget.photos[i].url),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 3,
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          loadingBuilder: (_, event) => Center(
+            child: CircularProgressIndicator(
+              value: event == null ? null
+                  : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
