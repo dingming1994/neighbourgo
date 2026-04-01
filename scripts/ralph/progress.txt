@@ -41,3 +41,17 @@ Started: Wed  1 Apr 2026 23:43:59 +08
   - `CachedNetworkImageProvider` (not `CachedNetworkImage` widget) is used when passing to `PhotoView.imageProvider`
   - Loading overlay pattern: track the ID of the item being operated on (e.g. `_deletingPhotoId`) rather than a simple bool, so you can show the spinner on the right tile
 ---
+
+## 2026-04-01 - US-061
+- Implemented fullscreen photo view on PublicProfileScreen: `_FullscreenPhotoPage` with `PageView` + `PhotoView` (same pattern as PhotoGalleryScreen), replaces TODO in `_PhotoGrid.onTap`
+- Added Report User flow: confirmation dialog → snackbar "Report submitted. We will review this." (UI-only, no backend)
+- Added Block User flow: confirmation dialog → snackbar "User blocked." (UI-only, no backend)
+- Made empty states consistent: Skills section always shows (displays "No skills listed" when empty), About Me section always shows (displays italic placeholder when bio is null)
+- Added `photo_view` import to public_profile_screen.dart
+- Files changed:
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+- **Learnings for future iterations:**
+  - The `_FullscreenPhotoPage` pattern is duplicated between `photo_gallery_screen.dart` and `public_profile_screen.dart` — consider extracting to a shared widget if a third screen needs it
+  - `_PhotoGrid` is a private widget in `public_profile_screen.dart` used for both category showcase photos and general gallery photos
+  - Pre-existing `withOpacity` deprecation warnings exist throughout the codebase — use `.withValues()` instead if cleaning up
+---
