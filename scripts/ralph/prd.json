@@ -70,7 +70,7 @@
         "Tapping 'Verify' on unverified badges shows snackbar 'Verification coming soon — we will notify you when available'",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-064",
