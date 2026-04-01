@@ -30,7 +30,7 @@
         "Add explicit back button to PhotoGalleryScreen AppBar as fallback (like TaskDetailScreen pattern)",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-061",
