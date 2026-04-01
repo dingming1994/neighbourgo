@@ -88,3 +88,20 @@ Started: Wed  1 Apr 2026 23:43:59 +08
   - `VerificationBadge` enum already has `.label` and `.emoji` extensions in `user_model.dart` — no need to define display strings separately
   - The `user.isProvider` extension helper (in `UserModelExt`) checks both `provider` and `both` roles — use it instead of manual role checks
 ---
+
+## 2026-04-02 - US-064
+- Final verification: all profile screens compile and work correctly
+- `flutter analyze`: 0 errors (only pre-existing warnings/infos in test files — sealed class warnings, prefer_const_constructors infos)
+- `flutter test`: 242/242 tests pass
+- No TODO comments remaining in any profile screen files
+- Code review checklist:
+  - ProfileScreen: renders, role picker refreshes UI via `ref.invalidate`, stats empty state for new providers ✅
+  - EditProfileScreen: saves all fields, service rates as double, field-level validation, controllers properly disposed ✅
+  - PublicProfileScreen: handles empty states (skills, bio, reviews), report/block dialogs, fullscreen photo view ✅
+  - PhotoGalleryScreen: loads/deletes/covers photos with loading states, fullscreen view, CachedNetworkImage ✅
+  - VerificationCentreScreen: renders all 8 badge rows with status chips and verify buttons ✅
+- No code changes required — this was a verification-only story
+- **Learnings for future iterations:**
+  - Pre-existing warnings in test files (sealed class, immutable) are from fake/mock implementations of Firebase classes — these are expected and not fixable without switching to a proper mocking library
+  - All 17 original profile bugs from Sprint 9 are now resolved across US-059 through US-063
+---

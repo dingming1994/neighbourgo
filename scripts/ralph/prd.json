@@ -83,7 +83,7 @@
         "No TODO comments left in profile screens (all replaced with real implementations or proper placeholder UX)",
         "Commit all changes"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
