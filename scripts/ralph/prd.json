@@ -56,7 +56,7 @@
         "Add field-level validation feedback: required fields show red border when empty on submit attempt",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-063",

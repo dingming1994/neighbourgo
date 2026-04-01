@@ -8,6 +8,7 @@ Started: Wed  1 Apr 2026 23:43:59 +08
 - When creating TextEditingControllers dynamically (e.g. in a Map), dispose them when removed from the map, not just in `dispose()`
 - Profile screens are at `lib/features/profile/presentation/screens/`
 - `AppCategories.all` and `AppCategories.getById()` in `category_constants.dart` for category lookups
+- `serviceRates` values in Firestore may be String (legacy) or double (new) — always handle both types when reading
 
 ---
 
@@ -54,4 +55,19 @@ Started: Wed  1 Apr 2026 23:43:59 +08
   - The `_FullscreenPhotoPage` pattern is duplicated between `photo_gallery_screen.dart` and `public_profile_screen.dart` — consider extracting to a shared widget if a third screen needs it
   - `_PhotoGrid` is a private widget in `public_profile_screen.dart` used for both category showcase photos and general gallery photos
   - Pre-existing `withOpacity` deprecation warnings exist throughout the codebase — use `.withValues()` instead if cleaning up
+---
+
+## 2026-04-01 - US-062
+- Changed service rates storage: `hourlyRate` now saved as `double` via `double.tryParse()` instead of raw String. Falls back to String if parsing fails.
+- Updated `_RatesAvailabilitySection` in `public_profile_screen.dart` to handle both `double` and `String` values for backward compatibility with existing Firestore data
+- Improved error handling on save failure: specific messages for permission denied, network errors, and generic failures. Form values are retained (already were — `Navigator.pop` only on success).
+- Added field-level validation: `AutovalidateMode` switches from `disabled` to `onUserInteraction` after first failed submit, so required fields show red `errorBorder` when empty
+- Added `errorBorder` and `focusedErrorBorder` to `_Field` widget for consistent red border styling
+- Files changed:
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+- **Learnings for future iterations:**
+  - The `_Field` widget in `edit_profile_screen.dart` is a local widget wrapping `TextFormField` — add border customizations there, not on individual fields
+  - `serviceRates` in Firestore may contain mixed types (String from old saves, double from new saves) — always handle both when reading
+  - Form already retains values on failure because `Navigator.pop` is only called in the `try` success path
 ---
