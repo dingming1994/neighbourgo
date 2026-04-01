@@ -1,187 +1,89 @@
 {
-  "featureName": "Sprint 8 — Two Complete Marketplace Flows: Task-Based Bidding + Direct Hire",
-  "description": "Implement two complete marketplace flows. Flow 1: Client posts task → Worker bids → Client reviews bids, messages bidder → Accepts bid → Worker starts work → Task completes → Mutual reviews. Flow 2: Worker advertises services → Client browses provider directory → Views profile → Hires directly (skips bidding) → Worker accepts/declines → Task completes → Mutual reviews. Includes new Provider Directory, direct hire system, improved chat, and UX fixes.",
-  "branchName": "ralph/sprint-8-marketplace-flows",
+  "featureName": "Sprint 9 — Profile Pages Bug Fixes & Feature Completion",
+  "description": "Fix all 17 identified issues in Profile-related screens: crashes, missing features, UX problems, and data issues. Covers ProfileScreen, EditProfileScreen, PublicProfileScreen, PhotoGalleryScreen, and VerificationCentreScreen.",
+  "branchName": "ralph/sprint-9-profile-fixes",
   "userStories": [
     {
-      "id": "US-048",
-      "title": "Fix Message Button on PublicProfileScreen + Direct Chat Support",
-      "description": "Wire up the non-functional Message button on PublicProfileScreen. Add direct chat support (chat without a task context).",
+      "id": "US-059",
+      "title": "Fix Critical Bugs — EmptyState Import, Image Loading, Memory Leak",
+      "description": "Fix the 3 critical bugs that cause crashes or broken rendering in Profile screens.",
       "acceptanceCriteria": [
-        "Add createDirectChat(uid1, uid2, otherUserName) method to ChatRepository that creates a chat with taskId=null, chatId='direct_{sorted_uids}'",
-        "Make ChatModel.taskId nullable (String?) if not already, update fromJson/toJson accordingly",
-        "On PublicProfileScreen, wire the 'Message' button: call createDirectChat, navigate to ChatThreadScreen",
-        "ChatThreadScreen AppBar: show other user's name when taskTitle is null (direct chat)",
-        "ChatListScreen: handle chats with null taskId gracefully (show other user's name instead of task title)",
+        "Create a shared EmptyState widget at lib/core/widgets/empty_state.dart (extracted from photo_gallery_screen.dart), accepting emoji, title, and optional subtitle params",
+        "Update public_profile_screen.dart to import and use the shared EmptyState widget for 'No reviews yet' and other empty states",
+        "Update photo_gallery_screen.dart to import from the shared widget instead of defining its own",
+        "Replace all Image.network() in photo_gallery_screen.dart with CachedNetworkImage with errorWidget and placeholder",
+        "Fix rate controller memory leak in edit_profile_screen.dart: properly dispose all dynamically created TextEditingControllers in dispose(), track them in a Map that gets cleaned up",
+        "Fix empty caption string showing empty overlay bar in photo_gallery_screen.dart: check caption != null && caption!.isNotEmpty",
         "flutter analyze shows 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-049",
-      "title": "Bid Cards — View Provider Profile + Message Bidder",
-      "description": "Enhance bid cards so the poster can view a bidder's profile and message them before accepting.",
+      "id": "US-060",
+      "title": "Photo Gallery — Loading States, Fullscreen View, Cover Photo Fix",
+      "description": "Add loading indicators for delete/cover operations, implement fullscreen photo view, and fix cover photo persistence.",
       "acceptanceCriteria": [
-        "In BidListSection _BidCard: make provider avatar and name tappable, navigate to /profile/:providerId",
-        "Add provider's average rating (stars) display on bid card if available",
-        "Add a 'Message' icon button on each pending bid card",
-        "Tapping Message creates a task-scoped chat between poster and bidder using existing createOrGetChat(taskId, posterId, bidderId)",
-        "Navigate to ChatThreadScreen after chat creation",
+        "Add loading state to _deletePhoto(): show CircularProgressIndicator while deletion is in progress, disable button during operation",
+        "Add loading state to _setCover(): show snackbar 'Setting cover photo...' then 'Cover photo updated!' on success",
+        "Implement photo tap to open fullscreen: use photo_view package (already in pubspec) to show tapped photo in a fullscreen dialog/page with pinch-to-zoom",
+        "Fix cover photo persistence: after uploading first photo, ensure isCover=true is properly saved via updatePhotosArray",
+        "Add explicit back button to PhotoGalleryScreen AppBar as fallback (like TaskDetailScreen pattern)",
         "flutter analyze shows 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-050",
-      "title": "Provider Starts Work — Status Transition + Progress UI",
-      "description": "Add a 'Start Work' button for assigned providers and show clear status indicators.",
+      "id": "US-061",
+      "title": "PublicProfile — Photo Fullscreen, Report/Block Placeholder, Consistent Empty States",
+      "description": "Fix photo tap, add report/block user stubs with feedback, and make empty states consistent.",
       "acceptanceCriteria": [
-        "On TaskDetailScreen, when current user is assigned provider AND status is 'assigned': show 'Start Work' button",
-        "Tapping 'Start Work' calls TaskRepository.updateStatus(taskId, TaskStatus.inProgress)",
-        "Show a 'Work in Progress' banner/badge when status is inProgress",
-        "Poster view: show status change from 'Assigned' to 'In Progress' in the info rows",
-        "Provider view: replace 'Start Work' with 'Work in Progress' indicator when status is inProgress",
+        "Implement photo tap on PublicProfileScreen: open fullscreen photo_view on tap (same as PhotoGallery implementation)",
+        "Report User button: show confirmation dialog 'Report this user?' then snackbar 'Report submitted. We will review this.' (no backend needed yet, just UI feedback)",
+        "Block User button: show confirmation dialog 'Block this user? You won't see their tasks or bids.' then snackbar 'User blocked.' (no backend needed yet, just UI feedback)",
+        "Add consistent empty states: Skills section shows 'No skills listed' when empty (instead of hiding), About section shows placeholder when bio is null",
         "flutter analyze shows 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-051",
-      "title": "Pending Reviews Section on Home Screens",
-      "description": "After task completion, show review prompts on both poster and provider home screens.",
+      "id": "US-062",
+      "title": "EditProfile — Fix Service Rates Data Type, Improve Error Handling",
+      "description": "Store service rates as doubles, improve form error recovery, and fix field-level validation UX.",
       "acceptanceCriteria": [
-        "On PosterHomeScreen: add 'Pending Reviews' section showing completed tasks where poster has not yet left a review",
-        "On ProviderHomeScreen: add 'Pending Reviews' section showing completed tasks where provider has not yet left a review",
-        "Each pending review card shows: task title, other party's name, 'Leave Review' button",
-        "Tapping 'Leave Review' navigates to SubmitReviewScreen with correct params",
-        "Query: completed tasks where user is poster/provider, then check if review exists in the other user's reviews subcollection for that taskId",
-        "Section hidden when no pending reviews",
+        "Change service rates storage: save hourlyRate as double (not String) in Firestore. Parse text field value with double.tryParse before saving",
+        "PublicProfileScreen: update rate display to handle both String and double values from Firestore (backward compatibility)",
+        "On save failure: retain all form field values (don't clear them). Show specific error message in snackbar",
+        "Add field-level validation feedback: required fields show red border when empty on submit attempt",
         "flutter analyze shows 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-052",
-      "title": "Service Rates, Availability on UserModel + Edit Profile",
-      "description": "Add structured pricing and availability data to provider profiles.",
+      "id": "US-063",
+      "title": "ProfileScreen — Role Change Refresh, Stats Empty State, Verification Centre",
+      "description": "Fix role change not refreshing UI, add stats empty state for new providers, and implement basic Verification Centre.",
       "acceptanceCriteria": [
-        "Add to UserModel: serviceRates as Map<String, dynamic> (categoryId → {hourlyRate, fixedRate, rateNote}), availableDays as List<String>, availableHours as String?",
-        "Run build_runner to regenerate Freezed code",
-        "On EditProfileScreen: add 'Rates' section where provider can set hourly rate per service category they offer",
-        "On EditProfileScreen: add 'Availability' section with day-of-week chips (Mon-Sun) and hours text field",
-        "On PublicProfileScreen: show 'Rates & Availability' section between stats and bio (only for providers)",
-        "Display format: 'From S$XX/hr' for each category, available days as chips",
+        "After role change in _RolePickerSheet: force refresh currentUserProvider so ProfileScreen immediately shows new role and HomeScreen switches view",
+        "For new providers with null stats: show a 'Your stats will appear after completing your first task' message instead of hiding the section completely",
+        "VerificationCentreScreen: replace stub with a real screen showing list of verification badges (phoneVerified, idVerified, policeCleared, etc.) with their current status (verified/not verified)",
+        "Each badge row shows: emoji, label, status chip (Verified in green or Not Verified in grey), and a 'Verify' button for unverified badges",
+        "Tapping 'Verify' on unverified badges shows snackbar 'Verification coming soon — we will notify you when available'",
         "flutter analyze shows 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-053",
-      "title": "Provider Directory Screen — Browse Providers by Category",
-      "description": "Create a new screen where clients can browse available service providers filtered by category and neighbourhood.",
+      "id": "US-064",
+      "title": "Final Verification — All Profile Screens Work End-to-End",
+      "description": "Verify all profile screens compile and work correctly, run flutter analyze and flutter test.",
       "acceptanceCriteria": [
-        "Create lib/features/providers/presentation/screens/provider_directory_screen.dart",
-        "Create lib/features/providers/data/repositories/provider_repository.dart with query: users where role in [provider, both], optional categoryId filter via serviceCategories array-contains, ordered by lastActiveAt desc",
-        "Horizontal category filter bar at top (All + 10 categories)",
-        "Provider cards show: avatar, name, headline, neighbourhood, avgRating stars, completedTasks count, top 2 service categories as chips, starting rate if available",
-        "Tapping card navigates to /profile/:userId",
-        "Pagination with infinite scroll (pageSize=20)",
-        "Empty state: 'No providers found in this category'",
-        "Add route /providers to AppRoutes and app_router.dart",
-        "flutter analyze shows 0 errors"
+        "flutter analyze shows 0 errors",
+        "flutter test — all existing unit tests pass (fix any broken by profile changes)",
+        "Manual verification checklist (code review): ProfileScreen renders without crash, EditProfileScreen saves all fields correctly, PublicProfileScreen handles all empty states, PhotoGalleryScreen loads/deletes/covers photos, VerificationCentreScreen renders badge list",
+        "No TODO comments left in profile screens (all replaced with real implementations or proper placeholder UX)",
+        "Commit all changes"
       ],
-      "passes": true
-    },
-    {
-      "id": "US-054",
-      "title": "Discover Tab Toggle — Tasks vs Providers",
-      "description": "Update the Discover tab to let clients toggle between browsing tasks and browsing providers.",
-      "acceptanceCriteria": [
-        "Create lib/features/discover/presentation/screens/discover_screen.dart as a wrapper",
-        "Add a segmented control toggle at top: 'Tasks' | 'Providers'",
-        "'Tasks' segment shows existing TaskListScreen content",
-        "'Providers' segment shows ProviderDirectoryScreen content",
-        "Toggle state persists during session via StateProvider",
-        "For provider-role users: Discover tab only shows Tasks (no toggle, providers don't need to browse other providers)",
-        "For poster-role users: shows toggle with Tasks + Providers",
-        "For both-role users: shows toggle",
-        "Update app_router.dart: /tasks route now renders DiscoverScreen",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-055",
-      "title": "Direct Hire — TaskModel Changes + Provider Accept/Decline",
-      "description": "Add direct hire support to the task model and let providers accept or decline direct hire offers.",
-      "acceptanceCriteria": [
-        "Add isDirectHire (bool, default false) field to TaskModel, run build_runner",
-        "Add watchDirectHireOffers(String providerId) to TaskRepository: query tasks where assignedProviderId==providerId, isDirectHire==true, status==assigned",
-        "On ProviderHomeScreen: add 'Job Offers' section at top showing direct hire tasks pending acceptance",
-        "On TaskDetailScreen for assigned provider of a direct hire task: show 'Accept Job' and 'Decline' buttons instead of normal provider view",
-        "'Accept Job' sets status to inProgress",
-        "'Decline' sets status to cancelled, clears assignedProviderId",
-        "Add Firestore index for tasks(assignedProviderId, isDirectHire, status)",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-056",
-      "title": "Hire This Provider — Direct Hire PostTask Flow",
-      "description": "Implement the 'Hire This Provider' button on PublicProfileScreen that creates a pre-assigned task.",
-      "acceptanceCriteria": [
-        "On PublicProfileScreen: 'Hire' button passes extra params to PostTaskScreen: directHireProviderId, directHireProviderName, preSelectedCategory (first of provider's serviceCategories)",
-        "PostTaskScreen reads extras from GoRouter state.extra",
-        "If directHire mode: show 'Hiring: [Provider Name]' banner at top of all steps, pre-select category if provided",
-        "On submit in directHire mode: create task with status=assigned, assignedProviderId, assignedProviderName, isDirectHire=true",
-        "After creation: navigate to task detail (not checkout yet)",
-        "Send notification to provider about new direct hire offer",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-057",
-      "title": "Integration Test — Flow 1: Task-Based Bidding End-to-End",
-      "description": "Write and run an integration test that verifies the complete Flow 1: Alice posts task → Ben bids → Alice messages Ben → Alice accepts bid → Ben starts work → Alice marks complete → Both review.",
-      "acceptanceCriteria": [
-        "Create integration_test/flow1_task_bidding_test.dart",
-        "Use two accounts: Alice (poster) and Ben (provider), created via Firebase emulator",
-        "Step 1: Alice registers, posts a Cleaning task (S$60, Ang Mo Kio)",
-        "Step 2: Switch to Ben, register as provider, find task in Discover, submit bid (S$55)",
-        "Step 3: Switch to Alice, view task detail, see Ben's bid, tap Message on bid card, send message in chat",
-        "Step 4: Alice accepts Ben's bid, verify task status=assigned",
-        "Step 5: Switch to Ben, open task detail, tap 'Start Work', verify status=inProgress",
-        "Step 6: Switch to Alice, tap 'Mark as Complete', verify status=completed",
-        "Step 7: Alice leaves review for Ben (4 stars), Ben leaves review for Alice (5 stars)",
-        "Step 8: Verify reviews exist in Firestore",
-        "All steps pass, cleanup emulator data",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-058",
-      "title": "Integration Test — Flow 2: Direct Hire End-to-End",
-      "description": "Write and run an integration test that verifies the complete Flow 2: Ben sets up provider profile → Alice browses directory → Alice hires Ben directly → Ben accepts → Task completes → Both review.",
-      "acceptanceCriteria": [
-        "Create integration_test/flow2_direct_hire_test.dart",
-        "Use two accounts: Alice (poster) and Ben (provider)",
-        "Step 1: Ben registers as provider, sets up profile with serviceCategories=[cleaning], rates, availability",
-        "Step 2: Switch to Alice, register as poster, go to Discover → toggle to Providers",
-        "Step 3: Alice sees Ben in provider directory, taps to view profile",
-        "Step 4: Alice taps 'Hire' on Ben's profile, posts a direct hire task (Cleaning, S$50, Ang Mo Kio)",
-        "Step 5: Verify task in Firestore: isDirectHire=true, status=assigned, assignedProviderId=Ben",
-        "Step 6: Switch to Ben, verify 'Job Offers' section shows the task on ProviderHome",
-        "Step 7: Ben opens task detail, taps 'Accept Job', verify status=inProgress",
-        "Step 8: Alice and Ben exchange chat messages",
-        "Step 9: Alice marks task complete, verify status=completed",
-        "Step 10: Both leave reviews, verify in Firestore",
-        "All steps pass, cleanup emulator data",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
+      "passes": false
     }
   ]
 }
