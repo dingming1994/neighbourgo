@@ -582,6 +582,10 @@ class _RatesAvailabilitySection extends StatelessWidget {
               final rateData = entry.value;
               final hourlyRate = rateData is Map ? rateData['hourlyRate'] : null;
               if (hourlyRate == null) return const SizedBox.shrink();
+              // Handle both double and String values for backward compatibility
+              final rateDisplay = hourlyRate is double
+                  ? hourlyRate.toStringAsFixed(hourlyRate.truncateToDouble() == hourlyRate ? 0 : 2)
+                  : hourlyRate.toString();
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -592,7 +596,7 @@ class _RatesAvailabilitySection extends StatelessWidget {
                       child: Text(cat?.label ?? entry.key,
                           style: const TextStyle(fontSize: 14)),
                     ),
-                    Text('From S\$$hourlyRate/hr',
+                    Text('From S\$$rateDisplay/hr',
                         style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

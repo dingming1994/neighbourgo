@@ -32,6 +32,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   File? _pickedAvatar;
   bool _isLoading = false;
   bool _initialized = false;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
   @override
   void dispose() {
@@ -76,7 +77,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
+      return;
+    }
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) return;
 
@@ -89,13 +93,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         avatarUrl = await repo.uploadAvatar(user.uid, _pickedAvatar!);
       }
 
-      // Build serviceRates map from controllers
+      // Build serviceRates map from controllers — store hourlyRate as double
       final Map<String, dynamic> rates = {};
       for (final catId in _selectedCategories) {
         final ctrl = _rateControllers[catId];
         final rateText = ctrl?.text.trim() ?? '';
         if (rateText.isNotEmpty) {
-          rates[catId] = {'hourlyRate': rateText};
+          final parsed = double.tryParse(rateText);
+          rates[catId] = {'hourlyRate': parsed ?? rateText};
         }
       }
 
@@ -127,8 +132,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = e.toString().contains('PERMISSION_DENIED')
+            ? 'Permission denied. Please sign in again.'
+            : e.toString().contains('UNAVAILABLE')
+                ? 'Network error. Please check your connection and try again.'
+                : 'Failed to save profile. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(content: Text(message)),
         );
       }
     } finally {
@@ -185,6 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           _initFromUser(user);
           return Form(
             key: _formKey,
+            autovalidateMode: _autovalidateMode,
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -597,6 +608,14 @@ class _Field extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide:
               const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );
