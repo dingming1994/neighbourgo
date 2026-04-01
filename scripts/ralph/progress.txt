@@ -1,183 +1,29 @@
 # Ralph Progress Log
-Started: Wed  1 Apr 2026 01:50:12 +08
+Started: Wed  1 Apr 2026 23:43:59 +08
 ---
 
 ## Codebase Patterns
-- ChatModel uses Freezed for code generation; after changing model fields, run `dart run build_runner build --delete-conflicting-outputs`
-- Chat IDs are deterministic: task chats use `{taskId}_{sorted_uids}`, direct chats use `direct_{sorted_uids}`
-- ChatRepository is provided via Riverpod `chatRepositoryProvider`; screens access it with `ref.read(chatRepositoryProvider)`
-- Navigation uses GoRouter with `context.push(AppRoutes.chatThread.replaceFirst(':chatId', chatId))`
-- PublicProfileScreen gets userId from GoRouter path params, current user from `currentUserProvider`
-- Pre-existing warnings/infos in `flutter analyze` are acceptable; only errors block commits
-- Pending reviews pattern: query completed tasks, then check `users/{otherUserId}/reviews` for reviewerId+taskId match to determine if review exists
-- Reusable sliver widgets can be shared across home screens via `lib/features/home/presentation/widgets/`
-- BidListSection requires both `taskId` and `posterId` params; posterId is needed for chat creation between poster and bidder
-- Use `FutureProvider.family` for lightweight one-off data fetches (e.g., provider rating) rather than streaming full profiles
-- Provider directory queries users collection with `role whereIn [provider, both]` and `serviceCategories arrayContains categoryId` for filtering
-- Screens that need to work both standalone and embedded use an `embedded` bool param — when true, skip Scaffold/AppBar and return body content in a ColoredBox
+- EmptyState widget lives at `lib/core/widgets/empty_state.dart`; also re-exported from `loading_overlay.dart` for backward compat
+- Use `CachedNetworkImage` (from `cached_network_image` package) instead of `Image.network()` — always provide `placeholder` and `errorWidget`
+- When creating TextEditingControllers dynamically (e.g. in a Map), dispose them when removed from the map, not just in `dispose()`
+- Profile screens are at `lib/features/profile/presentation/screens/`
+- `AppCategories.all` and `AppCategories.getById()` in `category_constants.dart` for category lookups
 
 ---
 
-## 2026-04-01 - US-048
-- **What was implemented:** Direct chat support (non-task chats) and wired Message button on PublicProfileScreen
-- **Files changed:**
-  - `lib/features/chat/domain/models/chat_model.dart` — Made taskId, taskTitle nullable; added otherUserName field
-  - `lib/features/chat/domain/models/chat_model.freezed.dart` — Regenerated
-  - `lib/features/chat/domain/models/chat_model.g.dart` — Regenerated
-  - `lib/features/chat/data/repositories/chat_repository.dart` — Added createDirectChat method
-  - `lib/features/chat/presentation/screens/chat_thread_screen.dart` — Show otherUserName and "Direct message" subtitle for direct chats
-  - `lib/features/chat/presentation/screens/chat_list_screen.dart` — Show otherUserName + person icon for direct chats instead of task title
-  - `lib/features/profile/presentation/screens/public_profile_screen.dart` — Wired Message button to createDirectChat + navigate
+## 2026-04-01 - US-059
+- Created shared `EmptyState` widget at `lib/core/widgets/empty_state.dart` (extracted from `photo_gallery_screen.dart`)
+- Updated `loading_overlay.dart` to re-export `empty_state.dart` so `public_profile_screen.dart` (which imports `loading_overlay.dart`) continues to work
+- Replaced `Image.network()` with `CachedNetworkImage` in `photo_gallery_screen.dart` with placeholder and error widget
+- Fixed empty caption overlay: changed condition to `caption != null && caption!.isNotEmpty`
+- Fixed rate controller memory leak in `edit_profile_screen.dart`: controllers for deselected categories are now disposed immediately in the `onSelected` callback
+- Files changed:
+  - `lib/core/widgets/empty_state.dart` (new)
+  - `lib/core/widgets/loading_overlay.dart` (removed EmptyState, added re-export)
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
 - **Learnings for future iterations:**
-  - ChatModel.taskId was originally required; making it nullable required regenerating Freezed code
-  - The otherUserName field is stored on the chat document to display in lists without extra queries
-  - ChatListScreen `_ChatTile` distinguishes direct vs task chats by checking `chat.taskId == null`
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-049
-- **What was implemented:** Enhanced bid cards with profile navigation, average rating display, and message bidder functionality
-- **Files changed:**
-  - `lib/features/bids/presentation/widgets/bid_list_section.dart` — Made avatar+name tappable (navigate to /profile/:providerId), added providerRatingProvider for avg rating stars, added Message icon button on pending bids, added posterId parameter for chat creation
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — Pass posterId to BidListSection
-- **Learnings for future iterations:**
-  - BidListSection now requires `posterId` param (breaking change from before) — TaskDetailScreen passes `task.posterId`
-  - Provider ratings are fetched via `providerRatingProvider` FutureProvider.family using profileRepository.fetchProfile
-  - Chat between poster and bidder uses `createOrGetChat(taskId, posterId, bidderId)` which is task-scoped (not direct chat)
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-050
-- **What was implemented:** Start Work button for assigned providers + Work in Progress banner/indicator on TaskDetailScreen
-- **Files changed:**
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — Added _StartWorkButton widget (with confirmation dialog, calls updateStatus to inProgress), _WorkInProgressBanner widget (shown when status is inProgress for both poster and provider views), Start Work button appears only when assigned provider views task with status==assigned
-- **Learnings for future iterations:**
-  - The existing `isInProgress` variable combines both `assigned` and `inProgress` statuses — for provider-specific actions, check `task.status == TaskStatus.assigned` directly
-  - TaskRepository.updateStatus is the generic method for status transitions; completeTask is a specialized version that also sets completedAt
-  - The Work in Progress banner is placed BEFORE the role-based section so both poster and provider see it
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-051
-- **What was implemented:** Pending Reviews section on both PosterHomeScreen and ProviderHomeScreen showing completed tasks where user hasn't yet left a review
-- **Files changed:**
-  - `lib/features/tasks/data/repositories/task_repository.dart` — Added watchMyCompletedPostTasks and watchMyCompletedProviderTasks methods
-  - `lib/features/home/presentation/widgets/pending_reviews_section.dart` — New file: PendingReview data class, posterPendingReviewsProvider, providerPendingReviewsProvider, PendingReviewsSection sliver widget, _PendingReviewCard widget
-  - `lib/features/home/presentation/screens/poster_home_screen.dart` — Added PendingReviewsSection between Post a Task button and Active Tasks
-  - `lib/features/home/presentation/screens/provider_home_screen.dart` — Added PendingReviewsSection after provider stats, before Recommended section
-- **Learnings for future iterations:**
-  - Reviews are stored in subcollection `users/{uid}/reviews/{reviewId}` — checking if a review exists requires querying by taskId+reviewerId
-  - StreamProvider.asyncMap is useful for combining a stream (completed tasks) with one-off Firestore queries (review existence checks)
-  - SliverMainAxisGroup allows grouping a header + list into a single sliver that can be hidden entirely when empty
-  - The Pending Reviews section is self-hiding: returns SizedBox.shrink() when empty, so no conditional logic needed in home screens
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-052
-- **What was implemented:** Added serviceRates, availableDays, availableHours fields to UserModel; Rates section on EditProfileScreen (hourly rate per selected service category); Availability section on EditProfileScreen (day-of-week chips + hours text field); Rates & Availability display section on PublicProfileScreen (only shown for providers)
-- **Files changed:**
-  - `lib/features/auth/data/models/user_model.dart` — Added serviceRates (Map<String, dynamic>), availableDays (List<String>), availableHours (String?) fields
-  - `lib/features/auth/data/models/user_model.freezed.dart` — Regenerated
-  - `lib/features/auth/data/models/user_model.g.dart` — Regenerated
-  - `lib/features/profile/presentation/screens/edit_profile_screen.dart` — Added rate controllers per category, available day chips, hours field; save logic builds serviceRates map from controllers
-  - `lib/features/profile/presentation/screens/public_profile_screen.dart` — Added _RatesAvailabilitySection widget between stats and action buttons; shows "From S$XX/hr" per category, day chips, and hours
-- **Learnings for future iterations:**
-  - serviceRates is stored as Map<String, dynamic> where keys are categoryIds and values are maps with `hourlyRate` key — keep the structure flat for Firestore compatibility
-  - Rate controllers are lazily created via `putIfAbsent` when categories are selected, so adding/removing categories in the same session works seamlessly
-  - The Rates section on EditProfileScreen is conditionally shown only when `_selectedCategories.isNotEmpty`
-  - PublicProfileScreen checks `user.isProvider` (from UserModelExt) to gate the Rates & Availability section
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-053
-- **What was implemented:** Provider Directory Screen with category filtering, provider cards (avatar, name, headline, neighbourhood, rating, completed tasks, category chips, starting rate), infinite scroll pagination, and Firestore query for providers
-- **Files changed:**
-  - `lib/features/providers/data/repositories/provider_repository.dart` — New: ProviderRepository with watchProviders query (role in [provider, both], optional arrayContains categoryId, ordered by lastActiveAt desc)
-  - `lib/features/providers/domain/providers/provider_list_provider.dart` — New: ProviderListState, ProviderListNotifier (StateNotifier with pagination, category filtering), providerDirectoryCategoryProvider, providerListNotifierProvider
-  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — New: Full screen with category filter bar, provider cards, shimmer loading, empty/error states
-  - `lib/core/constants/app_constants.dart` — Added `providers = '/providers'` route constant
-  - `lib/core/router/app_router.dart` — Added /providers route pointing to ProviderDirectoryScreen
-- **Learnings for future iterations:**
-  - The ProviderRepository queries users collection with `role whereIn [provider, both]` — this is a different pattern from TaskRepository which queries its own collection
-  - Category filtering for providers uses `serviceCategories arrayContains categoryId` (not `isEqualTo` like tasks)
-  - The ProviderListNotifier follows the exact same StateNotifier pattern as TaskListNotifier — pagination via increasing `_currentLimit` and re-subscribing
-  - Provider cards compute starting rate by finding the lowest hourlyRate across all serviceRates entries
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-054
-- **What was implemented:** DiscoverScreen wrapper with segmented control toggle (Tasks | Providers), role-based visibility, session-persisted toggle state via StateProvider, updated router to use DiscoverScreen for /tasks route
-- **Files changed:**
-  - `lib/features/discover/presentation/screens/discover_screen.dart` — New: DiscoverScreen with segmented toggle, discoverSegmentProvider StateProvider, role-based logic (provider-only users see no toggle)
-  - `lib/features/tasks/presentation/screens/task_list_screen.dart` — Added `embedded` parameter to skip Scaffold/AppBar when embedded in DiscoverScreen
-  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — Added `embedded` parameter to skip Scaffold/AppBar when embedded in DiscoverScreen
-  - `lib/core/router/app_router.dart` — Changed /tasks route from TaskListScreen to DiscoverScreen, added import
-- **Learnings for future iterations:**
-  - Direct hire tasks use `isDirectHire=true` on TaskModel; provider sees Accept/Decline instead of bid flow when `isDirectHire && status==assigned`
-- The `embedded` pattern (bool param that skips Scaffold wrapper) allows screens to be reused both standalone and embedded inside wrapper screens
-  - DiscoverScreen provides the shared AppBar ("Discover") when toggle is shown; when provider-only, it delegates directly to TaskListScreen which uses its own AppBar
-  - The segmented toggle uses AppColors.bgCard/bgLight for the pill-style iOS-like appearance, matching the app's theme
-  - When user is null (still loading), showToggle is false so TaskListScreen is shown by default — avoids flash of wrong UI
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-055
-- **What was implemented:** Added `isDirectHire` field to TaskModel, `watchDirectHireOffers` and `declineDirectHire` methods to TaskRepository, Job Offers section on ProviderHomeScreen, Accept/Decline buttons on TaskDetailScreen for direct hire tasks, Firestore composite index for direct hire queries
-- **Files changed:**
-  - `lib/features/tasks/data/models/task_model.dart` — Added `isDirectHire` (bool, default false) field
-  - `lib/features/tasks/data/models/task_model.freezed.dart` — Regenerated
-  - `lib/features/tasks/data/models/task_model.g.dart` — Regenerated
-  - `lib/features/tasks/data/repositories/task_repository.dart` — Added `watchDirectHireOffers(providerId)` stream query and `declineDirectHire(taskId)` method
-  - `lib/features/home/presentation/widgets/job_offers_section.dart` — New: `directHireOffersProvider`, `JobOffersSection` sliver widget, `_JobOfferCard` with Direct Hire badge
-  - `lib/features/home/presentation/screens/provider_home_screen.dart` — Added JobOffersSection at top of slivers (before Pending Reviews)
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — Added `_DirectHireResponseButtons` widget (Accept Job / Decline), conditional rendering for direct hire vs normal bid flow; fixed duplicate import
-  - `firestore.indexes.json` — Added composite index for tasks(assignedProviderId, isDirectHire, status, createdAt)
-- **Learnings for future iterations:**
-  - Direct hire tasks bypass the bidding flow entirely — when `isDirectHire && status==assigned`, the provider view shows Accept/Decline instead of Submit Bid + ProviderBidView + Start Work
-  - `declineDirectHire` uses `FieldValue.delete()` to clear assignedProviderId/Name fields (not set to null) — Firestore convention for removing fields
-  - The JobOffersSection follows the same self-hiding sliver pattern as PendingReviewsSection — returns SizedBox.shrink() when empty
-  - TaskDetailScreen had a pre-existing duplicate import of app_constants.dart which was cleaned up
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-056
-- **What was implemented:** Hire This Provider direct hire flow — PublicProfileScreen 'Hire' button passes directHireProviderId, directHireProviderName, preSelectedCategory to PostTaskScreen via GoRouter extras; PostTaskScreen supports direct hire mode with "Hiring: [Name]" banner, pre-selected category, and creates task with status=assigned, isDirectHire=true; sends in-app notification to provider about new direct hire offer
-- **Files changed:**
-  - `lib/features/profile/presentation/screens/public_profile_screen.dart` — Hire button now passes extra params (directHireProviderId, directHireProviderName, preSelectedCategory from user.serviceCategories.first)
-  - `lib/features/tasks/presentation/screens/post_task_screen.dart` — Added directHireProviderId/Name/preSelectedCategory constructor params, _isDirectHire getter, initState for pre-selecting category, direct hire banner in build, submit creates task with assigned status + isDirectHire=true, sends notification to provider
-  - `lib/core/router/app_router.dart` — PostTask route reads state.extra and passes direct hire params to PostTaskScreen
-- **Learnings for future iterations:**
-  - GoRouter extras are passed as `state.extra` and cast to `Map<String, dynamic>?` — null-safe access needed since normal PostTask navigation doesn't pass extras
-  - Notifications are stored at `notifications/{userId}/items/{docId}` — just add a doc with type/title/body/isRead/createdAt/data fields
-  - PostTaskScreen uses constructor params for direct hire state rather than reading GoRouter extras inside build — cleaner since the router extracts them
-  - The `_isDirectHire` getter pattern keeps the check DRY across submit, build, and banner
-  - Manual browser verification needed for UI changes
----
-
-## 2026-04-01 - US-057
-- **What was implemented:** Integration test for Flow 1: Task-Based Bidding End-to-End covering Alice posts task → Ben bids → Alice messages Ben via bid card → Alice accepts bid → Ben starts work → Alice marks complete → Both leave mutual reviews → Firestore verification
-- **Files changed:**
-  - `integration_test/flow1_task_bidding_test.dart` — New: Full E2E test with 9 steps (post task, submit bid, message via bid card, accept bid, start work, mark complete, Alice reviews Ben 4 stars, Ben reviews Alice 5 stars, verify reviews in Firestore)
-- **Learnings for future iterations:**
-  - Integration tests follow launchAndLogin pattern from full_journey_test.dart — same splash wait, dev login, role selection, profile setup helpers
-  - Reviews are stored under `users/{reviewedUserId}/reviews/{docId}` subcollection — query with reviewerId + taskId to verify
-  - Star rating in SubmitReviewScreen uses `Icons.star_rounded` — tap by index (0-based) for specific star count
-  - Chat ID for task-scoped chats is `{taskId}_{sorted_uids}` — use this deterministic format for Firestore verification
-  - Multi-user tests require sign out/sign in cycles with launchAndLogin between each user switch
-  - The "Accept" button text on bid cards is how poster accepts bids in the UI
-  - Start Work confirmation dialog has "Start Work?" title and "Confirm" button
-  - Integration tests can only be run on simulator/device, not in CI without emulators: `flutter test integration_test/flow1_task_bidding_test.dart -d <simulator_id>`
----
-
-## 2026-04-01 - US-058
-- **What was implemented:** Integration test for Flow 2: Direct Hire End-to-End covering Ben profile setup → Alice browses provider directory → Alice hires Ben directly → Ben accepts job → Chat messages exchanged → Alice marks complete → Both leave mutual reviews → Firestore verification
-- **Files changed:**
-  - `integration_test/flow2_direct_hire_test.dart` — New: Full E2E test with 10 steps (verify provider profile, discover providers toggle, browse directory, hire from profile, verify direct hire task, job offers section, accept job, chat exchange, mark complete, mutual reviews)
-- **Learnings for future iterations:**
-  - Direct hire flow uses "Send Hire Request" as submit button text (not "Post Task") and "Hire [FirstName]" on PublicProfileScreen
-  - Accept Job dialog uses "Accept" as confirm button text (not "Confirm" like Start Work dialog)
-  - Job Offers section on ProviderHomeScreen shows "Direct Hire" badge and task title — tappable to navigate to task detail
-  - Provider directory appears via Discover → Providers toggle; provider cards are tappable by display name
-  - Test provider users need serviceRates, availableDays, availableHours fields seeded for the directory to show rate info
-  - Chat in direct hire flow uses same deterministic ID format as task-scoped chats: `{taskId}_{sorted_uids}`
+  - `loading_overlay.dart` already had an EmptyState with an `action` parameter — check existing widgets before creating new ones
+  - `public_profile_screen.dart` gets EmptyState via `loading_overlay.dart` import, not a direct import
+  - The `_rateControllers` map in `edit_profile_screen.dart` has controllers created in `build()` via `putIfAbsent` — disposal needs to happen both in `dispose()` and when categories are deselected
 ---

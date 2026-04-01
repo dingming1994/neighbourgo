@@ -253,6 +253,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             _selectedCategories.add(cat.id);
                           } else {
                             _selectedCategories.remove(cat.id);
+                            // Dispose and remove stale controller to prevent memory leak
+                            _rateControllers.remove(cat.id)?.dispose();
                           }
                         });
                       },
@@ -364,8 +366,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(height: 12),
                   ..._selectedCategories.map((catId) {
                     final cat = AppCategories.getById(catId);
-                    _rateControllers.putIfAbsent(
-                        catId, () => TextEditingController());
+                    if (!_rateControllers.containsKey(catId)) {
+                      _rateControllers[catId] = TextEditingController();
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Row(

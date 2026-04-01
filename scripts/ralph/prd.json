@@ -16,7 +16,7 @@
         "Fix empty caption string showing empty overlay bar in photo_gallery_screen.dart: check caption != null && caption!.isNotEmpty",
         "flutter analyze shows 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-060",

@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
@@ -246,7 +248,15 @@ class _PhotoTile extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(photo.url, fit: BoxFit.cover),
+          child: CachedNetworkImage(
+            imageUrl: photo.url,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(color: AppColors.bgMint),
+            errorWidget: (_, __, ___) => Container(
+              color: AppColors.bgMint,
+              child: const Icon(Icons.broken_image_outlined, color: AppColors.textHint),
+            ),
+          ),
         ),
         if (photo.isCover)
           Positioned(
@@ -258,7 +268,7 @@ class _PhotoTile extends StatelessWidget {
             ),
           ),
         // Caption overlay
-        if (photo.caption != null)
+        if (photo.caption != null && photo.caption!.isNotEmpty)
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
@@ -298,25 +308,3 @@ class _PhotoTile extends StatelessWidget {
   );
 }
 
-// keep the import in scope (used above)
-class EmptyState extends StatelessWidget {
-  final String emoji, title;
-  final String? subtitle;
-  const EmptyState({super.key, required this.emoji, required this.title, this.subtitle});
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(emoji, style: const TextStyle(fontSize: 48)),
-        const SizedBox(height: 12),
-        Text(title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-        if (subtitle != null) ...[
-          const SizedBox(height: 8),
-          Text(subtitle!, style: const TextStyle(color: AppColors.textSecondary), textAlign: TextAlign.center),
-        ],
-      ]),
-    ),
-  );
-}
