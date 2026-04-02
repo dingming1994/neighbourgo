@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/constants/category_constants.dart';
@@ -88,7 +89,7 @@ class _TaskList extends ConsumerWidget {
     final tasksAsync = ref.watch(provider);
 
     return tasksAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _MyTasksLoadingList(),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -103,7 +104,7 @@ class _TaskList extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(emptyEmoji, style: const TextStyle(fontSize: 48)),
+                  Text(emptyEmoji, style: const TextStyle(fontSize: 56)),
                   const SizedBox(height: 16),
                   Text(
                     emptyMessage,
@@ -115,10 +116,17 @@ class _TaskList extends ConsumerWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          itemCount: tasks.length,
-          itemBuilder: (_, i) => _MyTaskCard(task: tasks[i]),
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            ref.invalidate(provider);
+          },
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            itemCount: tasks.length,
+            itemBuilder: (_, i) => _MyTaskCard(task: tasks[i]),
+          ),
         );
       },
     );
@@ -265,4 +273,30 @@ class _Chip extends StatelessWidget {
     decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
     child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
   );
+}
+
+class _MyTasksLoadingList extends StatelessWidget {
+  const _MyTasksLoadingList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      itemCount: 4,
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Shimmer.fromColors(
+          baseColor: AppColors.divider,
+          highlightColor: Colors.white,
+          child: Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.bgCard,
+              borderRadius: AppRadius.card,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

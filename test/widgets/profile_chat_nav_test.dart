@@ -396,7 +396,7 @@ void main() {
       expect(find.text('No messages yet'), findsOneWidget);
       expect(find.text('Start a conversation by bidding on a task'),
           findsOneWidget);
-      expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
+      expect(find.text('💬'), findsOneWidget);
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/theme/app_theme.dart';
@@ -83,7 +84,7 @@ class _BidTab extends ConsumerWidget {
     final bidsAsync = ref.watch(_myBidsProvider);
 
     return bidsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _BidsLoadingList(),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -99,7 +100,7 @@ class _BidTab extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(emptyEmoji, style: const TextStyle(fontSize: 48)),
+                  Text(emptyEmoji, style: const TextStyle(fontSize: 56)),
                   const SizedBox(height: 16),
                   Text(
                     emptyMessage,
@@ -111,10 +112,17 @@ class _BidTab extends ConsumerWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          itemCount: bids.length,
-          itemBuilder: (_, i) => _BidCard(bid: bids[i]),
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            ref.invalidate(_myBidsProvider);
+          },
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            itemCount: bids.length,
+            itemBuilder: (_, i) => _BidCard(bid: bids[i]),
+          ),
         );
       },
     );
@@ -237,6 +245,32 @@ class _BidStatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+      ),
+    );
+  }
+}
+
+class _BidsLoadingList extends StatelessWidget {
+  const _BidsLoadingList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      itemCount: 4,
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Shimmer.fromColors(
+          baseColor: AppColors.divider,
+          highlightColor: Colors.white,
+          child: Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.bgCard,
+              borderRadius: AppRadius.card,
+            ),
+          ),
+        ),
       ),
     );
   }

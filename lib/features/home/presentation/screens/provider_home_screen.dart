@@ -470,7 +470,14 @@ class _RecommendedTaskCard extends StatelessWidget {
                 Row(children: [
                   const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
-                  Text(task.neighbourhood!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  Expanded(
+                    child: Text(
+                      task.neighbourhood!,
+                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ]),
               ],
             ],
@@ -612,14 +619,20 @@ class _ProviderTaskCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (task.neighbourhood != null && task.neighbourhood!.isNotEmpty)
-                    Row(children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Text(
-                        task.neighbourhood!,
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                    ])
+                    Expanded(
+                      child: Row(children: [
+                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            task.neighbourhood!,
+                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ]),
+                    )
                   else
                     const SizedBox.shrink(),
                   Text(

@@ -61,12 +61,19 @@ class ServiceListingsScreen extends ConsumerWidget {
                           s.providerName.toLowerCase().contains(searchQuery);
                     }).toList();
               if (listings.isEmpty) return const _EmptyView();
-              return ListView.separated(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                itemCount: listings.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (_, i) => ServiceCard(listing: listings[i]),
+              return RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () async {
+                  ref.invalidate(_serviceListingsProvider);
+                },
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: listings.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (_, i) => ServiceCard(listing: listings[i]),
+                ),
               );
             },
           ),
