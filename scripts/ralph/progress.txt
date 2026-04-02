@@ -12,6 +12,9 @@ Started: Fri  3 Apr 2026 00:50:32 +08
 - Provider directory category filter uses `StateProvider.autoDispose<String?>` pattern
 - Always put `/create` routes before `/:id` routes in GoRouter to avoid wildcard matches
 - Pre-existing test failures (4): profile_chat_nav_test EditProfileScreen tests + task_repository_test watchMyPostedTasks
+- Client-side search: use `discoverSearchQueryProvider` (shared StateProvider) — embedded screens read it only when `embedded: true`
+- Querying subcollections across parents requires `collectionGroup()` + COLLECTION_GROUP index in firestore.indexes.json
+- Profile menu items can be role-gated: `if (user.isProvider)` before `_MenuItem`
 
 ---
 
@@ -37,4 +40,44 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - Hire button on ServiceDetailScreen navigates to PostTaskScreen with `directHireProviderId`, `directHireProviderName`, and `preSelectedCategory` extras
   - Service listings use `service_listings` Firestore collection (top-level, not nested)
   - Build runner may report "0 outputs" if generated files already exist from a prior run
+---
+
+## 2026-04-03 — US-071: Global Search — Search Tasks and Providers
+- Added search bar at top of DiscoverScreen with 300ms debounce, clear button
+- Client-side filtering on all three tabs: tasks (title/description), providers (displayName/headline/serviceCategories), services (title/description/providerName)
+- Shared `discoverSearchQueryProvider` StateProvider read by all embedded screens
+- Files modified:
+  - `lib/features/discover/presentation/screens/discover_screen.dart` — added search provider, search bar, converted to StatefulWidget for debounce timer
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart` — reads search query when embedded, filters tasks client-side
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — reads search query when embedded, filters providers client-side
+  - `lib/features/services/presentation/screens/service_listings_screen.dart` — reads search query when embedded, filters services client-side
+- **Learnings for future iterations:**
+  - Search filtering is done client-side on the already-loaded list data — no extra Firestore queries needed
+  - The `discoverSearchQueryProvider` is shared across all Discover tabs — new tabs should read it when `embedded: true`
+  - Embedded screens check `widget.embedded` (or `embedded`) before watching the search provider to avoid reading it when used standalone
+---
+
+## 2026-04-03 — US-072: My Tasks & My Bids History Pages
+- Created `my_tasks_screen.dart` with 3 tabs (Active, Completed, Cancelled) replacing `_MyTasksTab` placeholder
+- Created `my_bids_screen.dart` with 3 tabs (Pending, Accepted, Rejected) for provider bid history
+- Added `watchMyCancelledPostTasks` to TaskRepository for cancelled tasks query
+- Added `watchMyBids` collection group query to BidRepository for provider's bids across all tasks
+- Added `myBids` route (`/bids/mine`) to AppRoutes and GoRouter
+- Added "My Bids" menu item to ProfileScreen (visible only for providers via `user.isProvider`)
+- Added Firestore collection group index for `bids` (providerId + createdAt)
+- Files created:
+  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+- Files modified:
+  - `lib/features/tasks/data/repositories/task_repository.dart` — added `watchMyCancelledPostTasks`
+  - `lib/features/bids/data/repositories/bid_repository.dart` — added `watchMyBids` (collection group)
+  - `lib/core/constants/app_constants.dart` — added `myBids` route
+  - `lib/core/router/app_router.dart` — replaced `_MyTasksTab` stub, added myBids route, imported new screens
+  - `lib/features/profile/presentation/screens/profile_screen.dart` — added My Bids menu item
+  - `firestore.indexes.json` — added bids collection group index
+- **Learnings for future iterations:**
+  - Bids are subcollections under tasks (`tasks/{taskId}/bids`), so querying "all bids by a provider" requires `collectionGroup('bids')` + a COLLECTION_GROUP index in firestore.indexes.json
+  - Task titles for bids must be fetched separately since BidModel doesn't store task title — use `FutureProvider.family` with `watchTask(taskId)` for on-demand loading
+  - The `_MyTasksTab` stub in app_router.dart is now removed; MyTasksScreen is imported directly
+  - ProfileScreen menu items can be conditionally shown with `if (user.isProvider)` / `if (user.isPoster)` checks
 ---

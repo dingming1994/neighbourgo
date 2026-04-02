@@ -34,7 +34,7 @@
         "Clear button, empty state, debounce 300ms",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-072",
@@ -50,7 +50,7 @@
         "Replace placeholder in app_router.dart",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-073",
