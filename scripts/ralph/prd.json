@@ -65,7 +65,7 @@
         "Clear all filters button",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-074",

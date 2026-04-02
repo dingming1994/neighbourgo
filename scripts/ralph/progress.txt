@@ -81,3 +81,24 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - The `_MyTasksTab` stub in app_router.dart is now removed; MyTasksScreen is imported directly
   - ProfileScreen menu items can be conditionally shown with `if (user.isProvider)` / `if (user.isPoster)` checks
 ---
+
+## 2026-04-03 — US-073: Enhanced Filtering — Price, Rating, Sort
+- Added filter bottom sheet on TaskListScreen: budget range slider (S$0–S$500), neighbourhood dropdown, sort (newest/price low-high/price high-low)
+- Added filter bottom sheet on ProviderDirectoryScreen: min rating slider (0–5), neighbourhood dropdown, sort (highest rated/most reviews/newest)
+- Filter icon with active count badge on both category filter bars
+- Clear all button resets to defaults
+- Client-side filtering & sorting applied on already-loaded data (same pattern as search)
+- Files created:
+  - `lib/features/tasks/presentation/widgets/task_filter_sheet.dart`
+  - `lib/features/providers/presentation/widgets/provider_filter_sheet.dart`
+- Files modified:
+  - `lib/features/tasks/domain/providers/task_list_provider.dart` — added TaskFilterState, TaskSortOption, taskFilterProvider
+  - `lib/features/providers/domain/providers/provider_list_provider.dart` — added ProviderFilterState, ProviderSortOption, providerFilterProvider
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart` — integrated filter icon, _applyFiltersAndSort, _FilterIconButton
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — integrated filter icon, _applyFiltersAndSort, _FilterIconButton
+- **Learnings for future iterations:**
+  - Filter state is kept in StateProvider (not autoDispose) so it persists across tab switches in Discover
+  - The _CategoryFilterBar was updated to accept optional filterCount + onFilterTap for the tune icon — same pattern in both screens
+  - Neighbourhood filter uses case-insensitive `contains` match since task/provider data may have varying formats
+  - Singapore neighbourhood list is hardcoded in both filter sheets — could be extracted to a shared constant if needed
+---
