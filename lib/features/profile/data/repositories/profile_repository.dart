@@ -154,6 +154,80 @@ class ProfileRepository {
           .snapshots()
           .map((snap) => snap.docs.map((d) => ReviewModelExt.fromFirestore(d)).toList());
 
+  /// Check if a review from [reviewerId] already exists for [taskId] on user [reviewedUserId].
+  Future<bool> hasExistingReview({
+    required String reviewedUserId,
+    required String taskId,
+    required String reviewerId,
+  }) async {
+    final snap = await _db
+        .collection(AppConstants.usersCol)
+        .doc(reviewedUserId)
+        .collection(AppConstants.reviewsCol)
+        .where('taskId', isEqualTo: taskId)
+        .where('reviewerId', isEqualTo: reviewerId)
+        .limit(1)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
+  /// Fetch an existing review from [reviewerId] for [taskId] on user [reviewedUserId].
+  Future<ReviewModel?> fetchExistingReview({
+    required String reviewedUserId,
+    required String taskId,
+    required String reviewerId,
+  }) async {
+    final snap = await _db
+        .collection(AppConstants.usersCol)
+        .doc(reviewedUserId)
+        .collection(AppConstants.reviewsCol)
+        .where('taskId', isEqualTo: taskId)
+        .where('reviewerId', isEqualTo: reviewerId)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    return ReviewModelExt.fromFirestore(snap.docs.first);
+  }
+
+  /// Submit a review, throwing if a duplicate already exists.
+  Future<void> submitReview({
+    required String reviewedUserId,
+    required String reviewerId,
+    required String reviewerName,
+    String? reviewerAvatarUrl,
+    required String taskId,
+    required String taskCategory,
+    required double rating,
+    String? comment,
+    required List<String> skillEndorsements,
+  }) async {
+    final exists = await hasExistingReview(
+      reviewedUserId: reviewedUserId,
+      taskId: taskId,
+      reviewerId: reviewerId,
+    );
+    if (exists) {
+      throw Exception('You have already reviewed this task');
+    }
+
+    await _db
+        .collection(AppConstants.usersCol)
+        .doc(reviewedUserId)
+        .collection(AppConstants.reviewsCol)
+        .add({
+      'reviewerId': reviewerId,
+      'reviewerName': reviewerName,
+      'reviewerAvatarUrl': reviewerAvatarUrl,
+      'reviewedUserId': reviewedUserId,
+      'taskId': taskId,
+      'taskCategory': taskCategory,
+      'rating': rating,
+      'comment': comment,
+      'skillEndorsements': skillEndorsements,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> addProviderReply(String uid, String reviewId, String reply) async {
     await _db.collection(AppConstants.usersCol)
         .doc(uid)

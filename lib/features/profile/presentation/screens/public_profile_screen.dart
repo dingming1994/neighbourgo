@@ -24,7 +24,7 @@ final publicProfileProvider = StreamProvider.family<UserModel?, String>(
 );
 
 final userReviewsProvider = StreamProvider.family<List<ReviewModel>, String>(
-  (ref, uid) => ref.watch(profileRepositoryProvider).watchReviews(uid, limit: 5),
+  (ref, uid) => ref.watch(profileRepositoryProvider).watchReviews(uid, limit: 10),
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
