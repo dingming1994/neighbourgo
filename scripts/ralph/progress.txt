@@ -149,3 +149,19 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - Heart icon uses `AppColors.error` (red) for both filled and outline states for visual consistency
   - Pre-existing test failures (4) unchanged
 ---
+
+## 2026-04-03 — US-076: Task Status Timeline — Visual Progress Tracker
+- Created `_TaskTimeline` widget: horizontal stepper showing task lifecycle (Posted → Bidding → Matched → In Progress → Completed)
+- Current step uses primary color, past steps show green checkmarks, future steps are grey circles
+- Timestamps displayed under completed steps (when available from task model)
+- Cancelled tasks show: Posted → Cancelled (red cancel icon)
+- Disputed tasks show steps up to dispute point → Disputed (warning icon)
+- Placed at top of TaskDetailScreen body, below photos and above category/urgency chips
+- Files modified:
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` — added `_TaskTimeline`, `_TimelineStep`, `_StepItem` widgets + inserted timeline into build method
+- **Learnings for future iterations:**
+  - TaskModel has `createdAt`, `updatedAt`, `completedAt` timestamps — no dedicated `assignedAt` or `inProgressAt` fields, so only Posted and Completed steps show timestamps
+  - TaskStatus enum: `open`, `assigned`, `inProgress`, `completed`, `cancelled`, `disputed` — "open" maps to both Posted and Bidding conceptually
+  - The `_statusIndex` mapping: open=0, assigned=2, inProgress=3, completed=4 — "Bidding" is implicit (still open status)
+  - Pre-existing test failures (4) unchanged
+---
