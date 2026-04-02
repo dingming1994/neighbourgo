@@ -20,9 +20,11 @@ import '../../features/profile/presentation/screens/verification_centre_screen.d
 import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_thread_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
+import '../../features/discover/presentation/screens/discover_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/payment/checkout_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
+import '../../features/providers/presentation/screens/provider_directory_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -105,29 +107,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) => MainShellScreen(child: child),
         routes: [
           GoRoute(path: AppRoutes.home,    builder: (_, __) => const HomeScreen()),
-          GoRoute(path: AppRoutes.taskList, builder: (_, __) => const TaskListScreen()),
+          GoRoute(path: AppRoutes.taskList, builder: (_, __) => const DiscoverScreen()),
           GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const _MyTasksTab()),
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
       ),
 
+      // ── Provider directory ──────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.providers,
+        builder: (_, __) => const ProviderDirectoryScreen(),
+      ),
+
       // ── Task screens (full-screen, outside shell) ──────────────────────────
       // postTask must come before taskDetail to avoid /tasks/post matching /tasks/:taskId
       GoRoute(
         path: AppRoutes.postTask,
-        builder: (_, __) => const PostTaskScreen(),
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PostTaskScreen(
+            directHireProviderId: extra?['directHireProviderId'] as String?,
+            directHireProviderName: extra?['directHireProviderName'] as String?,
+            preSelectedCategory: extra?['preSelectedCategory'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.taskDetail,
         builder: (_, state) => TaskDetailScreen(taskId: state.pathParameters['taskId']!),
       ),
 
-      // ── Profile screens ────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.publicProfile,
-        builder: (_, state) => PublicProfileScreen(userId: state.pathParameters['userId']!),
-      ),
+      // ── Profile screens (edit before :userId to avoid wildcard match) ────
       GoRoute(
         path: AppRoutes.editProfile,
         builder: (_, __) => const EditProfileScreen(),
@@ -139,6 +150,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.verificationCentre,
         builder: (_, __) => const VerificationCentreScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.publicProfile,
+        builder: (_, state) => PublicProfileScreen(userId: state.pathParameters['userId']!),
       ),
 
       // ── Chat ──────────────────────────────────────────────────────────────

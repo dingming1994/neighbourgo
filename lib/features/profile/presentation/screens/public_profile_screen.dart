@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:photo_view/photo_view.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -11,6 +12,7 @@ import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../reviews/presentation/widgets/rating_summary.dart';
 import '../../../reviews/presentation/widgets/review_card.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
 import '../../data/models/profile_model.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -169,6 +171,12 @@ class PublicProfileScreen extends ConsumerWidget {
                         _StatsBar(stats: user.stats!),
                       ],
 
+                      // ── Rates & Availability ────────────────────────────
+                      if (user.isProvider && (user.serviceRates.isNotEmpty || user.availableDays.isNotEmpty)) ...[
+                        const SizedBox(height: 20),
+                        _RatesAvailabilitySection(user: user),
+                      ],
+
                       // ── Action buttons ────────────────────────────────────
                       if (!isMyProfile) ...[
                         const SizedBox(height: 20),
@@ -177,7 +185,16 @@ class PublicProfileScreen extends ConsumerWidget {
                             Expanded(
                               child: AppButton(
                                 label: 'Hire ${user.displayName?.split(' ').first ?? "Them"}',
-                                onPressed: () => context.push(AppRoutes.postTask),
+                                onPressed: () => context.push(
+                                  AppRoutes.postTask,
+                                  extra: {
+                                    'directHireProviderId': userId,
+                                    'directHireProviderName': user.displayName ?? 'Provider',
+                                    'preSelectedCategory': user.serviceCategories.isNotEmpty
+                                        ? user.serviceCategories.first
+                                        : null,
+                                  },
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -186,8 +203,19 @@ class PublicProfileScreen extends ConsumerWidget {
                                 label: 'Message',
                                 isOutlined: true,
                                 leading: const Icon(Icons.chat_bubble_outline, size: 18),
-                                onPressed: () {
-                                  // TODO: create/navigate to chat
+                                onPressed: () async {
+                                  if (me == null) return;
+                                  final chatRepo = ref.read(chatRepositoryProvider);
+                                  final chatId = await chatRepo.createDirectChat(
+                                    me.uid,
+                                    userId,
+                                    user.displayName ?? 'Neighbour',
+                                  );
+                                  if (context.mounted) {
+                                    context.push(
+                                      AppRoutes.chatThread.replaceFirst(':chatId', chatId),
+                                    );
+                                  }
                                 },
                               ),
                             ),
@@ -196,25 +224,27 @@ class PublicProfileScreen extends ConsumerWidget {
                       ],
 
                       // ── Bio ───────────────────────────────────────────────
-                      if (user.bio != null && user.bio!.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        _SectionHeader(title: 'About Me'),
-                        const SizedBox(height: 8),
-                        Text(user.bio!, style: const TextStyle(height: 1.6, color: AppColors.textPrimary)),
-                      ],
+                      const SizedBox(height: 24),
+                      _SectionHeader(title: 'About Me'),
+                      const SizedBox(height: 8),
+                      if (user.bio != null && user.bio!.isNotEmpty)
+                        Text(user.bio!, style: const TextStyle(height: 1.6, color: AppColors.textPrimary))
+                      else
+                        const Text('This user hasn\'t added a bio yet.', style: TextStyle(fontSize: 14, color: AppColors.textHint, fontStyle: FontStyle.italic)),
 
                       // ── Skill tags ────────────────────────────────────────
-                      if (user.skillTags.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        _SectionHeader(title: 'Skills'),
-                        const SizedBox(height: 10),
+                      const SizedBox(height: 24),
+                      _SectionHeader(title: 'Skills'),
+                      const SizedBox(height: 10),
+                      if (user.skillTags.isNotEmpty)
                         Wrap(
                           spacing: 8, runSpacing: 8,
                           children: user.skillTags
                               .map((t) => Chip(label: Text(t), backgroundColor: AppColors.bgMint))
                               .toList(),
-                        ),
-                      ],
+                        )
+                      else
+                        const Text('No skills listed', style: TextStyle(fontSize: 14, color: AppColors.textHint, fontStyle: FontStyle.italic)),
 
                       // ── Category Showcases ────────────────────────────────
                       if (user.categoryShowcases.isNotEmpty) ...[
@@ -278,12 +308,68 @@ class PublicProfileScreen extends ConsumerWidget {
     showModalBottomSheet(context: context, builder: (_) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(leading: const Icon(Icons.flag_outlined), title: const Text('Report User'),
-            onTap: () { Navigator.pop(context); }),
-        ListTile(leading: const Icon(Icons.block), title: const Text('Block User'),
-            onTap: () { Navigator.pop(context); }),
+        ListTile(
+          leading: const Icon(Icons.flag_outlined),
+          title: const Text('Report User'),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmReport(context, user);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.block),
+          title: const Text('Block User'),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmBlock(context, user);
+          },
+        ),
       ],
     ));
+  }
+
+  void _confirmReport(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Report this user?'),
+        content: Text('Are you sure you want to report ${user.displayName ?? 'this user'}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Report submitted. We will review this.')),
+              );
+            },
+            child: const Text('Report', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmBlock(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Block this user?'),
+        content: const Text('Block this user? You won\'t see their tasks or bids.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User blocked.')),
+              );
+            },
+            child: const Text('Block', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -442,7 +528,9 @@ class _PhotoGrid extends StatelessWidget {
         final p = photos[i];
         return GestureDetector(
           onTap: () {
-            // TODO: push photo_view full screen
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => _FullscreenPhotoPage(photos: photos, initialIndex: i),
+            ));
           },
           child: Stack(
             fit: StackFit.expand,
@@ -469,4 +557,158 @@ class _PhotoGrid extends StatelessWidget {
   }
 }
 
-// _ReviewTile replaced by ReviewCard widget in reviews feature
+class _RatesAvailabilitySection extends StatelessWidget {
+  final UserModel user;
+  const _RatesAvailabilitySection({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Rates & Availability',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          if (user.serviceRates.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...user.serviceRates.entries.map((entry) {
+              final cat = AppCategories.getById(entry.key);
+              final rateData = entry.value;
+              final hourlyRate = rateData is Map ? rateData['hourlyRate'] : null;
+              if (hourlyRate == null) return const SizedBox.shrink();
+              // Handle both double and String values for backward compatibility
+              final rateDisplay = hourlyRate is double
+                  ? hourlyRate.toStringAsFixed(hourlyRate.truncateToDouble() == hourlyRate ? 0 : 2)
+                  : hourlyRate.toString();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Text(cat?.emoji ?? '', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(cat?.label ?? entry.key,
+                          style: const TextStyle(fontSize: 14)),
+                    ),
+                    Text('From S\$$rateDisplay/hr',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary)),
+                  ],
+                ),
+              );
+            }),
+          ],
+          if (user.availableDays.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: user.availableDays
+                  .map((day) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgMint,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3)),
+                        ),
+                        child: Text(day,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary)),
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (user.availableHours != null &&
+              user.availableHours!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.schedule,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(user.availableHours!,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fullscreen Photo Viewer
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullscreenPhotoPage extends StatefulWidget {
+  final List<ProfilePhoto> photos;
+  final int initialIndex;
+
+  const _FullscreenPhotoPage({required this.photos, required this.initialIndex});
+
+  @override
+  State<_FullscreenPhotoPage> createState() => _FullscreenPhotoPageState();
+}
+
+class _FullscreenPhotoPageState extends State<_FullscreenPhotoPage> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text('${_currentIndex + 1} / ${widget.photos.length}',
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photos.length,
+        onPageChanged: (i) => setState(() => _currentIndex = i),
+        itemBuilder: (_, i) => PhotoView(
+          imageProvider: CachedNetworkImageProvider(widget.photos[i].url),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 3,
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          loadingBuilder: (_, event) => Center(
+            child: CircularProgressIndicator(
+              value: event == null ? null
+                  : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

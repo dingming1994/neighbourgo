@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +13,16 @@ import '../../data/models/task_model.dart';
 import '../../data/repositories/task_repository.dart';
 
 class PostTaskScreen extends ConsumerStatefulWidget {
-  const PostTaskScreen({super.key});
+  final String? directHireProviderId;
+  final String? directHireProviderName;
+  final String? preSelectedCategory;
+
+  const PostTaskScreen({
+    super.key,
+    this.directHireProviderId,
+    this.directHireProviderName,
+    this.preSelectedCategory,
+  });
 
   @override
   ConsumerState<PostTaskScreen> createState() => _PostTaskScreenState();
@@ -37,6 +47,16 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
 
   final _formKeys = List.generate(5, (_) => GlobalKey<FormState>());
 
+  bool get _isDirectHire => widget.directHireProviderId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.preSelectedCategory != null) {
+      _categoryId = widget.preSelectedCategory;
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Submit
   // ─────────────────────────────────────────────────────────────────────────
@@ -60,14 +80,32 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
         budgetMax:      _budgetMax,
         urgency:        _urgency,
         scheduledDate:  _scheduledDate,
-        status:         TaskStatus.open,
+        status:         _isDirectHire ? TaskStatus.assigned : TaskStatus.open,
+        assignedProviderId:   _isDirectHire ? widget.directHireProviderId : null,
+        assignedProviderName: _isDirectHire ? widget.directHireProviderName : null,
+        isDirectHire:         _isDirectHire,
       );
 
       final id = await repo.createTask(task, photos: _photos);
 
+      // Send notification to provider about direct hire offer
+      if (_isDirectHire) {
+        await _sendDirectHireNotification(
+          providerId: widget.directHireProviderId!,
+          taskId: id,
+          taskTitle: _title,
+          posterName: user.displayName ?? 'Someone',
+        );
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Task posted! Providers will bid shortly.'), backgroundColor: AppColors.success),
+          SnackBar(
+            content: Text(_isDirectHire
+                ? 'Hire request sent to ${widget.directHireProviderName}!'
+                : 'Task posted! Providers will bid shortly.'),
+            backgroundColor: AppColors.success,
+          ),
         );
         context.go('/tasks/$id');
       }
@@ -80,6 +118,27 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _sendDirectHireNotification({
+    required String providerId,
+    required String taskId,
+    required String taskTitle,
+    required String posterName,
+  }) async {
+    final db = FirebaseFirestore.instance;
+    await db
+        .collection(AppConstants.notificationsCol)
+        .doc(providerId)
+        .collection('items')
+        .add({
+      'type': 'direct_hire',
+      'title': 'New Job Offer',
+      'body': '$posterName wants to hire you for "$taskTitle"',
+      'isRead': false,
+      'createdAt': Timestamp.now(),
+      'data': {'taskId': taskId},
+    });
   }
 
   void _next() {
@@ -102,7 +161,7 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Post a Task  (${_step + 1}/$_totalSteps)'),
+        title: Text(_isDirectHire ? 'Hire Provider  (${_step + 1}/$_totalSteps)' : 'Post a Task  (${_step + 1}/$_totalSteps)'),
         leading: _step == 0
             ? IconButton(icon: const Icon(Icons.close), onPressed: () => context.pop())
             : IconButton(icon: const Icon(Icons.arrow_back), onPressed: _back),
@@ -117,6 +176,26 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (_isDirectHire)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: AppColors.primary.withOpacity(0.1),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person_pin, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Hiring: ${widget.directHireProviderName}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -138,7 +217,7 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: AppButton(
-                label: _step < _totalSteps - 1 ? 'Next' : 'Post Task',
+                label: _step < _totalSteps - 1 ? 'Next' : (_isDirectHire ? 'Send Hire Request' : 'Post Task'),
                 isLoading: _loading,
                 onPressed: _next,
               ),

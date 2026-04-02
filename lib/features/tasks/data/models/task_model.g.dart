@@ -65,6 +65,7 @@ _$TaskModelImpl _$$TaskModelImplFromJson(Map<String, dynamic> json) =>
       expiresAt: json['expiresAt'] == null
           ? null
           : DateTime.parse(json['expiresAt'] as String),
+      isDirectHire: json['isDirectHire'] as bool? ?? false,
       paymentIntentId: json['paymentIntentId'] as String?,
       isPaid: json['isPaid'] as bool? ?? false,
       isEscrowReleased: json['isEscrowReleased'] as bool? ?? false,
@@ -99,6 +100,7 @@ Map<String, dynamic> _$$TaskModelImplToJson(_$TaskModelImpl instance) =>
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'completedAt': instance.completedAt?.toIso8601String(),
       'expiresAt': instance.expiresAt?.toIso8601String(),
+      'isDirectHire': instance.isDirectHire,
       'paymentIntentId': instance.paymentIntentId,
       'isPaid': instance.isPaid,
       'isEscrowReleased': instance.isEscrowReleased,

@@ -766,7 +766,14 @@ mixin _$UserModel {
   List<String> get skillTags =>
       throw _privateConstructorUsedError; // e.g. #DogWalking
   List<CategoryShowcase> get categoryShowcases =>
-      throw _privateConstructorUsedError; // Media
+      throw _privateConstructorUsedError; // Rates & Availability
+  Map<String, dynamic> get serviceRates =>
+      throw _privateConstructorUsedError; // categoryId → {hourlyRate, fixedRate, rateNote}
+  List<String> get availableDays =>
+      throw _privateConstructorUsedError; // e.g. ['Mon', 'Tue', 'Wed']
+  String? get availableHours =>
+      throw _privateConstructorUsedError; // e.g. '9am - 6pm'
+// Media
   List<ProfilePhoto> get photos => throw _privateConstructorUsedError;
   String? get introVideoUrl =>
       throw _privateConstructorUsedError; // Trust & Verification
@@ -808,6 +815,9 @@ abstract class $UserModelCopyWith<$Res> {
       List<String> serviceCategories,
       List<String> skillTags,
       List<CategoryShowcase> categoryShowcases,
+      Map<String, dynamic> serviceRates,
+      List<String> availableDays,
+      String? availableHours,
       List<ProfilePhoto> photos,
       String? introVideoUrl,
       List<VerificationBadge> badges,
@@ -849,6 +859,9 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? serviceCategories = null,
     Object? skillTags = null,
     Object? categoryShowcases = null,
+    Object? serviceRates = null,
+    Object? availableDays = null,
+    Object? availableHours = freezed,
     Object? photos = null,
     Object? introVideoUrl = freezed,
     Object? badges = null,
@@ -909,6 +922,18 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.categoryShowcases
           : categoryShowcases // ignore: cast_nullable_to_non_nullable
               as List<CategoryShowcase>,
+      serviceRates: null == serviceRates
+          ? _value.serviceRates
+          : serviceRates // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      availableDays: null == availableDays
+          ? _value.availableDays
+          : availableDays // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      availableHours: freezed == availableHours
+          ? _value.availableHours
+          : availableHours // ignore: cast_nullable_to_non_nullable
+              as String?,
       photos: null == photos
           ? _value.photos
           : photos // ignore: cast_nullable_to_non_nullable
@@ -988,6 +1013,9 @@ abstract class _$$UserModelImplCopyWith<$Res>
       List<String> serviceCategories,
       List<String> skillTags,
       List<CategoryShowcase> categoryShowcases,
+      Map<String, dynamic> serviceRates,
+      List<String> availableDays,
+      String? availableHours,
       List<ProfilePhoto> photos,
       String? introVideoUrl,
       List<VerificationBadge> badges,
@@ -1028,6 +1056,9 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? serviceCategories = null,
     Object? skillTags = null,
     Object? categoryShowcases = null,
+    Object? serviceRates = null,
+    Object? availableDays = null,
+    Object? availableHours = freezed,
     Object? photos = null,
     Object? introVideoUrl = freezed,
     Object? badges = null,
@@ -1088,6 +1119,18 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value._categoryShowcases
           : categoryShowcases // ignore: cast_nullable_to_non_nullable
               as List<CategoryShowcase>,
+      serviceRates: null == serviceRates
+          ? _value._serviceRates
+          : serviceRates // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      availableDays: null == availableDays
+          ? _value._availableDays
+          : availableDays // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      availableHours: freezed == availableHours
+          ? _value.availableHours
+          : availableHours // ignore: cast_nullable_to_non_nullable
+              as String?,
       photos: null == photos
           ? _value._photos
           : photos // ignore: cast_nullable_to_non_nullable
@@ -1148,6 +1191,9 @@ class _$UserModelImpl implements _UserModel {
       final List<String> serviceCategories = const [],
       final List<String> skillTags = const [],
       final List<CategoryShowcase> categoryShowcases = const [],
+      final Map<String, dynamic> serviceRates = const {},
+      final List<String> availableDays = const [],
+      this.availableHours,
       final List<ProfilePhoto> photos = const [],
       this.introVideoUrl,
       final List<VerificationBadge> badges = const [],
@@ -1161,6 +1207,8 @@ class _$UserModelImpl implements _UserModel {
       : _serviceCategories = serviceCategories,
         _skillTags = skillTags,
         _categoryShowcases = categoryShowcases,
+        _serviceRates = serviceRates,
+        _availableDays = availableDays,
         _photos = photos,
         _badges = badges;
 
@@ -1226,8 +1274,35 @@ class _$UserModelImpl implements _UserModel {
     return EqualUnmodifiableListView(_categoryShowcases);
   }
 
+// Rates & Availability
+  final Map<String, dynamic> _serviceRates;
+// Rates & Availability
+  @override
+  @JsonKey()
+  Map<String, dynamic> get serviceRates {
+    if (_serviceRates is EqualUnmodifiableMapView) return _serviceRates;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_serviceRates);
+  }
+
+// categoryId → {hourlyRate, fixedRate, rateNote}
+  final List<String> _availableDays;
+// categoryId → {hourlyRate, fixedRate, rateNote}
+  @override
+  @JsonKey()
+  List<String> get availableDays {
+    if (_availableDays is EqualUnmodifiableListView) return _availableDays;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_availableDays);
+  }
+
+// e.g. ['Mon', 'Tue', 'Wed']
+  @override
+  final String? availableHours;
+// e.g. '9am - 6pm'
 // Media
   final List<ProfilePhoto> _photos;
+// e.g. '9am - 6pm'
 // Media
   @override
   @JsonKey()
@@ -1273,7 +1348,7 @@ class _$UserModelImpl implements _UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, phone: $phone, displayName: $displayName, email: $email, avatarUrl: $avatarUrl, headline: $headline, bio: $bio, neighbourhood: $neighbourhood, role: $role, serviceCategories: $serviceCategories, skillTags: $skillTags, categoryShowcases: $categoryShowcases, photos: $photos, introVideoUrl: $introVideoUrl, badges: $badges, stats: $stats, completenessScore: $completenessScore, createdAt: $createdAt, lastActiveAt: $lastActiveAt, isOnline: $isOnline, isProfileComplete: $isProfileComplete, isDeactivated: $isDeactivated)';
+    return 'UserModel(uid: $uid, phone: $phone, displayName: $displayName, email: $email, avatarUrl: $avatarUrl, headline: $headline, bio: $bio, neighbourhood: $neighbourhood, role: $role, serviceCategories: $serviceCategories, skillTags: $skillTags, categoryShowcases: $categoryShowcases, serviceRates: $serviceRates, availableDays: $availableDays, availableHours: $availableHours, photos: $photos, introVideoUrl: $introVideoUrl, badges: $badges, stats: $stats, completenessScore: $completenessScore, createdAt: $createdAt, lastActiveAt: $lastActiveAt, isOnline: $isOnline, isProfileComplete: $isProfileComplete, isDeactivated: $isDeactivated)';
   }
 
   @override
@@ -1300,6 +1375,12 @@ class _$UserModelImpl implements _UserModel {
                 .equals(other._skillTags, _skillTags) &&
             const DeepCollectionEquality()
                 .equals(other._categoryShowcases, _categoryShowcases) &&
+            const DeepCollectionEquality()
+                .equals(other._serviceRates, _serviceRates) &&
+            const DeepCollectionEquality()
+                .equals(other._availableDays, _availableDays) &&
+            (identical(other.availableHours, availableHours) ||
+                other.availableHours == availableHours) &&
             const DeepCollectionEquality().equals(other._photos, _photos) &&
             (identical(other.introVideoUrl, introVideoUrl) ||
                 other.introVideoUrl == introVideoUrl) &&
@@ -1335,6 +1416,9 @@ class _$UserModelImpl implements _UserModel {
         const DeepCollectionEquality().hash(_serviceCategories),
         const DeepCollectionEquality().hash(_skillTags),
         const DeepCollectionEquality().hash(_categoryShowcases),
+        const DeepCollectionEquality().hash(_serviceRates),
+        const DeepCollectionEquality().hash(_availableDays),
+        availableHours,
         const DeepCollectionEquality().hash(_photos),
         introVideoUrl,
         const DeepCollectionEquality().hash(_badges),
@@ -1377,6 +1461,9 @@ abstract class _UserModel implements UserModel {
       final List<String> serviceCategories,
       final List<String> skillTags,
       final List<CategoryShowcase> categoryShowcases,
+      final Map<String, dynamic> serviceRates,
+      final List<String> availableDays,
+      final String? availableHours,
       final List<ProfilePhoto> photos,
       final String? introVideoUrl,
       final List<VerificationBadge> badges,
@@ -1415,7 +1502,15 @@ abstract class _UserModel implements UserModel {
   @override
   List<String> get skillTags; // e.g. #DogWalking
   @override
-  List<CategoryShowcase> get categoryShowcases; // Media
+  List<CategoryShowcase> get categoryShowcases; // Rates & Availability
+  @override
+  Map<String, dynamic>
+      get serviceRates; // categoryId → {hourlyRate, fixedRate, rateNote}
+  @override
+  List<String> get availableDays; // e.g. ['Mon', 'Tue', 'Wed']
+  @override
+  String? get availableHours; // e.g. '9am - 6pm'
+// Media
   @override
   List<ProfilePhoto> get photos;
   @override

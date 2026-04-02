@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -26,9 +27,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   List<String> _selectedCategories = [];
   List<String> _skillTags = [];
+  Map<String, TextEditingController> _rateControllers = {};
+  List<String> _availableDays = [];
+  final _availableHoursCtrl = TextEditingController();
   File? _pickedAvatar;
   bool _isLoading = false;
   bool _initialized = false;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
   @override
   void dispose() {
@@ -37,6 +42,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _bioCtrl.dispose();
     _neighbourhoodCtrl.dispose();
     _tagCtrl.dispose();
+    _availableHoursCtrl.dispose();
+    for (final c in _rateControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -49,6 +58,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _neighbourhoodCtrl.text = user.neighbourhood ?? '';
     _selectedCategories = List.from(user.serviceCategories);
     _skillTags = List.from(user.skillTags);
+    _availableDays = List.from(user.availableDays);
+    _availableHoursCtrl.text = user.availableHours ?? '';
+    // Init rate controllers for each existing service category
+    for (final catId in user.serviceCategories) {
+      final rateData = user.serviceRates[catId];
+      final hourlyRate = rateData is Map ? (rateData['hourlyRate'] ?? '') : '';
+      _rateControllers[catId] = TextEditingController(text: hourlyRate.toString());
+    }
   }
 
   Future<void> _pickAvatar() async {
@@ -61,7 +78,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
+      return;
+    }
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) return;
 
@@ -72,6 +92,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (_pickedAvatar != null) {
         avatarUrl = await repo.uploadAvatar(user.uid, _pickedAvatar!);
+      }
+
+      // Build serviceRates map from controllers — store hourlyRate as double
+      final Map<String, dynamic> rates = {};
+      for (final catId in _selectedCategories) {
+        final ctrl = _rateControllers[catId];
+        final rateText = ctrl?.text.trim() ?? '';
+        if (rateText.isNotEmpty) {
+          final parsed = double.tryParse(rateText);
+          rates[catId] = {'hourlyRate': parsed ?? rateText};
+        }
       }
 
       final updated = user.copyWith(
@@ -86,6 +117,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         serviceCategories: _selectedCategories,
         skillTags: _skillTags,
         avatarUrl: avatarUrl,
+        serviceRates: rates,
+        availableDays: _availableDays,
+        availableHours: _availableHoursCtrl.text.trim().isEmpty
+            ? null
+            : _availableHoursCtrl.text.trim(),
       );
       await repo.updateProfile(updated);
 
@@ -97,8 +133,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = e.toString().contains('PERMISSION_DENIED')
+            ? 'Permission denied. Please sign in again.'
+            : e.toString().contains('UNAVAILABLE')
+                ? 'Network error. Please check your connection and try again.'
+                : 'Failed to save profile. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(content: Text(message)),
         );
       }
     } finally {
@@ -118,10 +159,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  UserModel? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = ref.read(currentUserProvider).valueOrNull
+        ?? await AuthRepository().fetchCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _user = user;
+        _initFromUser(user);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserProvider);
-
     return Scaffold(
       backgroundColor: AppColors.bgLight,
       appBar: AppBar(
@@ -145,22 +203,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         ],
       ),
-      body: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Not signed in'));
-          }
-          _initFromUser(user);
-          return Form(
+      body: _user == null
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
             key: _formKey,
+            autovalidateMode: _autovalidateMode,
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 // ── Avatar ────────────────────────────────────────────
                 _AvatarPicker(
-                  existingUrl: user.avatarUrl,
+                  existingUrl: _user!.avatarUrl,
                   pickedFile: _pickedAvatar,
                   onTap: _pickAvatar,
                 ),
@@ -223,6 +276,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             _selectedCategories.add(cat.id);
                           } else {
                             _selectedCategories.remove(cat.id);
+                            // Dispose and remove stale controller to prevent memory leak
+                            _rateControllers.remove(cat.id)?.dispose();
                           }
                         });
                       },
@@ -285,17 +340,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _addTag,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _addTag,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Add'),
                       ),
-                      child: const Text('Add'),
                     ),
                   ],
                 ),
@@ -320,12 +378,130 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         .toList(),
                   ),
                 ],
+                const SizedBox(height: 24),
+
+                // ── Rates ────────────────────────────────────────────
+                if (_selectedCategories.isNotEmpty) ...[
+                  _SectionHeader('Rates'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Set your hourly rate per service category (S\$)',
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  ..._selectedCategories.map((catId) {
+                    final cat = AppCategories.getById(catId);
+                    if (!_rateControllers.containsKey(catId)) {
+                      _rateControllers[catId] = TextEditingController();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Text(cat?.emoji ?? '',
+                              style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: Text(cat?.label ?? catId,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _rateControllers[catId],
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                prefixText: 'S\$ ',
+                                hintText: '0',
+                                suffixText: '/hr',
+                                filled: true,
+                                fillColor: AppColors.bgCard,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.border),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.border),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 24),
+                ],
+
+                // ── Availability ─────────────────────────────────────
+                _SectionHeader('Availability'),
+                const SizedBox(height: 4),
+                const Text(
+                  'Select which days you are available',
+                  style: TextStyle(
+                      fontSize: 13, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                      .map((day) {
+                    final selected = _availableDays.contains(day);
+                    return FilterChip(
+                      label: Text(day),
+                      selected: selected,
+                      onSelected: (val) {
+                        setState(() {
+                          if (val) {
+                            _availableDays.add(day);
+                          } else {
+                            _availableDays.remove(day);
+                          }
+                        });
+                      },
+                      selectedColor: AppColors.primary.withOpacity(0.15),
+                      checkmarkColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                      backgroundColor: AppColors.bgCard,
+                      side: BorderSide(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.border,
+                      ),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                _Field(
+                  controller: _availableHoursCtrl,
+                  label: 'Available Hours',
+                  hint: 'e.g. 9am - 6pm',
+                ),
                 const SizedBox(height: 40),
               ],
             ),
-          );
-        },
-      ),
+          ),
     );
   }
 }
@@ -445,6 +621,14 @@ class _Field extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide:
               const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );

@@ -89,6 +89,12 @@ _$UserModelImpl _$$UserModelImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => CategoryShowcase.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      serviceRates: json['serviceRates'] as Map<String, dynamic>? ?? const {},
+      availableDays: (json['availableDays'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      availableHours: json['availableHours'] as String?,
       photos: (json['photos'] as List<dynamic>?)
               ?.map((e) => ProfilePhoto.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -127,6 +133,9 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'serviceCategories': instance.serviceCategories,
       'skillTags': instance.skillTags,
       'categoryShowcases': instance.categoryShowcases,
+      'serviceRates': instance.serviceRates,
+      'availableDays': instance.availableDays,
+      'availableHours': instance.availableHours,
       'photos': instance.photos,
       'introVideoUrl': instance.introVideoUrl,
       'badges':

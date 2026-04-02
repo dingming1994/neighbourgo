@@ -1,115 +1,87 @@
 {
-  "featureName": "Sprint 7 — Feature Completion: Cloud Functions, Reviews, Notifications, Chat, Recommendations",
-  "description": "Complete all remaining features to bring the app to full MVP. Fix broken Cloud Functions, implement review/rating system UI, build notification list page with badges, enhance chat with image support and read receipts, and add provider task recommendations based on category and location.",
-  "branchName": "ralph/sprint-7-feature-completion",
+  "featureName": "Sprint 9 — Profile Pages Bug Fixes & Feature Completion",
+  "description": "Fix all 17 identified issues in Profile-related screens: crashes, missing features, UX problems, and data issues. Covers ProfileScreen, EditProfileScreen, PublicProfileScreen, PhotoGalleryScreen, and VerificationCentreScreen.",
+  "branchName": "ralph/sprint-9-profile-fixes",
   "userStories": [
     {
-      "id": "US-041",
-      "title": "Fix Cloud Functions — onUserCreate & Timestamp Issues",
-      "description": "Fix the broken onUserCreate Cloud Function that crashes with 'Cannot read properties of undefined (reading now)'. Audit all Cloud Functions for similar issues.",
+      "id": "US-059",
+      "title": "Fix Critical Bugs — EmptyState Import, Image Loading, Memory Leak",
+      "description": "Fix the 3 critical bugs that cause crashes or broken rendering in Profile screens.",
       "acceptanceCriteria": [
-        "Read functions/src/index.ts (or functions/lib/index.js) and identify the Timestamp.now() error",
-        "Fix onUserCreate: replace broken Timestamp reference with admin.firestore.FieldValue.serverTimestamp() or admin.firestore.Timestamp.now()",
-        "Audit all 8 Cloud Functions for similar issues: onUserCreate, onTaskCreate, createEscrowPayment, releaseEscrow, stripeWebhookHandler, updateCompletenessScore, onTaskComplete, onReviewCreate",
-        "Fix any other broken imports or references found",
-        "Run `cd functions && npm run build` (or tsc) to verify compilation succeeds",
-        "Run `cd functions && npm test` if tests exist, or verify no build errors",
-        "Deploy functions to emulator and verify onUserCreate no longer crashes",
+        "Create a shared EmptyState widget at lib/core/widgets/empty_state.dart (extracted from photo_gallery_screen.dart), accepting emoji, title, and optional subtitle params",
+        "Update public_profile_screen.dart to import and use the shared EmptyState widget for 'No reviews yet' and other empty states",
+        "Update photo_gallery_screen.dart to import from the shared widget instead of defining its own",
+        "Replace all Image.network() in photo_gallery_screen.dart with CachedNetworkImage with errorWidget and placeholder",
+        "Fix rate controller memory leak in edit_profile_screen.dart: properly dispose all dynamically created TextEditingControllers in dispose(), track them in a Map that gets cleaned up",
+        "Fix empty caption string showing empty overlay bar in photo_gallery_screen.dart: check caption != null && caption!.isNotEmpty",
         "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-042",
-      "title": "Review & Rating System — Submit Review UI",
-      "description": "Build the UI for submitting reviews after task completion. Both poster and provider should be able to rate and review each other.",
+      "id": "US-060",
+      "title": "Photo Gallery — Loading States, Fullscreen View, Cover Photo Fix",
+      "description": "Add loading indicators for delete/cover operations, implement fullscreen photo view, and fix cover photo persistence.",
       "acceptanceCriteria": [
-        "Create lib/features/reviews/presentation/screens/submit_review_screen.dart",
-        "Screen accepts: taskId, reviewedUserId, reviewedUserName, taskCategory",
-        "UI includes: 5-star rating selector (tap to rate 1-5), comment text field (optional, max 500 chars), skill endorsement chips (optional, based on category), Submit button with loading state",
-        "On submit: create ReviewModel document in Firestore users/{reviewedUserId}/reviews subcollection",
-        "After successful submit: show success snackbar, navigate back",
-        "Add route /reviews/submit to AppRoutes and app_router.dart",
-        "Show 'Leave a Review' prompt on TaskDetailScreen when task is completed (for both poster and provider)",
+        "Add loading state to _deletePhoto(): show CircularProgressIndicator while deletion is in progress, disable button during operation",
+        "Add loading state to _setCover(): show snackbar 'Setting cover photo...' then 'Cover photo updated!' on success",
+        "Implement photo tap to open fullscreen: use photo_view package (already in pubspec) to show tapped photo in a fullscreen dialog/page with pinch-to-zoom",
+        "Fix cover photo persistence: after uploading first photo, ensure isCover=true is properly saved via updatePhotosArray",
+        "Add explicit back button to PhotoGalleryScreen AppBar as fallback (like TaskDetailScreen pattern)",
         "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-043",
-      "title": "Review & Rating System — Display Reviews",
-      "description": "Display reviews on user profiles and calculate average ratings.",
+      "id": "US-061",
+      "title": "PublicProfile — Photo Fullscreen, Report/Block Placeholder, Consistent Empty States",
+      "description": "Fix photo tap, add report/block user stubs with feedback, and make empty states consistent.",
       "acceptanceCriteria": [
-        "Create lib/features/reviews/presentation/widgets/review_card.dart — shows reviewer avatar, name, rating stars, comment, time ago, category badge, skill endorsements",
-        "Create lib/features/reviews/presentation/widgets/rating_summary.dart — shows average rating (large number + stars), total review count, rating distribution bars (5/4/3/2/1 star counts)",
-        "Add reviews section to PublicProfileScreen: rating summary at top, list of ReviewCards below",
-        "Use existing profileRepository.watchReviews() stream for real-time data",
-        "Add provider stats display on ProfileScreen: completed tasks, avg rating, review count",
-        "Empty state when no reviews: 'No reviews yet'",
+        "Implement photo tap on PublicProfileScreen: open fullscreen photo_view on tap (same as PhotoGallery implementation)",
+        "Report User button: show confirmation dialog 'Report this user?' then snackbar 'Report submitted. We will review this.' (no backend needed yet, just UI feedback)",
+        "Block User button: show confirmation dialog 'Block this user? You won't see their tasks or bids.' then snackbar 'User blocked.' (no backend needed yet, just UI feedback)",
+        "Add consistent empty states: Skills section shows 'No skills listed' when empty (instead of hiding), About section shows placeholder when bio is null",
         "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-044",
-      "title": "Notification System — UI & Badge Count",
-      "description": "Build notification list screen and add unread badge counts to the bottom navigation.",
+      "id": "US-062",
+      "title": "EditProfile — Fix Service Rates Data Type, Improve Error Handling",
+      "description": "Store service rates as doubles, improve form error recovery, and fix field-level validation UX.",
       "acceptanceCriteria": [
-        "Create lib/features/notifications/presentation/screens/notification_list_screen.dart",
-        "Screen shows list of notifications from Firestore notifications/{uid} collection",
-        "Each notification tile shows: icon (based on type), title, body, time ago, read/unread indicator",
-        "Notification types: bid_received, bid_accepted, bid_rejected, task_completed, new_message, review_received",
-        "Tap notification navigates to relevant screen (task detail, chat, profile)",
-        "Mark notification as read on tap",
-        "Add notification bell icon to Home AppBar, tap opens NotificationListScreen",
-        "Add unread count badge to the notification bell icon (red circle with count)",
-        "Add route /notifications to AppRoutes and app_router.dart",
-        "Create notificationsProvider (StreamProvider) that watches unread count",
+        "Change service rates storage: save hourlyRate as double (not String) in Firestore. Parse text field value with double.tryParse before saving",
+        "PublicProfileScreen: update rate display to handle both String and double values from Firestore (backward compatibility)",
+        "On save failure: retain all form field values (don't clear them). Show specific error message in snackbar",
+        "Add field-level validation feedback: required fields show red border when empty on submit attempt",
         "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-045",
-      "title": "Chat Enhancement — Images, Read Receipts, Unread Count",
-      "description": "Enhance chat with image sending, read receipts, and unread message count on Messages tab.",
+      "id": "US-063",
+      "title": "ProfileScreen — Role Change Refresh, Stats Empty State, Verification Centre",
+      "description": "Fix role change not refreshing UI, add stats empty state for new providers, and implement basic Verification Centre.",
       "acceptanceCriteria": [
-        "Image sending: tap image picker icon in ChatThreadScreen, pick image, upload to Firebase Storage chat_media/{chatId}/, send message with imageUrl field",
-        "Display image messages: show image thumbnail in message bubble (max 200x200), tap to open full screen with photo_view",
-        "Read receipts: when user opens ChatThreadScreen, mark all messages as read (update isRead field). Show double-check icon for read messages, single-check for sent",
-        "Unread count on Messages tab: add badge to Messages icon in bottom nav showing total unread messages across all chats",
-        "Create unreadChatsProvider that watches chats collection and sums unread counts",
-        "Update MainShellScreen bottom nav to show badge on Messages tab when unread > 0",
-        "ChatListScreen: show unread count badge on each chat tile",
+        "After role change in _RolePickerSheet: force refresh currentUserProvider so ProfileScreen immediately shows new role and HomeScreen switches view",
+        "For new providers with null stats: show a 'Your stats will appear after completing your first task' message instead of hiding the section completely",
+        "VerificationCentreScreen: replace stub with a real screen showing list of verification badges (phoneVerified, idVerified, policeCleared, etc.) with their current status (verified/not verified)",
+        "Each badge row shows: emoji, label, status chip (Verified in green or Not Verified in grey), and a 'Verify' button for unverified badges",
+        "Tapping 'Verify' on unverified badges shows snackbar 'Verification coming soon — we will notify you when available'",
         "flutter analyze shows 0 errors"
       ],
       "passes": true
     },
     {
-      "id": "US-046",
-      "title": "Provider Task Recommendations",
-      "description": "Improve ProviderHomeScreen with smart task recommendations based on provider's service categories and neighbourhood.",
+      "id": "US-064",
+      "title": "Final Verification — All Profile Screens Work End-to-End",
+      "description": "Verify all profile screens compile and work correctly, run flutter analyze and flutter test.",
       "acceptanceCriteria": [
-        "Update ProviderHomeScreen to show recommended tasks section: 'Recommended for You'",
-        "Recommendation logic: filter open tasks where categoryId matches provider's serviceCategories, prioritize tasks in same neighbourhood",
-        "Create a recommendedTasksProvider that combines user's serviceCategories + neighbourhood with open tasks query",
-        "Show up to 5 recommended tasks at top, then 'All Open Tasks' section below",
-        "If provider has no serviceCategories set, show prompt: 'Add your service categories in profile to get recommendations'",
-        "Each recommendation card shows: match reason ('Matches your skills', 'In your neighbourhood', 'Near you')",
-        "flutter analyze shows 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-047",
-      "title": "Merge All Branches to Main & Final Verification",
-      "description": "Merge all sprint branches to main, run full test suite, verify everything works.",
-      "acceptanceCriteria": [
-        "Merge ralph/sprint-7-feature-completion into main branch",
-        "Run flutter analyze — 0 errors",
-        "Run flutter test — all unit tests pass (fix any broken tests from feature changes)",
-        "Verify app builds for iOS simulator without errors",
-        "Create a summary of all features completed across Sprint 1-7"
+        "flutter analyze shows 0 errors",
+        "flutter test — all existing unit tests pass (fix any broken by profile changes)",
+        "Manual verification checklist (code review): ProfileScreen renders without crash, EditProfileScreen saves all fields correctly, PublicProfileScreen handles all empty states, PhotoGalleryScreen loads/deletes/covers photos, VerificationCentreScreen renders badge list",
+        "No TODO comments left in profile screens (all replaced with real implementations or proper placeholder UX)",
+        "Commit all changes"
       ],
       "passes": true
     }

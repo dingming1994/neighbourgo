@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
-import '../../data/repositories/profile_repository.dart';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -61,9 +62,19 @@ class ProfileScreen extends ConsumerWidget {
               const Divider(height: 1),
 
               // ── Provider stats ─────────────────────────────────────────────
-              if (user.stats != null &&
-                  (user.role == UserRole.provider || user.role == UserRole.both))
+              if (user.isProvider && user.stats != null)
                 _ProviderStatsSection(stats: user.stats!),
+              if (user.isProvider && user.stats == null)
+                Container(
+                  color: AppColors.bgCard,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: const Text(
+                    'Your stats will appear after completing your first task',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  ),
+                ),
 
               // ── My Role ───────────────────────────────────────────────────
               _RoleSection(user: user),
@@ -269,12 +280,19 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
     }
     setState(() => _loading = true);
     try {
-      final repo = ref.read(profileRepositoryProvider);
-      await repo.updateProfile(widget.currentUser.copyWith(role: _selected));
+      final authRepo = AuthRepository();
+      await authRepo.updateUserRole(widget.currentUser.uid, _selected.name);
       if (mounted) {
+        ref.invalidate(currentUserProvider);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Role updated!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update role: $e')),
         );
       }
     } finally {

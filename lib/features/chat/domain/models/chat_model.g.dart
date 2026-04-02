@@ -9,8 +9,9 @@ part of 'chat_model.dart';
 _$ChatModelImpl _$$ChatModelImplFromJson(Map<String, dynamic> json) =>
     _$ChatModelImpl(
       chatId: json['chatId'] as String,
-      taskId: json['taskId'] as String,
-      taskTitle: json['taskTitle'] as String,
+      taskId: json['taskId'] as String?,
+      taskTitle: json['taskTitle'] as String?,
+      otherUserName: json['otherUserName'] as String?,
       participants: (json['participantIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -27,6 +28,7 @@ Map<String, dynamic> _$$ChatModelImplToJson(_$ChatModelImpl instance) =>
       'chatId': instance.chatId,
       'taskId': instance.taskId,
       'taskTitle': instance.taskTitle,
+      'otherUserName': instance.otherUserName,
       'participantIds': instance.participants,
       'lastMessage': instance.lastMessage,
       'lastMessageTime': instance.lastMessageTime?.toIso8601String(),

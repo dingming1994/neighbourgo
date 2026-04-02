@@ -1,11 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
-import '../../data/models/task_model.dart';
-import '../../domain/providers/task_list_provider.dart';
+import '../../../auth/data/models/user_model.dart';
+import '../../domain/providers/provider_list_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -13,16 +13,18 @@ import '../../../../core/theme/app_theme.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
-class TaskListScreen extends ConsumerStatefulWidget {
+class ProviderDirectoryScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
-  const TaskListScreen({super.key, this.embedded = false});
+  const ProviderDirectoryScreen({super.key, this.embedded = false});
 
   @override
-  ConsumerState<TaskListScreen> createState() => _TaskListScreenState();
+  ConsumerState<ProviderDirectoryScreen> createState() =>
+      _ProviderDirectoryScreenState();
 }
 
-class _TaskListScreenState extends ConsumerState<TaskListScreen> {
+class _ProviderDirectoryScreenState
+    extends ConsumerState<ProviderDirectoryScreen> {
   final _scrollController = ScrollController();
 
   @override
@@ -40,22 +42,22 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
   void _onScroll() {
     final pos = _scrollController.position;
     if (pos.pixels >= pos.maxScrollExtent - 200) {
-      ref.read(taskListNotifierProvider.notifier).loadMore();
+      ref.read(providerListNotifierProvider.notifier).loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(taskListNotifierProvider);
-    final selectedCategory = ref.watch(selectedCategoryProvider);
+    final state = ref.watch(providerListNotifierProvider);
+    final selectedCategory = ref.watch(providerDirectoryCategoryProvider);
 
     final body = Column(
       children: [
         _CategoryFilterBar(
           selected: selectedCategory,
           onSelect: (id) {
-            ref.read(selectedCategoryProvider.notifier).state = id;
-            ref.read(taskListNotifierProvider.notifier).selectCategory(id);
+            ref.read(providerDirectoryCategoryProvider.notifier).state = id;
+            ref.read(providerListNotifierProvider.notifier).selectCategory(id);
           },
         ),
         Expanded(child: _buildBody(state)),
@@ -71,35 +73,28 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
-      appBar: AppBar(
-        title: const Text('Discover Tasks'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
-            tooltip: 'Post a Task',
-            onPressed: () => context.push(AppRoutes.postTask),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Browse Providers')),
       body: body,
     );
   }
 
-  Widget _buildBody(TaskListState state) {
+  Widget _buildBody(ProviderListState state) {
     if (state.isLoading) return const _LoadingList();
 
     if (state.error != null) {
       return _ErrorView(
         message: state.error!,
-        onRetry: () => ref.read(taskListNotifierProvider.notifier).refresh(),
+        onRetry: () =>
+            ref.read(providerListNotifierProvider.notifier).refresh(),
       );
     }
 
-    if (state.tasks.isEmpty) return const _EmptyView();
+    if (state.providers.isEmpty) return const _EmptyView();
 
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () => ref.read(taskListNotifierProvider.notifier).refresh(),
+      onRefresh: () =>
+          ref.read(providerListNotifierProvider.notifier).refresh(),
       child: ListView.separated(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -109,10 +104,10 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
           AppSpacing.md,
           AppSpacing.xxl,
         ),
-        itemCount: state.tasks.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: state.providers.length + (state.isLoadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) {
-          if (index >= state.tasks.length) {
+          if (index >= state.providers.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Center(
@@ -123,10 +118,13 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
               ),
             );
           }
-          final task = state.tasks[index];
-          return TaskCard(
-            task: task,
-            onTap: () => context.push('/tasks/${task.id}'),
+          final provider = state.providers[index];
+          return _ProviderCard(
+            provider: provider,
+            onTap: () => context.push(
+              AppRoutes.publicProfile
+                  .replaceFirst(':userId', provider.uid),
+            ),
           );
         },
       ),
@@ -135,7 +133,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Category Filter Bar
+// Category Filter Bar (reuses same pattern as TaskListScreen)
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoryFilterBar extends StatelessWidget {
   final String? selected;
@@ -211,7 +209,8 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? chipColor.withValues(alpha: 0.12) : AppColors.bgMint,
+          color:
+              selected ? chipColor.withValues(alpha: 0.12) : AppColors.bgMint,
           borderRadius: AppRadius.chip,
           border: Border.all(
             color: selected ? chipColor : Colors.transparent,
@@ -239,19 +238,38 @@ class _FilterChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task Card
+// Provider Card
 // ─────────────────────────────────────────────────────────────────────────────
-class TaskCard extends StatelessWidget {
-  final TaskModel task;
+class _ProviderCard extends StatelessWidget {
+  final UserModel provider;
   final VoidCallback onTap;
 
-  const TaskCard({super.key, required this.task, required this.onTap});
+  const _ProviderCard({required this.provider, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final category = AppCategories.getById(task.categoryId);
-    final categoryColor =
-        AppColors.categoryColors[task.categoryId] ?? AppColors.primary;
+    final stats = provider.stats;
+    final avgRating = stats?.avgRating ?? 0.0;
+    final completedTasks = stats?.completedTasks ?? 0;
+
+    // Top 2 service categories
+    final topCategories = provider.serviceCategories.take(2).toList();
+
+    // Starting rate: find the lowest hourly rate across categories
+    String? startingRate;
+    if (provider.serviceRates.isNotEmpty) {
+      double? lowest;
+      for (final entry in provider.serviceRates.entries) {
+        final rateData = entry.value;
+        if (rateData is Map && rateData['hourlyRate'] != null) {
+          final rate = (rateData['hourlyRate'] as num).toDouble();
+          if (lowest == null || rate < lowest) lowest = rate;
+        }
+      }
+      if (lowest != null) {
+        startingRate = 'From S\$${lowest.toStringAsFixed(0)}/hr';
+      }
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -261,135 +279,149 @@ class TaskCard extends StatelessWidget {
           borderRadius: AppRadius.card,
           border: Border.all(color: AppColors.divider),
         ),
-        child: Column(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Photo banner
-            if (task.photoUrls.isNotEmpty)
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                child: Image.network(
-                  task.photoUrls.first,
-                  height: 140,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      height: 140,
-                      color: AppColors.bgMint,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                ),
-              ),
+            // Avatar
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.bgMint,
+              backgroundImage: provider.avatarUrl != null
+                  ? CachedNetworkImageProvider(provider.avatarUrl!)
+                  : null,
+              child: provider.avatarUrl == null
+                  ? const Icon(Icons.person, color: AppColors.primary)
+                  : null,
+            ),
+            const SizedBox(width: AppSpacing.md),
 
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+            // Info
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category badge + urgency
+                  // Name row
                   Row(
                     children: [
-                      _CategoryBadge(
-                        emoji: category?.emoji ?? '📋',
-                        label: category?.label ?? task.categoryId,
-                        color: categoryColor,
-                      ),
-                      const Spacer(),
-                      Text(
-                        task.urgencyDisplay,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Title
-                  Text(
-                    task.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Location + time
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: 2),
                       Expanded(
                         child: Text(
-                          task.neighbourhood ?? task.locationLabel,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          provider.displayName ?? 'Provider',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      const Icon(
-                        Icons.access_time_rounded,
-                        size: 14,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        task.createdAt != null
-                            ? timeago.format(task.createdAt!, locale: 'en_short')
-                            : '—',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      if (provider.isOnline)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(left: 6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  // Headline
+                  if (provider.headline != null &&
+                      provider.headline!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      provider.headline!,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Neighbourhood + Rating + Tasks
+                  Row(
+                    children: [
+                      if (provider.neighbourhood != null) ...[
+                        const Icon(Icons.location_on_outlined,
+                            size: 14, color: AppColors.textHint),
+                        const SizedBox(width: 2),
+                        Text(
+                          provider.neighbourhood!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      if (avgRating > 0) ...[
+                        const Icon(Icons.star_rounded,
+                            size: 14, color: AppColors.accent),
+                        const SizedBox(width: 2),
+                        Text(
+                          avgRating.toStringAsFixed(1),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      if (completedTasks > 0) ...[
+                        const Icon(Icons.check_circle_outline_rounded,
+                            size: 14, color: AppColors.textHint),
+                        const SizedBox(width: 2),
+                        Text(
+                          '$completedTasks done',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ],
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
-                  const Divider(height: 1),
-                  const SizedBox(height: AppSpacing.sm),
 
-                  // Budget + bids
+                  // Category chips + starting rate
                   Row(
                     children: [
-                      Text(
-                        task.budgetDisplay,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
+                      ...topCategories.map((catId) {
+                        final cat = AppCategories.getById(catId);
+                        if (cat == null) return const SizedBox.shrink();
+                        final catColor = AppColors.categoryColors[catId] ??
+                            AppColors.primary;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.12),
+                              borderRadius: AppRadius.chip,
                             ),
-                      ),
-                      const Spacer(),
-                      if (task.bidCount > 0) ...[
-                        const Icon(
-                          Icons.people_outline_rounded,
-                          size: 14,
-                          color: AppColors.textHint,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${task.bidCount} bid${task.bidCount != 1 ? 's' : ''}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ] else
-                        Text(
-                          'Be the first to bid',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.primaryLight,
-                                fontWeight: FontWeight.w500,
+                            child: Text(
+                              '${cat.emoji} ${cat.label}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: catColor,
                               ),
+                            ),
+                          ),
+                        );
+                      }),
+                      const Spacer(),
+                      if (startingRate != null)
+                        Text(
+                          startingRate,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                     ],
                   ),
@@ -397,37 +429,6 @@ class TaskCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryBadge extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final Color color;
-
-  const _CategoryBadge({
-    required this.emoji,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: AppRadius.chip,
-      ),
-      child: Text(
-        '$emoji $label',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
         ),
       ),
     );
@@ -446,13 +447,13 @@ class _LoadingList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: 5,
       separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (_, __) => const _SkeletonTaskCard(),
+      itemBuilder: (_, __) => const _SkeletonProviderCard(),
     );
   }
 }
 
-class _SkeletonTaskCard extends StatelessWidget {
-  const _SkeletonTaskCard();
+class _SkeletonProviderCard extends StatelessWidget {
+  const _SkeletonProviderCard();
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +461,7 @@ class _SkeletonTaskCard extends StatelessWidget {
       baseColor: AppColors.divider,
       highlightColor: Colors.white,
       child: Container(
-        height: 160,
+        height: 120,
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: AppRadius.card,
@@ -484,12 +485,12 @@ class _EmptyView extends StatelessWidget {
             const Text('🔍', style: TextStyle(fontSize: 52)),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'No tasks found',
+              'No providers found',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Try a different category or check back later',
+              'No providers found in this category',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -517,11 +518,8 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 52,
-              color: AppColors.error,
-            ),
+            const Icon(Icons.error_outline_rounded,
+                size: 52, color: AppColors.error),
             const SizedBox(height: AppSpacing.md),
             Text(
               'Something went wrong',

@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:photo_view/photo_view.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
@@ -19,6 +22,8 @@ class PhotoGalleryScreen extends ConsumerStatefulWidget {
 class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
   String? _selectedCategory; // null = general
   bool    _uploading = false;
+  String? _deletingPhotoId;
+  String? _settingCoverId;
 
   Future<void> _pickAndUpload() async {
     final imgs = await ImagePicker().pickMultiImage(
@@ -83,16 +88,59 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
         ],
       ),
     );
-    if (ok == true) {
+    if (ok != true) return;
+    setState(() => _deletingPhotoId = photo.id);
+    try {
       await ref.read(profileRepositoryProvider).removeGalleryPhoto(user.uid, photo);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _deletingPhotoId = null);
     }
   }
 
   Future<void> _setCover(UserModel user, ProfilePhoto photo) async {
-    final updated = user.photos.map(
-      (p) => p.copyWith(isCover: p.id == photo.id),
-    ).toList();
-    await ref.read(profileRepositoryProvider).updatePhotosArray(user.uid, updated);
+    setState(() => _settingCoverId = photo.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Setting cover photo...')),
+      );
+    }
+    try {
+      final updated = user.photos.map(
+        (p) => p.copyWith(isCover: p.id == photo.id),
+      ).toList();
+      await ref.read(profileRepositoryProvider).updatePhotosArray(user.uid, updated);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text('Cover photo updated!'), backgroundColor: AppColors.success),
+          );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text('Failed to set cover: $e'), backgroundColor: AppColors.error),
+          );
+      }
+    } finally {
+      if (mounted) setState(() => _settingCoverId = null);
+    }
+  }
+
+  void _openFullscreen(BuildContext context, List<ProfilePhoto> photos, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _FullscreenPhotoPage(photos: photos, initialIndex: index),
+      ),
+    );
   }
 
   @override
@@ -101,6 +149,7 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackButton(),
         title: const Text('Photo Gallery'),
         actions: [
           if (_uploading)
@@ -191,8 +240,11 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (_, i) => _PhotoTile(
                       photo: filtered[i],
+                      isDeleting: _deletingPhotoId == filtered[i].id,
+                      isSettingCover: _settingCoverId == filtered[i].id,
                       onDelete: () => _deletePhoto(user, filtered[i]),
                       onSetCover: () => _setCover(user, filtered[i]),
+                      onTap: () => _openFullscreen(context, filtered, i),
                     ),
                   );
                 }(),
@@ -234,20 +286,48 @@ class _CategoryChip extends StatelessWidget {
 
 class _PhotoTile extends StatelessWidget {
   final ProfilePhoto photo;
-  final VoidCallback onDelete, onSetCover;
+  final bool isDeleting;
+  final bool isSettingCover;
+  final VoidCallback onDelete, onSetCover, onTap;
 
-  const _PhotoTile({required this.photo, required this.onDelete, required this.onSetCover});
+  const _PhotoTile({
+    required this.photo,
+    required this.onDelete,
+    required this.onSetCover,
+    required this.onTap,
+    this.isDeleting = false,
+    this.isSettingCover = false,
+  });
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onLongPress: () => _showMenu(context),
+    onTap: onTap,
+    onLongPress: (isDeleting || isSettingCover) ? null : () => _showMenu(context),
     child: Stack(
       fit: StackFit.expand,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(photo.url, fit: BoxFit.cover),
+          child: CachedNetworkImage(
+            imageUrl: photo.url,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(color: AppColors.bgMint),
+            errorWidget: (_, __, ___) => Container(
+              color: AppColors.bgMint,
+              child: const Icon(Icons.broken_image_outlined, color: AppColors.textHint),
+            ),
+          ),
         ),
+        if (isDeleting || isSettingCover)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+            ),
+          ),
         if (photo.isCover)
           Positioned(
             top: 4, left: 4,
@@ -258,7 +338,7 @@ class _PhotoTile extends StatelessWidget {
             ),
           ),
         // Caption overlay
-        if (photo.caption != null)
+        if (photo.caption != null && photo.caption!.isNotEmpty)
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
@@ -298,25 +378,66 @@ class _PhotoTile extends StatelessWidget {
   );
 }
 
-// keep the import in scope (used above)
-class EmptyState extends StatelessWidget {
-  final String emoji, title;
-  final String? subtitle;
-  const EmptyState({super.key, required this.emoji, required this.title, this.subtitle});
+// ─────────────────────────────────────────────────────────────────────────────
+// Fullscreen Photo Page with pinch-to-zoom
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullscreenPhotoPage extends StatefulWidget {
+  final List<ProfilePhoto> photos;
+  final int initialIndex;
+
+  const _FullscreenPhotoPage({required this.photos, required this.initialIndex});
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(emoji, style: const TextStyle(fontSize: 48)),
-        const SizedBox(height: 12),
-        Text(title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-        if (subtitle != null) ...[
-          const SizedBox(height: 8),
-          Text(subtitle!, style: const TextStyle(color: AppColors.textSecondary), textAlign: TextAlign.center),
-        ],
-      ]),
-    ),
-  );
+  State<_FullscreenPhotoPage> createState() => _FullscreenPhotoPageState();
 }
+
+class _FullscreenPhotoPageState extends State<_FullscreenPhotoPage> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text('${_currentIndex + 1} / ${widget.photos.length}',
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photos.length,
+        onPageChanged: (i) => setState(() => _currentIndex = i),
+        itemBuilder: (_, i) => PhotoView(
+          imageProvider: CachedNetworkImageProvider(widget.photos[i].url),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 3,
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          loadingBuilder: (_, event) => Center(
+            child: CircularProgressIndicator(
+              value: event == null ? null
+                  : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

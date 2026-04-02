@@ -10,6 +10,7 @@ import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
+import '../widgets/pending_reviews_section.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: poster's active tasks (excludes completed/cancelled)
@@ -81,6 +82,9 @@ class PosterHomeScreen extends ConsumerWidget {
               ),
             ),
           ),
+
+          // ── Pending Reviews ────────────────────────────────────────────
+          PendingReviewsSection(provider: posterPendingReviewsProvider),
 
           // ── Section header ───────────────────────────────────────────────
           const SliverToBoxAdapter(

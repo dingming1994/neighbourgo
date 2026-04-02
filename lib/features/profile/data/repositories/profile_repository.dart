@@ -34,6 +34,13 @@ class ProfileRepository {
       ..['updatedAt'] = Timestamp.now()
       ..['completenessScore'] = user.completeness;
 
+    // Ensure nested Freezed objects are serialized to Maps
+    if (data['stats'] != null && data['stats'] is! Map) {
+      data['stats'] = (data['stats'] as dynamic).toJson();
+    }
+    // Remove null values that Firestore may reject
+    data.removeWhere((k, v) => v == null);
+
     await _db.collection(AppConstants.usersCol).doc(user.uid).update(data);
   }
 
