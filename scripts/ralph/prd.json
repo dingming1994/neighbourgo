@@ -62,7 +62,7 @@
         "flutter analyze 0 errors",
         "Write integration test: poster accepts bid, verify chat is created with initial message"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-083",

@@ -72,3 +72,19 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - FakeQuery now supports `_WhereClause` list for filtering — extend this pattern for future where() needs in tests
   - The `_ExistingBidView` is a private widget in submit_bid_sheet.dart — if reuse is needed, extract to its own file
 ---
+
+## 2026-04-03 05:45 - US-082
+- Added `createChatWithMessage()` to ChatRepository — creates/gets chat and sends an initial message in one call
+- Modified `_accept()` in BidListSection to auto-create chat after bid acceptance with message: "Hi! I accepted your bid for this task. Let's discuss the details."
+- Shows SnackBar with "Message Provider" action button after bid acceptance
+- Chat creation is best-effort (wrapped in try/catch) — does not block checkout navigation
+- 2 new tests in chat_repository_test.dart: createChatWithMessage creates chat + sends message, reuses existing chat + still sends message
+- Files changed:
+  - `lib/features/chat/data/repositories/chat_repository.dart`
+  - `lib/features/bids/presentation/widgets/bid_list_section.dart`
+  - `test/chat/chat_repository_test.dart`
+- **Learnings for future iterations:**
+  - `createOrGetChat` is idempotent — safe to call from `createChatWithMessage` without worrying about duplicates
+  - Chat auto-creation on bid acceptance should be best-effort (try/catch) to avoid blocking the checkout flow
+  - SnackBar actions with navigation work even when another push happens immediately after — Flutter queues them
+---
