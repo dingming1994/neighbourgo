@@ -15,7 +15,7 @@
         "Verify: if Firestore emulator is stopped mid-session, screens show error state instead of spinner",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-080",
