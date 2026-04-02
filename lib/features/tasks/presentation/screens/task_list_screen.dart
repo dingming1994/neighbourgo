@@ -8,6 +8,7 @@ import '../../data/models/task_model.dart';
 import '../../domain/providers/task_list_provider.dart';
 import '../widgets/task_filter_sheet.dart';
 import '../../../discover/presentation/screens/discover_screen.dart';
+import '../../../favorites/domain/providers/favorites_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -379,14 +380,15 @@ class _FilterIconButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Task Card
 // ─────────────────────────────────────────────────────────────────────────────
-class TaskCard extends StatelessWidget {
+class TaskCard extends ConsumerWidget {
   final TaskModel task;
   final VoidCallback onTap;
 
   const TaskCard({super.key, required this.task, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(favoriteIdsProvider).contains(task.id);
     final category = AppCategories.getById(task.categoryId);
     final categoryColor =
         AppColors.categoryColors[task.categoryId] ?? AppColors.primary;
@@ -433,7 +435,7 @@ class TaskCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category badge + urgency
+                  // Category badge + urgency + favorite
                   Row(
                     children: [
                       _CategoryBadge(
@@ -445,6 +447,15 @@ class TaskCard extends StatelessWidget {
                       Text(
                         task.urgencyDisplay,
                         style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () => toggleFavorite(ref, itemId: task.id, type: 'task'),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_outline,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
                       ),
                     ],
                   ),

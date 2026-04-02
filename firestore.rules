@@ -23,6 +23,11 @@ service cloud.firestore {
                     || isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(["badges"]) == false;
 
+      // Favorites sub-collection
+      match /favorites/{itemId} {
+        allow read, write: if isOwner(uid);
+      }
+
       // Reviews sub-collection
       match /reviews/{reviewId} {
         allow read: if isSignedIn();

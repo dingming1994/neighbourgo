@@ -29,6 +29,7 @@ import '../../features/services/presentation/screens/create_service_screen.dart'
 import '../../features/services/presentation/screens/service_detail_screen.dart';
 import '../../features/tasks/presentation/screens/my_tasks_screen.dart';
 import '../../features/bids/presentation/screens/my_bids_screen.dart';
+import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,6 +117,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
+      ),
+
+      // ── Favorites ──────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.favorites,
+        builder: (_, __) => const FavoritesScreen(),
       ),
 
       // ── My Bids (provider bid history) ─────────────────────────────────────

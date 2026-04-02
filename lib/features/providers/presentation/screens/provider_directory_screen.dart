@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../auth/data/models/user_model.dart';
+import '../../../favorites/domain/providers/favorites_provider.dart';
 import '../../domain/providers/provider_list_provider.dart';
 import '../widgets/provider_filter_sheet.dart';
 import '../../../discover/presentation/screens/discover_screen.dart';
@@ -381,14 +382,15 @@ class _FilterIconButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider Card
 // ─────────────────────────────────────────────────────────────────────────────
-class _ProviderCard extends StatelessWidget {
+class _ProviderCard extends ConsumerWidget {
   final UserModel provider;
   final VoidCallback onTap;
 
   const _ProviderCard({required this.provider, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(favoriteIdsProvider).contains(provider.uid);
     final stats = provider.stats;
     final avgRating = stats?.avgRating ?? 0.0;
     final completedTasks = stats?.completedTasks ?? 0;
@@ -466,6 +468,18 @@ class _ProviderCard extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () => toggleFavorite(ref,
+                            itemId: provider.uid, type: 'provider'),
+                        child: Icon(
+                          isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_outline,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
+                      ),
                     ],
                   ),
 

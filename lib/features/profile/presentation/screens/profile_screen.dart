@@ -96,6 +96,11 @@ class ProfileScreen extends ConsumerWidget {
                 label: 'Photo Gallery',
                 onTap: () => context.push(AppRoutes.photoGallery),
               ),
+              _MenuItem(
+                icon: Icons.favorite_outline,
+                label: 'Favorites',
+                onTap: () => context.push(AppRoutes.favorites),
+              ),
               if (user.isProvider)
                 _MenuItem(
                   icon: Icons.gavel_outlined,
