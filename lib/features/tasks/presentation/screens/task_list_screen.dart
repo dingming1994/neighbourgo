@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../data/models/task_model.dart';
 import '../../domain/providers/task_list_provider.dart';
+import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -48,6 +49,18 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(taskListNotifierProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
+    final searchQuery =
+        widget.embedded ? ref.watch(discoverSearchQueryProvider) : '';
+
+    // Apply client-side search filter
+    final filteredState = searchQuery.isEmpty
+        ? state
+        : state.copyWith(
+            tasks: state.tasks.where((t) {
+              return t.title.toLowerCase().contains(searchQuery) ||
+                  t.description.toLowerCase().contains(searchQuery);
+            }).toList(),
+          );
 
     final body = Column(
       children: [
@@ -58,7 +71,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
             ref.read(taskListNotifierProvider.notifier).selectCategory(id);
           },
         ),
-        Expanded(child: _buildBody(state)),
+        Expanded(child: _buildBody(filteredState)),
       ],
     );
 

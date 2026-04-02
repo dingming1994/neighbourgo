@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,14 +20,45 @@ enum DiscoverSegment { tasks, providers, services }
 final discoverSegmentProvider =
     StateProvider<DiscoverSegment>((_) => DiscoverSegment.tasks);
 
+/// Search query shared across all Discover tabs (tasks, providers, services).
+final discoverSearchQueryProvider = StateProvider<String>((_) => '');
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
-class DiscoverScreen extends ConsumerWidget {
+class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
+}
+
+class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      ref.read(discoverSearchQueryProvider.notifier).state =
+          value.trim().toLowerCase();
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(discoverSearchQueryProvider.notifier).state = '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.valueOrNull;
 
@@ -37,6 +70,7 @@ class DiscoverScreen extends ConsumerWidget {
     }
 
     final segment = ref.watch(discoverSegmentProvider);
+    final searchQuery = ref.watch(discoverSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
@@ -53,6 +87,52 @@ class DiscoverScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          // Search bar
+          Container(
+            color: AppColors.bgCard,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: switch (segment) {
+                  DiscoverSegment.tasks => 'Search tasks...',
+                  DiscoverSegment.providers => 'Search providers...',
+                  DiscoverSegment.services => 'Search services...',
+                },
+                hintStyle: const TextStyle(
+                  color: AppColors.textHint,
+                  fontSize: 14,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textHint,
+                  size: 20,
+                ),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                        onPressed: _clearSearch,
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppColors.bgLight,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
           _SegmentedToggle(
             selected: segment,
             onChanged: (s) =>

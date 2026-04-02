@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../data/models/service_listing_model.dart';
 import '../../data/repositories/service_listing_repository.dart';
 import '../widgets/service_card.dart';
@@ -34,6 +35,8 @@ class ServiceListingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingsAsync = ref.watch(_serviceListingsProvider);
     final selectedCategory = ref.watch(_serviceCategoryProvider);
+    final searchQuery =
+        embedded ? ref.watch(discoverSearchQueryProvider) : '';
 
     final body = Column(
       children: [
@@ -49,7 +52,14 @@ class ServiceListingsScreen extends ConsumerWidget {
               child: Text('Error: $e',
                   style: const TextStyle(color: AppColors.error)),
             ),
-            data: (listings) {
+            data: (allListings) {
+              final listings = searchQuery.isEmpty
+                  ? allListings
+                  : allListings.where((s) {
+                      return s.title.toLowerCase().contains(searchQuery) ||
+                          s.description.toLowerCase().contains(searchQuery) ||
+                          s.providerName.toLowerCase().contains(searchQuery);
+                    }).toList();
               if (listings.isEmpty) return const _EmptyView();
               return ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.md),

@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../auth/data/models/user_model.dart';
 import '../../domain/providers/provider_list_provider.dart';
+import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -50,6 +51,24 @@ class _ProviderDirectoryScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(providerListNotifierProvider);
     final selectedCategory = ref.watch(providerDirectoryCategoryProvider);
+    final searchQuery =
+        widget.embedded ? ref.watch(discoverSearchQueryProvider) : '';
+
+    // Apply client-side search filter
+    final filteredState = searchQuery.isEmpty
+        ? state
+        : state.copyWith(
+            providers: state.providers.where((p) {
+              final name = (p.displayName ?? '').toLowerCase();
+              final headline = (p.headline ?? '').toLowerCase();
+              final categories = p.serviceCategories
+                  .map((c) => c.toLowerCase())
+                  .join(' ');
+              return name.contains(searchQuery) ||
+                  headline.contains(searchQuery) ||
+                  categories.contains(searchQuery);
+            }).toList(),
+          );
 
     final body = Column(
       children: [
@@ -60,7 +79,7 @@ class _ProviderDirectoryScreenState
             ref.read(providerListNotifierProvider.notifier).selectCategory(id);
           },
         ),
-        Expanded(child: _buildBody(state)),
+        Expanded(child: _buildBody(filteredState)),
       ],
     );
 
