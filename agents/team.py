@@ -50,7 +50,7 @@ Key project conventions:
 
 You are READ-ONLY. Do NOT modify any files. Only analyze and plan.""",
         tools=["Read", "Glob", "Grep"],
-        model="opus",
+        model="claude-opus-4-6",
     ),
 
     "developer": AgentDefinition(
@@ -73,7 +73,7 @@ Critical rules:
 
 Do NOT run tests. The tester agent handles that.""",
         tools=["Read", "Edit", "Write", "Bash", "Glob", "Grep"],
-        model="sonnet",
+        model="claude-opus-4-6",
     ),
 
     "tester": AgentDefinition(
@@ -97,7 +97,7 @@ Test infrastructure:
 
 Always kill emulators after testing: `pkill -f firebase`""",
         tools=["Bash", "Read", "Edit", "Write", "Glob", "Grep"],
-        model="sonnet",
+        model="claude-opus-4-6",
     ),
 
     "reviewer": AgentDefinition(
@@ -121,7 +121,7 @@ Your responsibilities:
 
 You are READ-ONLY. Do NOT modify any files.""",
         tools=["Read", "Glob", "Grep"],
-        model="opus",
+        model="claude-opus-4-6",
     ),
 }
 
@@ -158,12 +158,13 @@ Rules:
 """
 
 
-async def run_team(task: str, max_budget: float = 15.0):
+async def run_team(task: str):
     """Run the agent team on a task."""
     print(f"\n{'='*60}")
     print(f"  NeighbourGo Agent Team")
     print(f"  Task: {task[:80]}...")
-    print(f"  Budget: ${max_budget:.2f}")
+    print(f"  Model: Claude Opus 4.6 (1M context)")
+    print(f"  Budget: unlimited")
     print(f"{'='*60}\n")
 
     result_text = ""
@@ -175,8 +176,8 @@ async def run_team(task: str, max_budget: float = 15.0):
             system_prompt=PM_SYSTEM_PROMPT,
             allowed_tools=["Agent", "Read", "Edit", "Write", "Bash", "Glob", "Grep"],
             agents=AGENTS,
-            max_turns=100,
-            max_budget_usd=max_budget,
+            max_turns=200,
+            model="claude-opus-4-6",
             cwd=PROJECT_ROOT,
         ),
     ):
@@ -193,7 +194,7 @@ async def run_team(task: str, max_budget: float = 15.0):
     return result_text, total_cost
 
 
-async def run_from_prd(prd_path: str, max_budget: float = 30.0):
+async def run_from_prd(prd_path: str):
     """Run the agent team on each user story from a PRD file."""
     with open(prd_path) as f:
         prd = json.load(f)
@@ -217,7 +218,7 @@ Acceptance Criteria:
 Follow the full workflow: architect → developer → reviewer → tester.
 Commit when all steps pass."""
 
-        _, cost = await run_team(task, max_budget=max_budget)
+        _, cost = await run_team(task)
         total_cost += cost
 
         # Mark as passed in PRD
@@ -246,17 +247,15 @@ def main():
 
     if sys.argv[1] == "--prd":
         prd_path = sys.argv[2] if len(sys.argv) > 2 else "scripts/ralph/prd.json"
-        budget = float(sys.argv[3]) if len(sys.argv) > 3 else 30.0
-        asyncio.run(run_from_prd(prd_path, max_budget=budget))
+        asyncio.run(run_from_prd(prd_path))
 
     elif sys.argv[1] == "--test-only":
         task = "Use the tester agent to run ALL integration tests and report results."
-        asyncio.run(run_team(task, max_budget=5.0))
+        asyncio.run(run_team(task))
 
     else:
         task = " ".join(sys.argv[1:])
-        budget = 15.0
-        asyncio.run(run_team(task, max_budget=budget))
+        asyncio.run(run_team(task))
 
 
 if __name__ == "__main__":
