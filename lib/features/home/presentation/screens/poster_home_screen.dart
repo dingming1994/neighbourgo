@@ -74,7 +74,7 @@ class PosterHomeScreen extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 52),
+                  minimumSize: const Size(0, 52),
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 icon: const Icon(Icons.add_circle_outline, size: 22),

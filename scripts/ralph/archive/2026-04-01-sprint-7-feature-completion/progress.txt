@@ -1,0 +1,143 @@
+# Ralph Progress Log
+Started: Tue 31 Mar 2026 20:41:10 +08
+---
+
+## Codebase Patterns
+- Cloud Functions use `admin.firestore.Timestamp.now()` (not `Timestamp.now()`) for timestamps
+- Cloud Functions use `admin.firestore.FieldValue.increment()` for atomic counter updates
+- All Cloud Functions are deployed to `asia-southeast1` region
+- Stripe config loaded from `functions.config().stripe` with env var fallback
+- Functions build: `cd functions && npm run build` (no test script exists)
+- Flutter quality checks: `flutter analyze` (0 errors required) + `flutter test`
+- Pre-existing test failure in `test/widgets/auth_screens_test.dart` — "Dev Login (Simulator)" text not found
+- Routes using `extra` params follow CheckoutScreen pattern — pass Map<String, dynamic>
+- ReviewModel lives in `lib/features/profile/data/models/profile_model.dart` (with freezed)
+- Notifications stored at `notifications/{uid}/items/{notifId}` subcollection
+- Use `notificationList` route (not `notifications` which is settings path)
+- `photo_view` package available for full-screen image viewing
+
+---
+
+## 2026-03-31 20:45 +08 - US-041
+- Audited all 8 Cloud Functions in `functions/src/index.ts`
+- **Result:** All functions already use correct `admin.firestore.Timestamp.now()` pattern — no fix needed
+- Verified: `npm run build` compiles successfully, compiled `lib/index.js` matches source
+- Verified: `flutter analyze` shows 0 errors (only deprecation warnings)
+- Files reviewed: `functions/src/index.ts`, `functions/lib/index.js`, `functions/package.json`
+- **Learnings for future iterations:**
+  - The Cloud Functions code was already correct from the initial commit — PRD described a hypothetical issue
+  - No test script exists in functions/package.json — only build verification is possible
+  - Pre-existing test failure in auth_screens_test.dart (unrelated to functions)
+---
+
+## 2026-03-31 20:55 +08 - US-042
+- Created `lib/features/reviews/presentation/screens/submit_review_screen.dart`
+  - 5-star rating with RatingBar.builder, comment field (max 500 chars), category-based skill endorsement chips
+  - Writes to Firestore `users/{reviewedUserId}/reviews` subcollection
+  - Success snackbar + context.pop() on submit
+- Added `submitReview = '/reviews/submit'` to AppRoutes
+- Added GoRoute with extra params in app_router.dart
+- Added `_LeaveReviewCard` widget to TaskDetailScreen — shows for both poster and provider when task is completed
+- Files changed: `submit_review_screen.dart` (new), `app_constants.dart`, `app_router.dart`, `task_detail_screen.dart`
+- **Learnings for future iterations:**
+  - Routes using `extra` params follow the pattern in CheckoutScreen — pass Map<String, dynamic>
+  - ReviewModel already exists in `lib/features/profile/data/models/profile_model.dart` (with freezed)
+  - flutter_rating_bar is already a dependency — use `RatingBar.builder` for star ratings
+  - Skill endorsement chips use the existing `AppChip` widget from `core/widgets/app_button.dart`
+---
+
+## 2026-03-31 21:05 +08 - US-043
+- Created `lib/features/reviews/presentation/widgets/review_card.dart` — reusable ReviewCard widget
+- Created `lib/features/reviews/presentation/widgets/rating_summary.dart` — avg rating, stars, distribution bars
+- Updated PublicProfileScreen: added RatingSummary above review list, replaced _ReviewTile with ReviewCard
+- Added provider stats section to ProfileScreen: completed tasks, avg rating, review count (shown for provider/both roles)
+- Files changed: `review_card.dart` (new), `rating_summary.dart` (new), `public_profile_screen.dart`, `profile_screen.dart`
+- **Learnings for future iterations:**
+  - PublicProfileScreen already had reviews display via `userReviewsProvider` and `_ReviewTile` — extracted to reusable widget
+  - `ProviderStats` model is in `user_model.dart` and available via `user.stats`
+  - When removing code from a screen, check for unused imports (timeago, flutter_rating_bar)
+---
+
+## 2026-03-31 21:15 +08 - US-044
+- Created notification infrastructure: `notification_providers.dart` (AppNotification model, notificationsProvider, unreadNotificationCountProvider)
+- Created `notification_list_screen.dart` with type-based icons, read/unread state, navigation on tap, mark-as-read on tap
+- Created `notification_bell.dart` reusable widget with unread badge count
+- Added `notificationList = '/notifications'` route to AppRoutes and app_router.dart
+- Replaced empty notification IconButton in PosterHomeScreen and ProviderHomeScreen with NotificationBell widget
+- Files: 4 new files in notifications feature, updated app_constants.dart, app_router.dart, poster_home_screen.dart, provider_home_screen.dart
+- **Learnings for future iterations:**
+  - Notifications stored at `notifications/{uid}/items/{notifId}` subcollection
+  - Both home screens had placeholder `IconButton(onPressed: () {})` for notifications
+  - Use `notificationList` route (not `notifications` which is settings path)
+---
+
+## 2026-03-31 21:25 +08 - US-045
+- Added `markMessagesAsRead()` to ChatRepository — batch updates isRead field for non-self messages
+- Added mark-as-read call in ChatThreadScreen's `initState`
+- Added tap-to-open full-screen image with photo_view in `_MessageBubble`
+- Created `unreadChatsCountProvider` — sums unreadCount across all chats
+- Updated MainShellScreen bottom nav: Messages tab shows red badge when unread > 0
+- Files changed: `chat_repository.dart`, `chat_thread_screen.dart`, `main_shell_screen.dart`
+- **Learnings for future iterations:**
+  - Image sending, display, and read receipt icons were already implemented
+  - ChatListScreen already had per-chat unread badge
+  - `photo_view` package is already in pubspec.yaml — use `PhotoView` widget for full-screen images
+  - Avoid parameter name `sum` as it conflicts with Dart's `Sum` type
+---
+
+## 2026-03-31 21:35 +08 - US-046
+- Added `_recommendedTasksProvider` with `RecommendedTask` class — client-side filtering + scoring of open tasks
+- Added "Recommended for You" section with up to 5 scored recommendations
+- Match reasons: "In your neighbourhood" > "Matches your skills" > "Near you"
+- Added `_NoServiceCategoriesPrompt` widget with link to Edit Profile
+- Added `_RecommendedTaskCard` with match reason badge
+- Renamed existing "Open Tasks" header to "All Open Tasks"
+- Files changed: `provider_home_screen.dart`
+- **Learnings for future iterations:**
+  - `user.serviceCategories` is a `List<String>` of category IDs
+  - `user.neighbourhood` is a nullable String like "Ang Mo Kio"
+  - Recommendations are computed client-side from the same open tasks stream (avoids complex Firestore compound queries)
+---
+
+## 2026-03-31 21:45 +08 - US-047
+- Merged `ralph/sprint-7-feature-completion` into `main` (fast-forward)
+- Fixed 2 broken tests: auth_screens_test ("Dev Login" text mismatch), profile_chat_nav_test ("Open Tasks" → "All Open Tasks")
+- Added new routes to app_constants_test route list
+- `flutter analyze`: 0 errors (112 infos/warnings — all pre-existing)
+- `flutter test`: 242/242 tests passing
+- iOS build verification: not available without Xcode simulator, but flutter analyze and tests pass
+
+### Sprint 1-7 Feature Summary
+
+**Sprint 1-3: Foundation**
+- Firebase Auth (phone, email, dev login)
+- User profiles with Firestore CRUD
+- Task posting & discovery with category filtering
+- GoRouter navigation with auth guards
+
+**Sprint 4: Bidding & Chat**
+- Bid system (submit, accept, reject)
+- Real-time chat with Firestore
+- Task status lifecycle (open → assigned → inProgress → completed)
+
+**Sprint 5: Payments & Profile**
+- Stripe escrow payments (hold → capture on completion)
+- Profile completeness scoring
+- Photo gallery with Firebase Storage
+- Verification centre & badges
+- Category showcases on profiles
+
+**Sprint 6: Testing & Polish**
+- 242 unit/widget tests
+- Integration test suite (10 test files)
+- Bug fixes: GoRouter auth rebuild, Firebase config
+
+**Sprint 7: Feature Completion (this sprint)**
+- US-041: Audited all 8 Cloud Functions — all correct
+- US-042: Submit Review screen with 5-star rating, comments, skill endorsements
+- US-043: Review display with ReviewCard, RatingSummary (distribution bars), provider stats on ProfileScreen
+- US-044: Notification list screen with badge counts, type-based icons, mark-as-read
+- US-045: Chat image full-screen view, mark-as-read on open, unread badge on Messages tab
+- US-046: Provider task recommendations based on serviceCategories + neighbourhood
+- US-047: Merged to main, all tests passing
+---

@@ -1,0 +1,117 @@
+{
+  "featureName": "Sprint 7 — Feature Completion: Cloud Functions, Reviews, Notifications, Chat, Recommendations",
+  "description": "Complete all remaining features to bring the app to full MVP. Fix broken Cloud Functions, implement review/rating system UI, build notification list page with badges, enhance chat with image support and read receipts, and add provider task recommendations based on category and location.",
+  "branchName": "ralph/sprint-7-feature-completion",
+  "userStories": [
+    {
+      "id": "US-041",
+      "title": "Fix Cloud Functions — onUserCreate & Timestamp Issues",
+      "description": "Fix the broken onUserCreate Cloud Function that crashes with 'Cannot read properties of undefined (reading now)'. Audit all Cloud Functions for similar issues.",
+      "acceptanceCriteria": [
+        "Read functions/src/index.ts (or functions/lib/index.js) and identify the Timestamp.now() error",
+        "Fix onUserCreate: replace broken Timestamp reference with admin.firestore.FieldValue.serverTimestamp() or admin.firestore.Timestamp.now()",
+        "Audit all 8 Cloud Functions for similar issues: onUserCreate, onTaskCreate, createEscrowPayment, releaseEscrow, stripeWebhookHandler, updateCompletenessScore, onTaskComplete, onReviewCreate",
+        "Fix any other broken imports or references found",
+        "Run `cd functions && npm run build` (or tsc) to verify compilation succeeds",
+        "Run `cd functions && npm test` if tests exist, or verify no build errors",
+        "Deploy functions to emulator and verify onUserCreate no longer crashes",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-042",
+      "title": "Review & Rating System — Submit Review UI",
+      "description": "Build the UI for submitting reviews after task completion. Both poster and provider should be able to rate and review each other.",
+      "acceptanceCriteria": [
+        "Create lib/features/reviews/presentation/screens/submit_review_screen.dart",
+        "Screen accepts: taskId, reviewedUserId, reviewedUserName, taskCategory",
+        "UI includes: 5-star rating selector (tap to rate 1-5), comment text field (optional, max 500 chars), skill endorsement chips (optional, based on category), Submit button with loading state",
+        "On submit: create ReviewModel document in Firestore users/{reviewedUserId}/reviews subcollection",
+        "After successful submit: show success snackbar, navigate back",
+        "Add route /reviews/submit to AppRoutes and app_router.dart",
+        "Show 'Leave a Review' prompt on TaskDetailScreen when task is completed (for both poster and provider)",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-043",
+      "title": "Review & Rating System — Display Reviews",
+      "description": "Display reviews on user profiles and calculate average ratings.",
+      "acceptanceCriteria": [
+        "Create lib/features/reviews/presentation/widgets/review_card.dart — shows reviewer avatar, name, rating stars, comment, time ago, category badge, skill endorsements",
+        "Create lib/features/reviews/presentation/widgets/rating_summary.dart — shows average rating (large number + stars), total review count, rating distribution bars (5/4/3/2/1 star counts)",
+        "Add reviews section to PublicProfileScreen: rating summary at top, list of ReviewCards below",
+        "Use existing profileRepository.watchReviews() stream for real-time data",
+        "Add provider stats display on ProfileScreen: completed tasks, avg rating, review count",
+        "Empty state when no reviews: 'No reviews yet'",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-044",
+      "title": "Notification System — UI & Badge Count",
+      "description": "Build notification list screen and add unread badge counts to the bottom navigation.",
+      "acceptanceCriteria": [
+        "Create lib/features/notifications/presentation/screens/notification_list_screen.dart",
+        "Screen shows list of notifications from Firestore notifications/{uid} collection",
+        "Each notification tile shows: icon (based on type), title, body, time ago, read/unread indicator",
+        "Notification types: bid_received, bid_accepted, bid_rejected, task_completed, new_message, review_received",
+        "Tap notification navigates to relevant screen (task detail, chat, profile)",
+        "Mark notification as read on tap",
+        "Add notification bell icon to Home AppBar, tap opens NotificationListScreen",
+        "Add unread count badge to the notification bell icon (red circle with count)",
+        "Add route /notifications to AppRoutes and app_router.dart",
+        "Create notificationsProvider (StreamProvider) that watches unread count",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-045",
+      "title": "Chat Enhancement — Images, Read Receipts, Unread Count",
+      "description": "Enhance chat with image sending, read receipts, and unread message count on Messages tab.",
+      "acceptanceCriteria": [
+        "Image sending: tap image picker icon in ChatThreadScreen, pick image, upload to Firebase Storage chat_media/{chatId}/, send message with imageUrl field",
+        "Display image messages: show image thumbnail in message bubble (max 200x200), tap to open full screen with photo_view",
+        "Read receipts: when user opens ChatThreadScreen, mark all messages as read (update isRead field). Show double-check icon for read messages, single-check for sent",
+        "Unread count on Messages tab: add badge to Messages icon in bottom nav showing total unread messages across all chats",
+        "Create unreadChatsProvider that watches chats collection and sums unread counts",
+        "Update MainShellScreen bottom nav to show badge on Messages tab when unread > 0",
+        "ChatListScreen: show unread count badge on each chat tile",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-046",
+      "title": "Provider Task Recommendations",
+      "description": "Improve ProviderHomeScreen with smart task recommendations based on provider's service categories and neighbourhood.",
+      "acceptanceCriteria": [
+        "Update ProviderHomeScreen to show recommended tasks section: 'Recommended for You'",
+        "Recommendation logic: filter open tasks where categoryId matches provider's serviceCategories, prioritize tasks in same neighbourhood",
+        "Create a recommendedTasksProvider that combines user's serviceCategories + neighbourhood with open tasks query",
+        "Show up to 5 recommended tasks at top, then 'All Open Tasks' section below",
+        "If provider has no serviceCategories set, show prompt: 'Add your service categories in profile to get recommendations'",
+        "Each recommendation card shows: match reason ('Matches your skills', 'In your neighbourhood', 'Near you')",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-047",
+      "title": "Merge All Branches to Main & Final Verification",
+      "description": "Merge all sprint branches to main, run full test suite, verify everything works.",
+      "acceptanceCriteria": [
+        "Merge ralph/sprint-7-feature-completion into main branch",
+        "Run flutter analyze — 0 errors",
+        "Run flutter test — all unit tests pass (fix any broken tests from feature changes)",
+        "Verify app builds for iOS simulator without errors",
+        "Create a summary of all features completed across Sprint 1-7"
+      ],
+      "passes": false
+    }
+  ]
+}

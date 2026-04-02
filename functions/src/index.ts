@@ -20,7 +20,7 @@ export const onUserCreate = functions
   .region("asia-southeast1")
   .auth.user()
   .onCreate(async (user) => {
-    const now = admin.firestore.Timestamp.now();
+    const now = admin.firestore.FieldValue.serverTimestamp();
     await db.collection("users").doc(user.uid).set(
       {
         uid:                user.uid,
@@ -166,7 +166,7 @@ export const releaseEscrow = functions
     await db.collection("tasks").doc(taskId).update({
       status:           "completed",
       isEscrowReleased: true,
-      completedAt:      admin.firestore.Timestamp.now(),
+      completedAt:      admin.firestore.FieldValue.serverTimestamp(),
     });
 
     // Update provider earnings

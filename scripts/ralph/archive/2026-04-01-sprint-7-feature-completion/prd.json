@@ -1,0 +1,187 @@
+{
+  "featureName": "Sprint 8 — Two Complete Marketplace Flows: Task-Based Bidding + Direct Hire",
+  "description": "Implement two complete marketplace flows. Flow 1: Client posts task → Worker bids → Client reviews bids, messages bidder → Accepts bid → Worker starts work → Task completes → Mutual reviews. Flow 2: Worker advertises services → Client browses provider directory → Views profile → Hires directly (skips bidding) → Worker accepts/declines → Task completes → Mutual reviews. Includes new Provider Directory, direct hire system, improved chat, and UX fixes.",
+  "branchName": "ralph/sprint-8-marketplace-flows",
+  "userStories": [
+    {
+      "id": "US-048",
+      "title": "Fix Message Button on PublicProfileScreen + Direct Chat Support",
+      "description": "Wire up the non-functional Message button on PublicProfileScreen. Add direct chat support (chat without a task context).",
+      "acceptanceCriteria": [
+        "Add createDirectChat(uid1, uid2, otherUserName) method to ChatRepository that creates a chat with taskId=null, chatId='direct_{sorted_uids}'",
+        "Make ChatModel.taskId nullable (String?) if not already, update fromJson/toJson accordingly",
+        "On PublicProfileScreen, wire the 'Message' button: call createDirectChat, navigate to ChatThreadScreen",
+        "ChatThreadScreen AppBar: show other user's name when taskTitle is null (direct chat)",
+        "ChatListScreen: handle chats with null taskId gracefully (show other user's name instead of task title)",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-049",
+      "title": "Bid Cards — View Provider Profile + Message Bidder",
+      "description": "Enhance bid cards so the poster can view a bidder's profile and message them before accepting.",
+      "acceptanceCriteria": [
+        "In BidListSection _BidCard: make provider avatar and name tappable, navigate to /profile/:providerId",
+        "Add provider's average rating (stars) display on bid card if available",
+        "Add a 'Message' icon button on each pending bid card",
+        "Tapping Message creates a task-scoped chat between poster and bidder using existing createOrGetChat(taskId, posterId, bidderId)",
+        "Navigate to ChatThreadScreen after chat creation",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-050",
+      "title": "Provider Starts Work — Status Transition + Progress UI",
+      "description": "Add a 'Start Work' button for assigned providers and show clear status indicators.",
+      "acceptanceCriteria": [
+        "On TaskDetailScreen, when current user is assigned provider AND status is 'assigned': show 'Start Work' button",
+        "Tapping 'Start Work' calls TaskRepository.updateStatus(taskId, TaskStatus.inProgress)",
+        "Show a 'Work in Progress' banner/badge when status is inProgress",
+        "Poster view: show status change from 'Assigned' to 'In Progress' in the info rows",
+        "Provider view: replace 'Start Work' with 'Work in Progress' indicator when status is inProgress",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-051",
+      "title": "Pending Reviews Section on Home Screens",
+      "description": "After task completion, show review prompts on both poster and provider home screens.",
+      "acceptanceCriteria": [
+        "On PosterHomeScreen: add 'Pending Reviews' section showing completed tasks where poster has not yet left a review",
+        "On ProviderHomeScreen: add 'Pending Reviews' section showing completed tasks where provider has not yet left a review",
+        "Each pending review card shows: task title, other party's name, 'Leave Review' button",
+        "Tapping 'Leave Review' navigates to SubmitReviewScreen with correct params",
+        "Query: completed tasks where user is poster/provider, then check if review exists in the other user's reviews subcollection for that taskId",
+        "Section hidden when no pending reviews",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-052",
+      "title": "Service Rates, Availability on UserModel + Edit Profile",
+      "description": "Add structured pricing and availability data to provider profiles.",
+      "acceptanceCriteria": [
+        "Add to UserModel: serviceRates as Map<String, dynamic> (categoryId → {hourlyRate, fixedRate, rateNote}), availableDays as List<String>, availableHours as String?",
+        "Run build_runner to regenerate Freezed code",
+        "On EditProfileScreen: add 'Rates' section where provider can set hourly rate per service category they offer",
+        "On EditProfileScreen: add 'Availability' section with day-of-week chips (Mon-Sun) and hours text field",
+        "On PublicProfileScreen: show 'Rates & Availability' section between stats and bio (only for providers)",
+        "Display format: 'From S$XX/hr' for each category, available days as chips",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-053",
+      "title": "Provider Directory Screen — Browse Providers by Category",
+      "description": "Create a new screen where clients can browse available service providers filtered by category and neighbourhood.",
+      "acceptanceCriteria": [
+        "Create lib/features/providers/presentation/screens/provider_directory_screen.dart",
+        "Create lib/features/providers/data/repositories/provider_repository.dart with query: users where role in [provider, both], optional categoryId filter via serviceCategories array-contains, ordered by lastActiveAt desc",
+        "Horizontal category filter bar at top (All + 10 categories)",
+        "Provider cards show: avatar, name, headline, neighbourhood, avgRating stars, completedTasks count, top 2 service categories as chips, starting rate if available",
+        "Tapping card navigates to /profile/:userId",
+        "Pagination with infinite scroll (pageSize=20)",
+        "Empty state: 'No providers found in this category'",
+        "Add route /providers to AppRoutes and app_router.dart",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-054",
+      "title": "Discover Tab Toggle — Tasks vs Providers",
+      "description": "Update the Discover tab to let clients toggle between browsing tasks and browsing providers.",
+      "acceptanceCriteria": [
+        "Create lib/features/discover/presentation/screens/discover_screen.dart as a wrapper",
+        "Add a segmented control toggle at top: 'Tasks' | 'Providers'",
+        "'Tasks' segment shows existing TaskListScreen content",
+        "'Providers' segment shows ProviderDirectoryScreen content",
+        "Toggle state persists during session via StateProvider",
+        "For provider-role users: Discover tab only shows Tasks (no toggle, providers don't need to browse other providers)",
+        "For poster-role users: shows toggle with Tasks + Providers",
+        "For both-role users: shows toggle",
+        "Update app_router.dart: /tasks route now renders DiscoverScreen",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-055",
+      "title": "Direct Hire — TaskModel Changes + Provider Accept/Decline",
+      "description": "Add direct hire support to the task model and let providers accept or decline direct hire offers.",
+      "acceptanceCriteria": [
+        "Add isDirectHire (bool, default false) field to TaskModel, run build_runner",
+        "Add watchDirectHireOffers(String providerId) to TaskRepository: query tasks where assignedProviderId==providerId, isDirectHire==true, status==assigned",
+        "On ProviderHomeScreen: add 'Job Offers' section at top showing direct hire tasks pending acceptance",
+        "On TaskDetailScreen for assigned provider of a direct hire task: show 'Accept Job' and 'Decline' buttons instead of normal provider view",
+        "'Accept Job' sets status to inProgress",
+        "'Decline' sets status to cancelled, clears assignedProviderId",
+        "Add Firestore index for tasks(assignedProviderId, isDirectHire, status)",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-056",
+      "title": "Hire This Provider — Direct Hire PostTask Flow",
+      "description": "Implement the 'Hire This Provider' button on PublicProfileScreen that creates a pre-assigned task.",
+      "acceptanceCriteria": [
+        "On PublicProfileScreen: 'Hire' button passes extra params to PostTaskScreen: directHireProviderId, directHireProviderName, preSelectedCategory (first of provider's serviceCategories)",
+        "PostTaskScreen reads extras from GoRouter state.extra",
+        "If directHire mode: show 'Hiring: [Provider Name]' banner at top of all steps, pre-select category if provided",
+        "On submit in directHire mode: create task with status=assigned, assignedProviderId, assignedProviderName, isDirectHire=true",
+        "After creation: navigate to task detail (not checkout yet)",
+        "Send notification to provider about new direct hire offer",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-057",
+      "title": "Integration Test — Flow 1: Task-Based Bidding End-to-End",
+      "description": "Write and run an integration test that verifies the complete Flow 1: Alice posts task → Ben bids → Alice messages Ben → Alice accepts bid → Ben starts work → Alice marks complete → Both review.",
+      "acceptanceCriteria": [
+        "Create integration_test/flow1_task_bidding_test.dart",
+        "Use two accounts: Alice (poster) and Ben (provider), created via Firebase emulator",
+        "Step 1: Alice registers, posts a Cleaning task (S$60, Ang Mo Kio)",
+        "Step 2: Switch to Ben, register as provider, find task in Discover, submit bid (S$55)",
+        "Step 3: Switch to Alice, view task detail, see Ben's bid, tap Message on bid card, send message in chat",
+        "Step 4: Alice accepts Ben's bid, verify task status=assigned",
+        "Step 5: Switch to Ben, open task detail, tap 'Start Work', verify status=inProgress",
+        "Step 6: Switch to Alice, tap 'Mark as Complete', verify status=completed",
+        "Step 7: Alice leaves review for Ben (4 stars), Ben leaves review for Alice (5 stars)",
+        "Step 8: Verify reviews exist in Firestore",
+        "All steps pass, cleanup emulator data",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-058",
+      "title": "Integration Test — Flow 2: Direct Hire End-to-End",
+      "description": "Write and run an integration test that verifies the complete Flow 2: Ben sets up provider profile → Alice browses directory → Alice hires Ben directly → Ben accepts → Task completes → Both review.",
+      "acceptanceCriteria": [
+        "Create integration_test/flow2_direct_hire_test.dart",
+        "Use two accounts: Alice (poster) and Ben (provider)",
+        "Step 1: Ben registers as provider, sets up profile with serviceCategories=[cleaning], rates, availability",
+        "Step 2: Switch to Alice, register as poster, go to Discover → toggle to Providers",
+        "Step 3: Alice sees Ben in provider directory, taps to view profile",
+        "Step 4: Alice taps 'Hire' on Ben's profile, posts a direct hire task (Cleaning, S$50, Ang Mo Kio)",
+        "Step 5: Verify task in Firestore: isDirectHire=true, status=assigned, assignedProviderId=Ben",
+        "Step 6: Switch to Ben, verify 'Job Offers' section shows the task on ProviderHome",
+        "Step 7: Ben opens task detail, taps 'Accept Job', verify status=inProgress",
+        "Step 8: Alice and Ben exchange chat messages",
+        "Step 9: Alice marks task complete, verify status=completed",
+        "Step 10: Both leave reviews, verify in Firestore",
+        "All steps pass, cleanup emulator data",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "featureName": "Sprint 6 — Poster & Provider Full Journey Integration Tests",
+  "description": "Write and run complete user journey integration tests for both the Job Poster and Job Seeker (Provider) roles. Tests run on iOS simulator with Firebase Emulators. Each test walks through the entire user flow from registration to task completion, seeding backend data where needed for cross-user interactions. After implementation, run the tests and document all failures/bugs found.",
+  "branchName": "ralph/sprint-6-journey-tests",
+  "userStories": [
+    {
+      "id": "US-038",
+      "title": "Job Poster Full Journey Test",
+      "description": "Integration test covering the complete poster lifecycle: register with email → select poster role → setup profile → post task → view bids → accept bid → chat with provider → mark complete → verify final state.",
+      "acceptanceCriteria": [
+        "Create integration_test/poster_journey_test.dart",
+        "Test setup: initialize Firebase emulators, pre-seed a provider user (Ben Lim, role=provider) and leave them ready for backend bid seeding",
+        "Step 1 — App Launch: pump app, verify splash screen shows 'NeighbourGo', wait for welcome screen with 'Continue with Email' button",
+        "Step 2 — Register: tap 'Continue with Email', enter email 'poster-test@neighbourgo.com' and password 'test123456', tap 'Continue', verify navigation to role selection",
+        "Step 3 — Select Role: tap 'I need help' (poster), verify selected, tap 'Continue', verify profile setup screen",
+        "Step 4 — Profile Setup: enter name 'Alice Tan', headline 'Busy mum looking for help', select neighbourhood 'Ang Mo Kio', tap 'Complete Setup', verify home screen shows 'Hi, Alice!' and 'Post a Task' button",
+        "Step 5 — Post Task: tap Post FAB → Step 1: select 'Home Cleaning' → Step 2: title 'Deep clean 3-room HDB', description (20+ chars) → Step 3: location 'Blk 456 Ang Mo Kio Ave 3', neighbourhood 'Ang Mo Kio' → Step 4: budget '50' → Step 5: verify review, tap 'Post Task'",
+        "Step 6 — Verify task in Firestore: status=open, categoryId=cleaning, budgetMin=50, posterId matches",
+        "Step 7 — Seed bid: programmatically create bid from pre-seeded provider (Ben Lim, amount=65, message='5 years experience') in Firestore bids subcollection",
+        "Step 8 — View bids: navigate to task detail, verify bid visible with S$65, provider name, Accept/Reject buttons",
+        "Step 9 — Accept bid: tap Accept, verify task status=assigned and bid status=accepted in Firestore",
+        "Step 10 — Chat: tap 'Message Provider', verify ChatThreadScreen, send message 'Hi Ben, when can you come?', verify message appears, verify in Firestore",
+        "Step 11 — Complete task: navigate to task detail, tap 'Mark as Complete', confirm dialog, verify task status=completed in Firestore",
+        "Step 12 — Final state: verify completed task not in Active Tasks on home, verify profile shows 'Alice Tan'",
+        "Teardown: sign out, cleanup emulator data",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-039",
+      "title": "Job Seeker (Provider) Full Journey Test",
+      "description": "Integration test covering the complete provider lifecycle: register with email → select provider role → setup profile → browse tasks → submit bid → get accepted (seeded) → chat with poster → task completed (seeded) → verify final state.",
+      "acceptanceCriteria": [
+        "Create integration_test/provider_journey_test.dart",
+        "Test setup: initialize Firebase emulators, pre-seed a poster user (Alice Tan, role=poster) and an open task ('Deep clean 3-room HDB', cleaning, S$50-80, Ang Mo Kio) in Firestore",
+        "Step 1 — App Launch: pump app, verify splash → welcome screen with 'Continue with Email'",
+        "Step 2 — Register: tap 'Continue with Email', enter email 'provider-test@neighbourgo.com' and password 'test123456', tap 'Continue', verify role selection",
+        "Step 3 — Select Role: tap 'I want to earn' (provider), verify selected, tap 'Continue', verify profile setup",
+        "Step 4 — Profile Setup: enter name 'Ben Lim', headline 'Experienced cleaner & handyman', select neighbourhood 'Bedok', tap 'Complete Setup', verify ProviderHomeScreen shows 'Hi, Ben!' and 'Open Tasks'",
+        "Step 5 — Browse tasks: verify seeded task 'Deep clean 3-room HDB' visible in Open Tasks or Discover tab, tap to open TaskDetailScreen",
+        "Step 6 — Verify provider task detail: 'Submit Bid' button visible, no 'Mark as Complete', poster info shows 'Alice Tan'",
+        "Step 7 — Submit bid: tap 'Submit Bid', enter amount '65', enter proposal (20+ chars), tap submit, verify snackbar success",
+        "Step 8 — Verify bid in Firestore: amount=65, status=pending, providerId matches",
+        "Step 9 — Verify own bid view: task detail shows 'Your Bid' section with S$65 and 'Pending' badge",
+        "Step 10 — Seed acceptance: programmatically set bid status=accepted, task status=assigned, assignedProviderId=providerUid in Firestore",
+        "Step 11 — Verify accepted state: navigate to task detail, verify 'Accepted' badge, 'Message Poster' button visible",
+        "Step 12 — Chat: tap 'Message Poster', send message 'Hi Alice, I can come tomorrow at 10am.', verify message appears, verify in Firestore",
+        "Step 13 — Seed completion: programmatically set task status=completed, completedAt in Firestore",
+        "Step 14 — Verify completed state: task detail shows 'Completed' status, 'Message Poster' still visible",
+        "Step 15 — Final state: verify profile shows 'Ben Lim', home no longer shows completed task in open tasks",
+        "Teardown: sign out, cleanup emulator data",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-040",
+      "title": "Run Tests & Document All Bugs Found",
+      "description": "Actually execute both journey tests on the iOS simulator with Firebase emulators, collect all failures, and document every bug found.",
+      "acceptanceCriteria": [
+        "Ensure Firebase emulators can be started (firebase emulators:start)",
+        "Run poster_journey_test.dart on iOS simulator: flutter test integration_test/poster_journey_test.dart -d <simulator_id>",
+        "Run provider_journey_test.dart on iOS simulator: flutter test integration_test/provider_journey_test.dart -d <simulator_id>",
+        "If tests fail, document each failure with: (1) which step failed, (2) expected behavior, (3) actual behavior, (4) error message/stack trace",
+        "Create a bug report file at scripts/ralph/bug_report.md listing all issues found",
+        "Categorize bugs as: CRITICAL (blocks user flow), MAJOR (feature broken but workaround exists), MINOR (cosmetic/UX issue)",
+        "If possible, fix simple bugs (typos, missing null checks, wrong text) directly and re-run",
+        "Final summary: how many steps passed, how many failed, which features are working end-to-end",
+        "flutter analyze shows 0 errors"
+      ],
+      "passes": false
+    }
+  ]
+}

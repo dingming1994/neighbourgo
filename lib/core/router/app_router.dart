@@ -64,6 +64,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation != AppRoutes.emailAuth &&
           state.matchedLocation != AppRoutes.phoneAuth &&
           state.matchedLocation != AppRoutes.otpVerify) {
+        // Check if the user has completed onboarding before sending to home
+        final userModel = ref.read(currentUserProvider).valueOrNull;
+        if (userModel == null || !userModel.isProfileComplete) {
+          return AppRoutes.roleSelect;
+        }
         return AppRoutes.home;
       }
       return null;
