@@ -25,9 +25,10 @@ enum _BidDuration {
 
 class SubmitBidSheet extends ConsumerStatefulWidget {
   final String       taskId;
+  final double       taskBudget;
   final VoidCallback? onSuccess;
 
-  const SubmitBidSheet({super.key, required this.taskId, this.onSuccess});
+  const SubmitBidSheet({super.key, required this.taskId, required this.taskBudget, this.onSuccess});
 
   @override
   ConsumerState<SubmitBidSheet> createState() => _SubmitBidSheetState();
@@ -164,6 +165,9 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
                 if (v == null || v.isEmpty) return 'Enter a bid amount';
                 final n = double.tryParse(v);
                 if (n == null || n <= 0) return 'Enter a valid amount';
+                if (n < 1) return 'Minimum bid is S\$1';
+                final maxBid = widget.taskBudget * 2;
+                if (n > maxBid) return 'Bid cannot exceed S\$${maxBid.toStringAsFixed(0)}';
                 return null;
               },
             ),

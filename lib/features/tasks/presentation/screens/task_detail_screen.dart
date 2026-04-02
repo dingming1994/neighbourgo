@@ -209,7 +209,7 @@ class TaskDetailScreen extends ConsumerWidget {
                                     top: Radius.circular(20)),
                               ),
                               builder: (_) =>
-                                  SubmitBidSheet(taskId: taskId),
+                                  SubmitBidSheet(taskId: taskId, taskBudget: task.budgetMin),
                             ),
                           ),
                         );
