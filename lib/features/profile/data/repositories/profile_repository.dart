@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../models/profile_model.dart';
 
@@ -46,6 +47,9 @@ class ProfileRepository {
 
   // ── Avatar upload ─────────────────────────────────────────────────────────
   Future<String> uploadAvatar(String uid, File file) async {
+    final validationError = ImageValidator.validate(file);
+    if (validationError != null) throw Exception(validationError);
+
     final ext = file.path.split('.').last;
     final ref = _storage.ref('${AppConstants.profilePhotosPath}/$uid/avatar.$ext');
     final task = await ref.putFile(
@@ -64,6 +68,9 @@ class ProfileRepository {
     String? categoryId,
     bool    isCover = false,
   }) async {
+    final validationError = ImageValidator.validate(file);
+    if (validationError != null) throw Exception(validationError);
+
     final photoId = _uuid.v4();
     final ext     = file.path.split('.').last;
     final ref     = _storage.ref(

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../domain/models/message_model.dart';
@@ -96,11 +97,22 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null) return;
 
+    final file = File(picked.path);
+    final validationError = ImageValidator.validate(file);
+    if (validationError != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(validationError), backgroundColor: AppColors.error),
+        );
+      }
+      return;
+    }
+
     setState(() => _isSending = true);
     try {
       final repo = ref.read(chatRepositoryProvider);
       final url =
-          await repo.uploadChatImage(widget.chatId, File(picked.path));
+          await repo.uploadChatImage(widget.chatId, file);
       final message = MessageModel(
         messageId: '',
         chatId: widget.chatId,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -30,6 +31,18 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
       maxWidth: 1024, maxHeight: 1024, imageQuality: 85, limit: 5,
     );
     if (imgs.isEmpty) return;
+
+    // Validate images before upload
+    final files = imgs.map((x) => File(x.path)).toList();
+    final errors = ImageValidator.validateAll(files);
+    if (errors.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errors.first), backgroundColor: AppColors.error),
+        );
+      }
+      return;
+    }
 
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) return;

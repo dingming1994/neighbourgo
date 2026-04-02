@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -316,7 +317,21 @@ class _StepDescriptionState extends State<_StepDescription> {
 
   Future<void> _pick() async {
     final imgs = await ImagePicker().pickMultiImage(maxWidth: 1024, imageQuality: 80, limit: AppConstants.maxTaskPhotos);
-    setState(() => _photos = imgs.map((x) => File(x.path)).take(AppConstants.maxTaskPhotos).toList());
+    if (imgs.isEmpty) return;
+
+    final files = imgs.map((x) => File(x.path)).take(AppConstants.maxTaskPhotos).toList();
+    final errors = ImageValidator.validateAll(files);
+    if (errors.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errors.first), backgroundColor: Colors.red),
+        );
+      }
+      // Keep only valid files
+      files.removeWhere((f) => ImageValidator.validate(f) != null);
+    }
+
+    setState(() => _photos = files);
     widget.onPhotosChanged(_photos);
   }
 
