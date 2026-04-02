@@ -122,7 +122,7 @@
         "Add to Profile menu before Sign Out, add route /settings",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-078",

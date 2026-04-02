@@ -165,3 +165,22 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - The `_statusIndex` mapping: open=0, assigned=2, inProgress=3, completed=4 — "Bidding" is implicit (still open status)
   - Pre-existing test failures (4) unchanged
 ---
+
+## 2026-04-03 — US-077: Settings Page — Preferences & Account
+- Created `settings_screen.dart` with three sections: Notifications (push/email/chat toggles), Account (change password, delete account), About (version, terms, privacy, contact support)
+- Delete account has double confirmation dialog for safety
+- Change password sends Firebase password reset email (only for email accounts)
+- About section uses AppConstants for version, terms URL, privacy URL, support email
+- Added Settings route `/settings` to app_router.dart
+- Added Settings menu item to ProfileScreen before Sign Out
+- Files created:
+  - `lib/features/settings/presentation/screens/settings_screen.dart`
+- Files modified:
+  - `lib/core/router/app_router.dart` — added SettingsScreen import + route
+  - `lib/features/profile/presentation/screens/profile_screen.dart` — added Settings menu item
+- **Learnings for future iterations:**
+  - Implementation was already committed in a prior batch commit — verified all acceptance criteria met
+  - url_launcher is already a dependency in pubspec.yaml — use for external URLs
+  - Settings screen uses local state for notification toggles (not persisted to Firestore yet) — future story could wire to user preferences
+  - Pre-existing test failures (4) unchanged
+---
