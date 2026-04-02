@@ -77,6 +77,7 @@ class AppRoutes {
   static const postTask        = '/tasks/post';
   static const myTasks         = '/tasks/mine';
   static const bidsReceived    = '/tasks/:taskId/bids';
+  static const myBids          = '/bids/mine';
 
   // Profile
   static const myProfile       = '/profile';

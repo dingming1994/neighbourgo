@@ -96,6 +96,12 @@ class ProfileScreen extends ConsumerWidget {
                 label: 'Photo Gallery',
                 onTap: () => context.push(AppRoutes.photoGallery),
               ),
+              if (user.isProvider)
+                _MenuItem(
+                  icon: Icons.gavel_outlined,
+                  label: 'My Bids',
+                  onTap: () => context.push(AppRoutes.myBids),
+                ),
               const Divider(height: 1),
               _MenuItem(
                 icon: Icons.logout,

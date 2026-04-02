@@ -61,6 +61,7 @@ class TaskRepository {
 
   Stream<List<TaskModel>> watchMyPostedTasks(String uid) =>
       _col.where('posterId', isEqualTo: uid)
+          .where('status', whereIn: [TaskStatus.open.name, TaskStatus.assigned.name, TaskStatus.inProgress.name])
           .orderBy('createdAt', descending: true)
           .snapshots()
           .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
@@ -76,6 +77,13 @@ class TaskRepository {
       _col.where('posterId', isEqualTo: uid)
           .where('status', isEqualTo: TaskStatus.completed.name)
           .orderBy('completedAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
+
+  Stream<List<TaskModel>> watchMyCancelledPostTasks(String uid) =>
+      _col.where('posterId', isEqualTo: uid)
+          .where('status', isEqualTo: TaskStatus.cancelled.name)
+          .orderBy('createdAt', descending: true)
           .snapshots()
           .map((s) => s.docs.map((d) => TaskModelExt.fromFirestore(d)).toList());
 

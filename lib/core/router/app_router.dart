@@ -27,6 +27,8 @@ import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../../features/providers/presentation/screens/provider_directory_screen.dart';
 import '../../features/services/presentation/screens/create_service_screen.dart';
 import '../../features/services/presentation/screens/service_detail_screen.dart';
+import '../../features/tasks/presentation/screens/my_tasks_screen.dart';
+import '../../features/bids/presentation/screens/my_bids_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,11 +68,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation != AppRoutes.emailAuth &&
           state.matchedLocation != AppRoutes.phoneAuth &&
           state.matchedLocation != AppRoutes.otpVerify) {
-        // Check if the user has completed onboarding before sending to home
-        final userModel = ref.read(currentUserProvider).valueOrNull;
-        if (userModel == null || !userModel.isProfileComplete) {
-          return AppRoutes.roleSelect;
-        }
         return AppRoutes.home;
       }
       return null;
@@ -115,10 +112,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: AppRoutes.home,    builder: (_, __) => const HomeScreen()),
           GoRoute(path: AppRoutes.taskList, builder: (_, __) => const DiscoverScreen()),
-          GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const _MyTasksTab()),
+          GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const MyTasksScreen()),
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
+      ),
+
+      // ── My Bids (provider bid history) ─────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.myBids,
+        builder: (_, __) => const MyBidsScreen(),
       ),
 
       // ── Provider directory ──────────────────────────────────────────────────
@@ -221,14 +224,4 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Stub tab builders – replaced by real screens in their feature modules
-class _MyTasksTab  extends StatelessWidget { const _MyTasksTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('My Tasks'); }
-
-class _TabPlaceholder extends StatelessWidget {
-  final String label;
-  const _TabPlaceholder(this.label);
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Text(label, style: Theme.of(context).textTheme.headlineMedium),
-  );
-}
+// (Stubs removed – real screens imported from feature modules)
