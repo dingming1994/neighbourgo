@@ -47,7 +47,7 @@
         "flutter analyze 0 errors",
         "Write integration test: provider submits bid, verify cannot submit second bid on same task"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-082",

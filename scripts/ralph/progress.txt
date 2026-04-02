@@ -9,6 +9,9 @@ Started: Fri  3 Apr 2026 01:59:25 +08
 - Pre-existing test failures in `test/widgets/profile_chat_nav_test.dart` (EditProfileScreen Firebase init) — not related to feature work
 - Country code picker widget is in `lib/features/auth/presentation/widgets/country_code_picker.dart` — reusable `Country` model and `supportedCountries` list
 - Phone auth tests use `testPhone()` helper for large surface size (480x1200) and overflow suppression
+- BidRepository.hasExistingBid() queries by providerId — use for duplicate checks before any bid-related writes
+- FakeCollectionReference/FakeQuery in bid_repository_test.dart support `.where()` filtering via `_WhereClause` list
+- `bidsStreamProvider` (in bid_list_section.dart) is the canonical way to watch bids for a task — reuse it rather than creating new providers
 ---
 
 ## 2026-04-03 02:00 - US-079
@@ -47,4 +50,25 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - Phone auth screen uses `_selectedCountry.dialCode` to build the full phone number — any future changes to phone format must update both `_sendOtp()` and `_handleStateChange()`
   - The `testPhone()` helper in auth_screens_test.dart sets surface size to 480x1200 and suppresses overflow errors — use it for all phone auth screen tests
   - `AppConstants.phonePrefix` still exists but is no longer used by PhoneAuthScreen — it may be referenced elsewhere
+---
+
+## 2026-04-03 04:30 - US-081
+- Added `hasExistingBid()` method to BidRepository that queries by providerId before allowing submission
+- `submitBid()` now throws if provider already has a bid on the task (server-side guard)
+- SubmitBidSheet now watches `bidsStreamProvider` and shows read-only `_ExistingBidView` if provider already bid (shows amount, proposal, status)
+- Submit button disabled while `_isSubmitting` is true (prevents double-tap)
+- TaskDetailScreen: "Submit Bid" button hidden when provider already has a bid (watches bids stream, uses `Builder` widget)
+- `_ProviderBidView` (already existed) continues to show the existing bid details below
+- Added `where()` support to FakeCollectionReference and FakeQuery in test fakes
+- 3 new tests: duplicate throws, different provider succeeds, hasExistingBid returns correct values
+- Files changed:
+  - `lib/features/bids/data/repositories/bid_repository.dart`
+  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `test/bids/bid_repository_test.dart`
+- **Learnings for future iterations:**
+  - The `bidsStreamProvider` from `bid_list_section.dart` is widely used — import it rather than creating new providers
+  - TaskDetailScreen uses `Builder` widget pattern to watch additional providers inline without extracting a new widget
+  - FakeQuery now supports `_WhereClause` list for filtering — extend this pattern for future where() needs in tests
+  - The `_ExistingBidView` is a private widget in submit_bid_sheet.dart — if reuse is needed, extract to its own file
 ---
