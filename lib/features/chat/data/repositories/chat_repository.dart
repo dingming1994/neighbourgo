@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/models/chat_model.dart';
 import '../../domain/models/message_model.dart';
@@ -98,6 +99,9 @@ class ChatRepository {
 
   // ── Upload chat image ─────────────────────────────────────────────────────
   Future<String> uploadChatImage(String chatId, File file) async {
+    final validationError = ImageValidator.validate(file);
+    if (validationError != null) throw Exception(validationError);
+
     final id = _uuid.v4();
     final ext = file.path.split('.').last;
     final ref =
@@ -157,6 +161,26 @@ class ChatRepository {
       'createdAt': Timestamp.now(),
     });
 
+    return chatId;
+  }
+
+  // ── Create chat and send initial message ────────────────────────────────
+  Future<String> createChatWithMessage({
+    required String taskId,
+    required String posterId,
+    required String providerId,
+    required String senderId,
+    required String messageText,
+  }) async {
+    final chatId = await createOrGetChat(taskId, posterId, providerId);
+    final message = MessageModel(
+      messageId: '',
+      chatId: chatId,
+      senderId: senderId,
+      text: messageText,
+      timestamp: DateTime.now(),
+    );
+    await sendMessage(chatId, message);
     return chatId;
   }
 

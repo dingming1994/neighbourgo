@@ -372,9 +372,67 @@ void main() {
       expect(find.text('Enter your phone number'), findsOneWidget);
     });
 
-    testPhone('renders country code +65', (tester) async {
+    testPhone('renders default country code +65 with flag', (tester) async {
       await tester.pumpWidget(buildPhoneScreen());
       expect(find.text('+65'), findsOneWidget);
+      expect(find.text('\u{1F1F8}\u{1F1EC}'), findsOneWidget); // SG flag
+    });
+
+    testPhone('select country code via picker', (tester) async {
+      await tester.pumpWidget(buildPhoneScreen());
+
+      // Tap the country code button to open picker
+      await tester.tap(find.text('+65'));
+      await tester.pumpAndSettle();
+
+      // Bottom sheet should show country list
+      expect(find.text('Select Country'), findsOneWidget);
+      expect(find.text('Malaysia'), findsOneWidget);
+      expect(find.text('United States'), findsOneWidget);
+
+      // Select Malaysia
+      await tester.tap(find.text('Malaysia'));
+      await tester.pumpAndSettle();
+
+      // Country code should now be +60
+      expect(find.text('+60'), findsOneWidget);
+      expect(find.text('\u{1F1F2}\u{1F1FE}'), findsOneWidget); // MY flag
+    });
+
+    testPhone('phone input accepts digits only', (tester) async {
+      await tester.pumpWidget(buildPhoneScreen());
+
+      final field = find.byType(TextFormField);
+      await tester.enterText(field, 'abc123def456');
+      await tester.pump();
+
+      // Only digits should be kept
+      final ctrl = tester.widget<TextFormField>(field);
+      expect(ctrl.controller!.text, '123456');
+    });
+
+    testPhone('shows validation error for short phone number', (tester) async {
+      await tester.pumpWidget(buildPhoneScreen());
+
+      final field = find.byType(TextFormField);
+      await tester.enterText(field, '123');
+      await tester.tap(find.text('Send OTP'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Minimum 7 digits required'), findsOneWidget);
+    });
+
+    testPhone('valid phone number passes validation', (tester) async {
+      await tester.pumpWidget(buildPhoneScreen());
+
+      final field = find.byType(TextFormField);
+      await tester.enterText(field, '91234567');
+      await tester.tap(find.text('Send OTP'));
+      await tester.pumpAndSettle();
+
+      // No validation errors should appear
+      expect(find.text('Minimum 7 digits required'), findsNothing);
+      expect(find.text('Enter your phone number'), findsNothing);
     });
 
     testPhone('shows error message when state has error', (tester) async {

@@ -550,6 +550,91 @@ void main() {
       });
     });
 
+    group('createChatWithMessage', () {
+      test('creates chat and sends initial message', () async {
+        final db = FakeFirebaseFirestore();
+
+        // Set up tasks collection with a task doc for title lookup
+        final tasksCol = FakeCollectionReference();
+        tasksCol.addDoc('task-1',
+            data: {'title': 'Fix my sink'}, exists: true);
+        db.setCollection('tasks', tasksCol);
+
+        final repo = ChatRepository(db: db, storage: FakeFirebaseStorage());
+        final chatId = await repo.createChatWithMessage(
+          taskId: 'task-1',
+          posterId: 'poster-1',
+          providerId: 'provider-1',
+          senderId: 'poster-1',
+          messageText: 'Hi! I accepted your bid.',
+        );
+
+        // Chat was created with deterministic ID
+        expect(chatId, 'task-1_poster-1_provider-1');
+
+        // Verify chat doc was created
+        final chatDoc = db.getCollection('chats').docs[chatId];
+        expect(chatDoc, isNotNull);
+        expect(chatDoc!.lastSetData, isNotNull);
+        expect(chatDoc.lastSetData!['taskId'], 'task-1');
+        expect(chatDoc.lastSetData!['taskTitle'], 'Fix my sink');
+        expect(chatDoc.lastSetData!['participantIds'],
+            ['poster-1', 'provider-1']);
+
+        // Verify message was sent
+        final messagesCol = chatDoc.getSubcollection('messages');
+        expect(messagesCol.docs.length, 1);
+        final msgDoc = messagesCol.docs.values.first;
+        expect(msgDoc.lastSetData, isNotNull);
+        expect(msgDoc.lastSetData!['senderId'], 'poster-1');
+        expect(msgDoc.lastSetData!['text'], 'Hi! I accepted your bid.');
+
+        // Verify lastMessage was updated on chat doc
+        expect(chatDoc.lastUpdateData, isNotNull);
+        expect(chatDoc.lastUpdateData!['lastMessage'],
+            'Hi! I accepted your bid.');
+      });
+
+      test('reuses existing chat and still sends message', () async {
+        final db = FakeFirebaseFirestore();
+
+        // Pre-create the chat doc
+        final chatId =
+            ChatRepository.buildChatId('task-1', 'poster-1', 'provider-1');
+        db.getCollection('chats').addDoc(chatId,
+            data: {
+              'chatId': chatId,
+              'taskId': 'task-1',
+              'taskTitle': 'Fix my sink',
+              'participantIds': ['poster-1', 'provider-1'],
+              'lastMessage': null,
+              'lastMessageTime': null,
+            },
+            exists: true);
+
+        final repo = ChatRepository(db: db, storage: FakeFirebaseStorage());
+        final result = await repo.createChatWithMessage(
+          taskId: 'task-1',
+          posterId: 'poster-1',
+          providerId: 'provider-1',
+          senderId: 'poster-1',
+          messageText: 'Hello again!',
+        );
+
+        expect(result, chatId);
+
+        // Chat doc should NOT have been re-set (lastSetData stays null)
+        final chatDoc = db.getCollection('chats').docs[chatId]!;
+        expect(chatDoc.lastSetData, isNull);
+
+        // But message should still have been sent
+        final messagesCol = chatDoc.getSubcollection('messages');
+        expect(messagesCol.docs.length, 1);
+        final msgDoc = messagesCol.docs.values.first;
+        expect(msgDoc.lastSetData!['text'], 'Hello again!');
+      });
+    });
+
     group('uploadChatImage', () {
       test('upload logic uses correct storage path structure', () {
         // UploadTask has a private constructor and cannot be faked directly.

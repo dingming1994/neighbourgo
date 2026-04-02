@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../models/task_model.dart';
 
 class TaskRepository {
@@ -19,9 +20,15 @@ class TaskRepository {
 
   // ── Create ────────────────────────────────────────────────────────────────
   Future<String> createTask(TaskModel task, {List<File> photos = const []}) async {
+    // Validate all photos before uploading
+    for (final f in photos) {
+      final error = ImageValidator.validate(f);
+      if (error != null) throw Exception(error);
+    }
+
     final id = _uuid.v4();
 
-    // Upload photos first
+    // Upload photos
     final urls = <String>[];
     for (final f in photos) {
       final ext = f.path.split('.').last;

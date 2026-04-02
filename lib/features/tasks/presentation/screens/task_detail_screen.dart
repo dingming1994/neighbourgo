@@ -189,22 +189,33 @@ class TaskDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ] else ...[
                     // Normal bid-based flow
-                    if (isOpen) ...[
-                      AppButton(
-                        label: 'Submit Bid',
-                        onPressed: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20)),
+                    // Check if provider already has a bid on this task
+                    Builder(builder: (context) {
+                      final bidsAsync = ref.watch(bidsStreamProvider(taskId));
+                      final hasBid = bidsAsync.whenOrNull(
+                        data: (bids) => bids.any((b) => b.providerId == currentUser.uid),
+                      ) ?? false;
+
+                      if (isOpen && !hasBid) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: AppButton(
+                            label: 'Submit Bid',
+                            onPressed: () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20)),
+                              ),
+                              builder: (_) =>
+                                  SubmitBidSheet(taskId: taskId, taskBudget: task.budgetMin),
+                            ),
                           ),
-                          builder: (_) =>
-                              SubmitBidSheet(taskId: taskId),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
 
                     // Show provider's own bid if any
                     _ProviderBidView(

@@ -6,6 +6,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/bid_repository.dart';
 import '../../domain/models/bid_model.dart';
+import 'bid_list_section.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Duration options
@@ -24,9 +25,10 @@ enum _BidDuration {
 
 class SubmitBidSheet extends ConsumerStatefulWidget {
   final String       taskId;
+  final double       taskBudget;
   final VoidCallback? onSuccess;
 
-  const SubmitBidSheet({super.key, required this.taskId, this.onSuccess});
+  const SubmitBidSheet({super.key, required this.taskId, required this.taskBudget, this.onSuccess});
 
   @override
   ConsumerState<SubmitBidSheet> createState() => _SubmitBidSheetState();
@@ -101,6 +103,19 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Check for existing bid from this provider
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    final bidsAsync = ref.watch(bidsStreamProvider(widget.taskId));
+    final existingBid = bidsAsync.whenOrNull(
+      data: (bids) => user == null
+          ? null
+          : bids.where((b) => b.providerId == user.uid).firstOrNull,
+    );
+
+    if (existingBid != null) {
+      return _ExistingBidView(bid: existingBid);
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         left:   24,
@@ -150,6 +165,9 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
                 if (v == null || v.isEmpty) return 'Enter a bid amount';
                 final n = double.tryParse(v);
                 if (n == null || n <= 0) return 'Enter a valid amount';
+                if (n < 1) return 'Minimum bid is S\$1';
+                final maxBid = widget.taskBudget * 2;
+                if (n > maxBid) return 'Bid cannot exceed S\$${maxBid.toStringAsFixed(0)}';
                 return null;
               },
             ),
@@ -252,7 +270,7 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
               child: AppButton(
                 label:     'Submit Bid',
                 isLoading: _isSubmitting,
-                onPressed: () {
+                onPressed: _isSubmitting ? null : () {
                   debugPrint('=== SUBMIT BID TAPPED ===');
                   _submit();
                 },
@@ -261,6 +279,97 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
           ],
         ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Read-only view when provider already has a bid on this task
+// ─────────────────────────────────────────────────────────────────────────────
+class _ExistingBidView extends StatelessWidget {
+  final BidModel bid;
+  const _ExistingBidView({required this.bid});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Icon(Icons.check_circle_outline,
+              size: 48, color: AppColors.primary),
+          const SizedBox(height: 12),
+          Text('Bid Already Submitted',
+              style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.bgMint,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your Bid Amount',
+                    style: Theme.of(context).textTheme.labelMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'S\$${bid.amount.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (bid.message != null && bid.message!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text('Your Proposal',
+                      style: Theme.of(context).textTheme.labelMedium),
+                  const SizedBox(height: 4),
+                  Text(bid.message!,
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Status: ${bid.status.name.toUpperCase()}',
+            style: TextStyle(
+              color: bid.status == BidStatus.accepted
+                  ? AppColors.success
+                  : bid.status == BidStatus.rejected
+                      ? AppColors.error
+                      : AppColors.warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SafeArea(
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/task_model.dart';
 import '../../data/repositories/task_repository.dart';
@@ -90,11 +91,9 @@ class _TaskList extends ConsumerWidget {
 
     return tasksAsync.when(
       loading: () => const _MyTasksLoadingList(),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Error: $e', style: const TextStyle(color: AppColors.error)),
-        ),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(provider),
       ),
       data: (tasks) {
         if (tasks.isEmpty) {

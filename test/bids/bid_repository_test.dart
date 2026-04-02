@@ -61,8 +61,36 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   final FakeCollectionReference? _parent;
   String? lastOrderByField;
   bool? lastDescending;
+  // where filters
+  final List<_WhereClause> _whereClauses;
 
-  FakeQuery(this._results, {FakeCollectionReference? parent}) : _parent = parent;
+  FakeQuery(this._results, {FakeCollectionReference? parent, List<_WhereClause>? whereClauses})
+      : _parent = parent,
+        _whereClauses = whereClauses ?? [];
+
+  List<Map<String, dynamic>> get _filteredResults {
+    if (_whereClauses.isEmpty) return _results;
+    return _results.where((data) {
+      return _whereClauses.every((clause) => data[clause.field] == clause.value);
+    }).toList();
+  }
+
+  @override
+  Query<Map<String, dynamic>> where(Object field,
+      {Object? isEqualTo,
+      Object? isNotEqualTo,
+      Object? isLessThan,
+      Object? isLessThanOrEqualTo,
+      Object? isGreaterThan,
+      Object? isGreaterThanOrEqualTo,
+      Object? arrayContains,
+      Iterable<Object?>? arrayContainsAny,
+      Iterable<Object?>? whereIn,
+      Iterable<Object?>? whereNotIn,
+      bool? isNull}) {
+    final clauses = [..._whereClauses, _WhereClause(field as String, isEqualTo)];
+    return FakeQuery(_results, parent: _parent, whereClauses: clauses);
+  }
 
   @override
   Query<Map<String, dynamic>> orderBy(Object field,
@@ -77,7 +105,7 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
       {bool includeMetadataChanges = false,
       ListenSource source = ListenSource.defaultSource}) {
     final parent = _parent;
-    final docs = _results.map((data) {
+    final docs = _filteredResults.map((data) {
       final docId = data['bidId'] as String? ?? data['id'] as String? ?? 'doc-id';
       final ref = parent != null
           ? parent.docs.putIfAbsent(docId, () => FakeDocumentReference(id: docId, data: data, exists: true))
@@ -91,7 +119,7 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   Future<QuerySnapshot<Map<String, dynamic>>> get(
       [GetOptions? options]) async {
     final parent = _parent;
-    final docs = _results.map((data) {
+    final docs = _filteredResults.map((data) {
       final docId = data['bidId'] as String? ?? data['id'] as String? ?? 'doc-id';
       final ref = parent != null
           ? parent.docs.putIfAbsent(docId, () => FakeDocumentReference(id: docId, data: data, exists: true))
@@ -100,6 +128,12 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
     }).toList();
     return FakeQuerySnapshot(docs: docs);
   }
+}
+
+class _WhereClause {
+  final String field;
+  final Object? value;
+  _WhereClause(this.field, this.value);
 }
 
 class FakeDocumentReference extends Fake
@@ -172,6 +206,22 @@ class FakeCollectionReference extends Fake
   void addDoc(String id,
       {Map<String, dynamic>? data, bool exists = false}) {
     docs[id] = FakeDocumentReference(id: id, data: data, exists: exists);
+  }
+
+  @override
+  Query<Map<String, dynamic>> where(Object field,
+      {Object? isEqualTo,
+      Object? isNotEqualTo,
+      Object? isLessThan,
+      Object? isLessThanOrEqualTo,
+      Object? isGreaterThan,
+      Object? isGreaterThanOrEqualTo,
+      Object? arrayContains,
+      Iterable<Object?>? arrayContainsAny,
+      Iterable<Object?>? whereIn,
+      Iterable<Object?>? whereNotIn,
+      bool? isNull}) {
+    return _query.where(field, isEqualTo: isEqualTo);
   }
 
   @override
@@ -557,6 +607,118 @@ void main() {
           amount: 25.0,
         );
         expect(bid.status, BidStatus.pending);
+      });
+    });
+
+    group('duplicate bid prevention', () {
+      test('submitBid throws if provider already has a bid on the task', () async {
+        final db = FakeFirebaseFirestore();
+
+        // Set up bids subcollection with existing bid from provider-1
+        final bidsCol = FakeCollectionReference(queryResults: [
+          {
+            'bidId': 'existing-bid',
+            'taskId': 'task-1',
+            'providerId': 'provider-1',
+            'providerName': 'Jane',
+            'amount': 50.0,
+            'status': 'pending',
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+
+        final taskDocRef = FakeDocumentReference(id: 'task-1', exists: true);
+        taskDocRef.setSubcollection('bids', bidsCol);
+
+        final tasksCol = FakeCollectionReference();
+        tasksCol.docs['task-1'] = taskDocRef;
+        db.setCollection('tasks', tasksCol);
+
+        final repo = BidRepository(db: db);
+
+        const duplicateBid = BidModel(
+          bidId: '',
+          taskId: 'task-1',
+          providerId: 'provider-1',
+          providerName: 'Jane',
+          amount: 60.0,
+          message: 'Second bid attempt',
+        );
+
+        expect(
+          () => repo.submitBid('task-1', duplicateBid),
+          throwsA(isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('already submitted a bid'),
+          )),
+        );
+      });
+
+      test('submitBid succeeds when a different provider bids', () async {
+        final db = FakeFirebaseFirestore();
+
+        // Existing bid from provider-1
+        final bidsCol = FakeCollectionReference(queryResults: [
+          {
+            'bidId': 'existing-bid',
+            'taskId': 'task-1',
+            'providerId': 'provider-1',
+            'providerName': 'Jane',
+            'amount': 50.0,
+            'status': 'pending',
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+
+        final taskDocRef = FakeDocumentReference(id: 'task-1', exists: true);
+        taskDocRef.setSubcollection('bids', bidsCol);
+
+        final tasksCol = FakeCollectionReference();
+        tasksCol.docs['task-1'] = taskDocRef;
+        db.setCollection('tasks', tasksCol);
+
+        final repo = BidRepository(db: db);
+
+        // Different provider submits — should succeed
+        const newBid = BidModel(
+          bidId: '',
+          taskId: 'task-1',
+          providerId: 'provider-2',
+          providerName: 'Bob',
+          amount: 45.0,
+          message: 'I can help!',
+        );
+
+        final bidId = await repo.submitBid('task-1', newBid);
+        expect(bidId, isNotEmpty);
+      });
+
+      test('hasExistingBid returns true when bid exists', () async {
+        final db = FakeFirebaseFirestore();
+
+        final bidsCol = FakeCollectionReference(queryResults: [
+          {
+            'bidId': 'bid-1',
+            'taskId': 'task-1',
+            'providerId': 'provider-1',
+            'providerName': 'Jane',
+            'amount': 50.0,
+            'status': 'pending',
+          },
+        ]);
+
+        final taskDocRef = FakeDocumentReference(id: 'task-1', exists: true);
+        taskDocRef.setSubcollection('bids', bidsCol);
+
+        final tasksCol = FakeCollectionReference();
+        tasksCol.docs['task-1'] = taskDocRef;
+        db.setCollection('tasks', tasksCol);
+
+        final repo = BidRepository(db: db);
+
+        expect(await repo.hasExistingBid('task-1', 'provider-1'), true);
+        expect(await repo.hasExistingBid('task-1', 'provider-999'), false);
       });
     });
   });

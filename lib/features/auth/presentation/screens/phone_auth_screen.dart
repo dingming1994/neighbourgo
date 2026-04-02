@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/providers/auth_provider.dart';
+import '../widgets/country_code_picker.dart';
 
 class PhoneAuthScreen extends ConsumerStatefulWidget {
   const PhoneAuthScreen({super.key});
@@ -16,7 +18,7 @@ class PhoneAuthScreen extends ConsumerStatefulWidget {
 class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   final _phoneCtrl = TextEditingController();
   final _formKey   = GlobalKey<FormState>();
-  String _countryCode = '+65';
+  Country _selectedCountry = defaultCountry;
   bool _navigated = false;
 
   @override
@@ -34,7 +36,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
       }
     } else if (next.otpSent && next.verificationId != null) {
       _navigated = true;
-      final phone = '$_countryCode${_phoneCtrl.text.trim()}';
+      final phone = '${_selectedCountry.dialCode}${_phoneCtrl.text.trim()}';
       context.push(
         '${AppRoutes.otpVerify}?vid=${next.verificationId}&phone=${Uri.encodeComponent(phone)}',
       );
@@ -44,9 +46,15 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     _navigated = false;
-    final phone = '$_countryCode${_phoneCtrl.text.trim()}';
+    final phone = '${_selectedCountry.dialCode}${_phoneCtrl.text.trim()}';
     ref.read(phoneAuthProvider.notifier).sendOtp(phone);
-    // Navigation is handled by _handleStateChange via ref.listen
+  }
+
+  Future<void> _pickCountry() async {
+    final country = await showCountryCodePicker(context);
+    if (country != null) {
+      setState(() => _selectedCountry = country);
+    }
   }
 
   @override
@@ -81,9 +89,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                   children: [
                     // Country code picker
                     GestureDetector(
-                      onTap: () {
-                        // TODO: show country picker sheet
-                      },
+                      onTap: _pickCountry,
                       child: Container(
                         height: 52,
                         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -94,9 +100,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Text('🇸🇬', style: TextStyle(fontSize: 20)),
+                            Text(_selectedCountry.flag, style: const TextStyle(fontSize: 20)),
                             const SizedBox(width: 6),
-                            Text(_countryCode, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(_selectedCountry.dialCode, style: const TextStyle(fontWeight: FontWeight.w600)),
                             const Icon(Icons.expand_more, size: 18, color: AppColors.textHint),
                           ],
                         ),
@@ -109,6 +115,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                       child: TextFormField(
                         controller:  _phoneCtrl,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         style:       const TextStyle(fontSize: 18, letterSpacing: 1.5),
                         decoration:  const InputDecoration(
                           hintText: '9123 4567',
@@ -116,7 +125,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return 'Enter your phone number';
-                          if (v.trim().length < 8) return 'Enter a valid SG number';
+                          final digits = v.trim();
+                          if (digits.length < 7) return 'Minimum 7 digits required';
+                          if (digits.length > 15) return 'Maximum 15 digits allowed';
                           return null;
                         },
                         onFieldSubmitted: (_) => _sendOtp(),

@@ -60,17 +60,30 @@ class FakeQuerySnapshot extends Fake
   FakeQuerySnapshot({required this.docs});
 }
 
+class _WhereClause {
+  final String field;
+  final Object? value;
+  _WhereClause(this.field, this.value);
+}
+
 class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   final List<Map<String, dynamic>> _results;
   final FakeCollectionReference? _parent;
-  String? lastWhereField;
-  Object? lastWhereValue;
+  final List<_WhereClause> _whereClauses;
   String? lastOrderByField;
   bool? lastDescending;
   int? lastLimit;
 
-  FakeQuery(this._results, {FakeCollectionReference? parent})
-      : _parent = parent;
+  FakeQuery(this._results, {FakeCollectionReference? parent, List<_WhereClause>? whereClauses})
+      : _parent = parent,
+        _whereClauses = whereClauses ?? [];
+
+  List<Map<String, dynamic>> get _filteredResults {
+    if (_whereClauses.isEmpty) return _results;
+    return _results.where((data) {
+      return _whereClauses.every((clause) => data[clause.field] == clause.value);
+    }).toList();
+  }
 
   @override
   Query<Map<String, dynamic>> where(Object field,
@@ -85,9 +98,8 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
       Iterable<Object?>? whereIn,
       Iterable<Object?>? whereNotIn,
       bool? isNull}) {
-    lastWhereField = field as String;
-    lastWhereValue = arrayContains ?? isEqualTo;
-    return this;
+    final clauses = [..._whereClauses, _WhereClause(field as String, isEqualTo)];
+    return FakeQuery(_results, parent: _parent, whereClauses: clauses);
   }
 
   @override
@@ -101,7 +113,7 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   @override
   Query<Map<String, dynamic>> limit(int length) {
     lastLimit = length;
-    return this;
+    return FakeQuery(_filteredResults, parent: _parent, whereClauses: _whereClauses);
   }
 
   @override
@@ -109,7 +121,7 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
       {bool includeMetadataChanges = false,
       ListenSource source = ListenSource.defaultSource}) {
     final parent = _parent;
-    final docs = _results.map((data) {
+    final docs = _filteredResults.map((data) {
       final docId = data['id'] as String? ?? 'doc-id';
       final ref = parent != null
           ? parent.docs.putIfAbsent(docId,
@@ -124,7 +136,7 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   Future<QuerySnapshot<Map<String, dynamic>>> get(
       [GetOptions? options]) async {
     final parent = _parent;
-    final docs = _results.map((data) {
+    final docs = _filteredResults.map((data) {
       final docId = data['id'] as String? ?? 'doc-id';
       final ref = parent != null
           ? parent.docs.putIfAbsent(docId,
@@ -245,6 +257,11 @@ class FakeCollectionReference extends Fake
   }
 
   @override
+  Query<Map<String, dynamic>> limit(int length) {
+    return _query.limit(length);
+  }
+
+  @override
   Stream<QuerySnapshot<Map<String, dynamic>>> snapshots(
       {bool includeMetadataChanges = false,
       ListenSource source = ListenSource.defaultSource}) {
@@ -255,6 +272,15 @@ class FakeCollectionReference extends Fake
   Future<QuerySnapshot<Map<String, dynamic>>> get(
       [GetOptions? options]) async {
     return _query.get();
+  }
+
+  @override
+  Future<DocumentReference<Map<String, dynamic>>> add(
+      Map<String, dynamic> data) async {
+    final docId = data['id'] as String? ?? 'auto-${docs.length}';
+    final ref = FakeDocumentReference(id: docId, data: data, exists: true);
+    docs[docId] = ref;
+    return ref;
   }
 
   FakeQuery get query => _query;
@@ -729,6 +755,252 @@ void main() {
         final reviewDoc = reviewsCol.docs['review-1']!;
         expect(reviewDoc.lastUpdateData, isNotNull);
         expect(reviewDoc.lastUpdateData!['providerReply'], 'Thank you!');
+      });
+    });
+
+    group('hasExistingReview', () {
+      test('returns true when review from reviewer exists for task', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.0,
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+        final exists = await repo.hasExistingReview(
+          reviewedUserId: 'user-1',
+          taskId: 'task-1',
+          reviewerId: 'reviewer-1',
+        );
+
+        expect(exists, true);
+      });
+
+      test('returns false when no review exists for different reviewer', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.0,
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+        final exists = await repo.hasExistingReview(
+          reviewedUserId: 'user-1',
+          taskId: 'task-1',
+          reviewerId: 'reviewer-999',
+        );
+
+        expect(exists, false);
+      });
+    });
+
+    group('fetchExistingReview', () {
+      test('returns review when it exists', () async {
+        final db = FakeFirebaseFirestore();
+        final now = DateTime.now();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.5,
+            'comment': 'Great job!',
+            'skillEndorsements': <String>[],
+            'createdAt': now.toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+        final review = await repo.fetchExistingReview(
+          reviewedUserId: 'user-1',
+          taskId: 'task-1',
+          reviewerId: 'reviewer-1',
+        );
+
+        expect(review, isNotNull);
+        expect(review!.reviewerName, 'Alice');
+        expect(review.rating, 4.5);
+      });
+
+      test('returns null when no review exists', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.0,
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+        final review = await repo.fetchExistingReview(
+          reviewedUserId: 'user-1',
+          taskId: 'task-1',
+          reviewerId: 'reviewer-999',
+        );
+
+        expect(review, isNull);
+      });
+    });
+
+    group('submitReview', () {
+      test('creates review when no duplicate exists', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: []);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+        await repo.submitReview(
+          reviewedUserId: 'user-1',
+          reviewerId: 'reviewer-1',
+          reviewerName: 'Alice',
+          taskId: 'task-1',
+          taskCategory: 'cleaning',
+          rating: 4.5,
+          comment: 'Great!',
+          skillEndorsements: ['Thorough'],
+        );
+
+        // Verify a doc was added to the reviews subcollection
+        expect(reviewsCol.docs.length, 1);
+      });
+
+      test('throws when duplicate review exists', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.0,
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+
+        expect(
+          () => repo.submitReview(
+            reviewedUserId: 'user-1',
+            reviewerId: 'reviewer-1',
+            reviewerName: 'Alice',
+            taskId: 'task-1',
+            taskCategory: 'cleaning',
+            rating: 5.0,
+            skillEndorsements: [],
+          ),
+          throwsA(isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('already reviewed'),
+          )),
+        );
+      });
+
+      test('allows different reviewer on same task', () async {
+        final db = FakeFirebaseFirestore();
+
+        final reviewsCol = FakeCollectionReference(queryResults: [
+          {
+            'id': 'review-1',
+            'reviewerId': 'reviewer-1',
+            'reviewerName': 'Alice',
+            'reviewedUserId': 'user-1',
+            'taskId': 'task-1',
+            'taskCategory': 'cleaning',
+            'rating': 4.0,
+            'createdAt': DateTime.now().toIso8601String(),
+          },
+        ]);
+        final userDocRef = FakeDocumentReference(id: 'user-1', exists: true);
+        userDocRef.setSubcollection(AppConstants.reviewsCol, reviewsCol);
+
+        final usersCol = FakeCollectionReference();
+        usersCol.docs['user-1'] = userDocRef;
+        db.setCollection(AppConstants.usersCol, usersCol);
+
+        final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
+
+        // Different reviewer should succeed
+        await repo.submitReview(
+          reviewedUserId: 'user-1',
+          reviewerId: 'reviewer-2',
+          reviewerName: 'Bob',
+          taskId: 'task-1',
+          taskCategory: 'cleaning',
+          rating: 3.0,
+          skillEndorsements: [],
+        );
+
+        expect(reviewsCol.docs.length, 1); // added one doc
       });
     });
   });

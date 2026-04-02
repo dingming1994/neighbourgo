@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/image_validator.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -316,7 +318,21 @@ class _StepDescriptionState extends State<_StepDescription> {
 
   Future<void> _pick() async {
     final imgs = await ImagePicker().pickMultiImage(maxWidth: 1024, imageQuality: 80, limit: AppConstants.maxTaskPhotos);
-    setState(() => _photos = imgs.map((x) => File(x.path)).take(AppConstants.maxTaskPhotos).toList());
+    if (imgs.isEmpty) return;
+
+    final files = imgs.map((x) => File(x.path)).take(AppConstants.maxTaskPhotos).toList();
+    final errors = ImageValidator.validateAll(files);
+    if (errors.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errors.first), backgroundColor: Colors.red),
+        );
+      }
+      // Keep only valid files
+      files.removeWhere((f) => ImageValidator.validate(f) != null);
+    }
+
+    setState(() => _photos = files);
     widget.onPhotosChanged(_photos);
   }
 
@@ -455,12 +471,15 @@ class _StepBudgetState extends State<_StepBudget> {
           const Text('Minimum (S\$)', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
-            controller: _minCtrl, keyboardType: TextInputType.number,
+            controller: _minCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
             decoration: const InputDecoration(prefixText: 'S\$ '),
             onChanged: (v) { _min = double.tryParse(v) ?? 0; widget.onBudgetChanged(_min, _max); },
             validator: (v) {
               final n = double.tryParse(v ?? '');
-              if (n == null || n < 5) return 'Min S\$5';
+              if (n == null || n < 5) return 'Minimum budget is S\$5';
+              if (n > 10000) return 'Maximum budget is S\$10,000';
               return null;
             },
           ),
@@ -471,9 +490,19 @@ class _StepBudgetState extends State<_StepBudget> {
             const Text('Maximum (S\$)', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _maxCtrl, keyboardType: TextInputType.number,
+              controller: _maxCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
               decoration: const InputDecoration(prefixText: 'S\$ '),
               onChanged: (v) { _max = double.tryParse(v); widget.onBudgetChanged(_min, _max); },
+              validator: (v) {
+                if (v == null || v.isEmpty) return null;
+                final n = double.tryParse(v);
+                if (n == null || n < 5) return 'Minimum budget is S\$5';
+                if (n > 10000) return 'Maximum budget is S\$10,000';
+                if (n < _min) return 'Max must be ≥ min';
+                return null;
+              },
             ),
           ])),
       ]),
