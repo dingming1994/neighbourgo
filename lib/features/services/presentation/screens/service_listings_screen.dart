@@ -1,0 +1,240 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
+
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/category_constants.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../data/models/service_listing_model.dart';
+import '../../data/repositories/service_listing_repository.dart';
+import '../widgets/service_card.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State providers
+// ─────────────────────────────────────────────────────────────────────────────
+final _serviceCategoryProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
+
+final _serviceListingsProvider =
+    StreamProvider.autoDispose<List<ServiceListingModel>>((ref) {
+  final categoryId = ref.watch(_serviceCategoryProvider);
+  return ref
+      .watch(serviceListingRepositoryProvider)
+      .watchActiveListings(categoryId: categoryId);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screen
+// ─────────────────────────────────────────────────────────────────────────────
+class ServiceListingsScreen extends ConsumerWidget {
+  final bool embedded;
+  const ServiceListingsScreen({super.key, this.embedded = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listingsAsync = ref.watch(_serviceListingsProvider);
+    final selectedCategory = ref.watch(_serviceCategoryProvider);
+
+    final body = Column(
+      children: [
+        _CategoryFilterBar(
+          selected: selectedCategory,
+          onSelect: (id) =>
+              ref.read(_serviceCategoryProvider.notifier).state = id,
+        ),
+        Expanded(
+          child: listingsAsync.when(
+            loading: () => const _LoadingList(),
+            error: (e, _) => Center(
+              child: Text('Error: $e',
+                  style: const TextStyle(color: AppColors.error)),
+            ),
+            data: (listings) {
+              if (listings.isEmpty) return const _EmptyView();
+              return ListView.separated(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                itemCount: listings.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (_, i) => ServiceCard(listing: listings[i]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+
+    if (embedded) {
+      return ColoredBox(color: AppColors.bgLight, child: body);
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.bgLight,
+      appBar: AppBar(title: const Text('Service Listings')),
+      body: body,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category filter bar
+// ─────────────────────────────────────────────────────────────────────────────
+class _CategoryFilterBar extends StatelessWidget {
+  final String? selected;
+  final void Function(String?) onSelect;
+
+  const _CategoryFilterBar({required this.selected, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.bgCard,
+      child: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: 'All',
+                  emoji: '✨',
+                  selected: selected == null,
+                  onTap: () => onSelect(null),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                ...AppCategories.all.map(
+                  (cat) => Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterChip(
+                      label: cat.label,
+                      emoji: cat.emoji,
+                      selected: selected == cat.id,
+                      color: cat.color,
+                      onTap: () =>
+                          onSelect(selected == cat.id ? null : cat.id),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final String emoji;
+  final bool selected;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? AppColors.primary;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color:
+              selected ? chipColor.withValues(alpha: 0.12) : AppColors.bgMint,
+          borderRadius: AppRadius.chip,
+          border: Border.all(
+            color: selected ? chipColor : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? chipColor : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading / Empty
+// ─────────────────────────────────────────────────────────────────────────────
+class _LoadingList extends StatelessWidget {
+  const _LoadingList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (_, __) => Shimmer.fromColors(
+        baseColor: AppColors.divider,
+        highlightColor: Colors.white,
+        child: Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: AppRadius.card,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🏪', style: TextStyle(fontSize: 52)),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              'No services listed yet',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'Service listings from providers will appear here.',
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

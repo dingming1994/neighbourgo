@@ -100,6 +100,16 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // ── Service Listings ──────────────────────────────────────────────────────
+    match /service_listings/{listingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && isNotDeactivated()
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+                            && resource.data.providerId == request.auth.uid;
+    }
+
     // ── Payments (read-only for users; write via Cloud Functions only) ───────
     match /payments/{paymentId} {
       allow read: if isSignedIn()

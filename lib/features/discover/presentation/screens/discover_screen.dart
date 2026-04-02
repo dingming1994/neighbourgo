@@ -6,13 +6,14 @@ import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../tasks/presentation/screens/task_list_screen.dart';
 import '../../../providers/presentation/screens/provider_directory_screen.dart';
+import '../../../services/presentation/screens/service_listings_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toggle state — persists during session
 // ─────────────────────────────────────────────────────────────────────────────
-enum DiscoverSegment { tasks, providers }
+enum DiscoverSegment { tasks, providers, services }
 
 final discoverSegmentProvider =
     StateProvider<DiscoverSegment>((_) => DiscoverSegment.tasks);
@@ -58,9 +59,13 @@ class DiscoverScreen extends ConsumerWidget {
                 ref.read(discoverSegmentProvider.notifier).state = s,
           ),
           Expanded(
-            child: segment == DiscoverSegment.tasks
-                ? const TaskListScreen(embedded: true)
-                : const ProviderDirectoryScreen(embedded: true),
+            child: switch (segment) {
+              DiscoverSegment.tasks => const TaskListScreen(embedded: true),
+              DiscoverSegment.providers =>
+                const ProviderDirectoryScreen(embedded: true),
+              DiscoverSegment.services =>
+                const ServiceListingsScreen(embedded: true),
+            },
           ),
         ],
       ),
@@ -104,6 +109,12 @@ class _SegmentedToggle extends StatelessWidget {
               icon: Icons.people_outline_rounded,
               isSelected: selected == DiscoverSegment.providers,
               onTap: () => onChanged(DiscoverSegment.providers),
+            ),
+            _SegmentButton(
+              label: 'Services',
+              icon: Icons.storefront_outlined,
+              isSelected: selected == DiscoverSegment.services,
+              onTap: () => onChanged(DiscoverSegment.services),
             ),
           ],
         ),

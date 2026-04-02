@@ -19,12 +19,14 @@ class AppConstants {
   static const reviewsCol    = 'reviews';
   static const paymentsCol   = 'payments';
   static const notificationsCol = 'notifications';
+  static const serviceListingsCol = 'service_listings';
 
   // Storage paths
   static const profilePhotosPath  = 'profile_photos';
   static const taskPhotosPath      = 'task_photos';
   static const chatMediaPath       = 'chat_media';
   static const verificationDocsPath = 'verification_docs';
+  static const serviceListingPhotosPath = 'service_listing_photos';
 
   // Pagination
   static const pageSize = 20;
@@ -99,6 +101,10 @@ class AppRoutes {
 
   // Providers
   static const providers       = '/providers';
+
+  // Services
+  static const createService   = '/services/create';
+  static const serviceDetail   = '/services/:listingId';
 
   // Settings
   static const settings        = '/settings';

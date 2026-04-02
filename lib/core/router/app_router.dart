@@ -25,6 +25,8 @@ import '../../features/notifications/presentation/screens/notification_list_scre
 import '../../features/payment/checkout_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../../features/providers/presentation/screens/provider_directory_screen.dart';
+import '../../features/services/presentation/screens/create_service_screen.dart';
+import '../../features/services/presentation/screens/service_detail_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +125,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.providers,
         builder: (_, __) => const ProviderDirectoryScreen(),
+      ),
+
+      // ── Service listings ──────────────────────────────────────────────────
+      // createService must come before serviceDetail to avoid :listingId match
+      GoRoute(
+        path: AppRoutes.createService,
+        builder: (_, __) => const CreateServiceScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.serviceDetail,
+        builder: (_, state) =>
+            ServiceDetailScreen(listingId: state.pathParameters['listingId']!),
       ),
 
       // ── Task screens (full-screen, outside shell) ──────────────────────────

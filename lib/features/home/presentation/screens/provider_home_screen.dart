@@ -9,10 +9,23 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../profile/presentation/widgets/provider_stats_widget.dart';
+import '../../../services/data/models/service_listing_model.dart';
+import '../../../services/data/repositories/service_listing_repository.dart';
+import '../../../services/presentation/widgets/service_card.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
 import '../widgets/job_offers_section.dart';
 import '../widgets/pending_reviews_section.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider: my service listings
+// ─────────────────────────────────────────────────────────────────────────────
+final _myServiceListingsProvider =
+    StreamProvider.autoDispose<List<ServiceListingModel>>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return Stream.value([]);
+  return ref.watch(serviceListingRepositoryProvider).watchMyListings(user.uid);
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: selected category filter
@@ -135,6 +148,28 @@ class ProviderHomeScreen extends ConsumerWidget {
           // ── Pending Reviews ────────────────────────────────────────────
           PendingReviewsSection(provider: providerPendingReviewsProvider),
 
+          // ── My Services ───────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('My Services',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  TextButton.icon(
+                    onPressed: () =>
+                        context.push(AppRoutes.createService),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _MyServicesSection(),
+
           // ── Recommended for You ─────────────────────────────────────────────
           if (user != null && user.serviceCategories.isEmpty)
             const SliverToBoxAdapter(
@@ -194,6 +229,82 @@ class ProviderHomeScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// My Services section
+// ─────────────────────────────────────────────────────────────────────────────
+class _MyServicesSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listingsAsync = ref.watch(_myServiceListingsProvider);
+
+    return listingsAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      data: (listings) {
+        if (listings.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.createService),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgMint,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.storefront_outlined, color: AppColors.primary),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Create your first service listing',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14)),
+                            SizedBox(height: 4),
+                            Text(
+                              'Let clients find and hire you directly.',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios,
+                          size: 14, color: AppColors.textHint),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (ctx, i) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: ServiceCard(listing: listings[i]),
+            ),
+            childCount: listings.length > 3 ? 3 : listings.length,
+          ),
+        );
+      },
     );
   }
 }

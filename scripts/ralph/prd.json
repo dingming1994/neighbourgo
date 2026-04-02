@@ -20,7 +20,7 @@
         "flutter analyze 0 errors",
         "Write and run integration test: provider creates listing, client browses and hires"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-071",
