@@ -30,8 +30,21 @@ class BidRepository {
   }
 
   // ── Write ─────────────────────────────────────────────────────────────────
+  /// Check if a provider already has a bid on a task.
+  Future<bool> hasExistingBid(String taskId, String providerId) async {
+    final snap = await _bidsCol(taskId)
+        .where('providerId', isEqualTo: providerId)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   /// Submit a bid and increment the task's bidCount.
+  /// Throws if this provider already has a bid on this task.
   Future<String> submitBid(String taskId, BidModel bid) async {
+    if (await hasExistingBid(taskId, bid.providerId)) {
+      throw Exception('You have already submitted a bid for this task');
+    }
+
     final id  = _uuid.v4();
     final now = DateTime.now();
 
