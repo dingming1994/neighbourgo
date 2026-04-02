@@ -13,6 +13,8 @@ Started: Fri  3 Apr 2026 01:59:25 +08
 - Image validation: use `ImageValidator.validate(file)` from `core/utils/image_validator.dart` before any upload — checks size (<=10MB) and extension (jpg/jpeg/png/heic/webp)
 - FakeCollectionReference/FakeQuery in bid_repository_test.dart support `.where()` filtering via `_WhereClause` list
 - `bidsStreamProvider` (in bid_list_section.dart) is the canonical way to watch bids for a task — reuse it rather than creating new providers
+- Review duplicate check: use `ProfileRepository.hasExistingReview()` before any review-related writes — queries by taskId + reviewerId
+- `ServiceCategory` (not `AppCategory`) is the type returned by `AppCategories.getById()` in `category_constants.dart`
 ---
 
 ## 2026-04-03 02:00 - US-079
@@ -109,4 +111,27 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - `ImagePicker` already does some compression (imageQuality param), but does NOT validate file type or size
   - PostTaskScreen uses multi-image picker — need to validate each file individually and filter out bad ones rather than rejecting all
   - `file.lengthSync()` works for size checking in Dart — no async needed
+---
+
+## 2026-04-03 08:30 - US-084
+- Added `hasExistingReview()`, `fetchExistingReview()`, and `submitReview()` methods to ProfileRepository
+- `submitReview()` checks for existing review before creating — throws if duplicate
+- SubmitReviewScreen now checks for existing review on init, shows read-only `_ExistingReviewView` if already submitted
+- Moved review creation from inline Firestore writes to ProfileRepository (proper abstraction)
+- Updated PublicProfileScreen `userReviewsProvider` limit from 5 to 10 (AC: latest 10, sorted by date)
+- Reviews section already existed on PublicProfileScreen with ReviewCard (name, avatar, stars, comment, date, category badge) and empty state
+- Updated FakeQuery in profile tests to support `_WhereClause` filtering (matching bid test pattern)
+- Added `add()` method and `limit()` delegation to FakeCollectionReference
+- 7 new tests: hasExistingReview (true/false), fetchExistingReview (found/null), submitReview (success/duplicate throws/different reviewer succeeds)
+- Files changed:
+  - `lib/features/profile/data/repositories/profile_repository.dart`
+  - `lib/features/reviews/presentation/screens/submit_review_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+  - `test/profile/profile_repository_test.dart`
+- **Learnings for future iterations:**
+  - PublicProfileScreen already had a Reviews section with RatingSummary + ReviewCard widgets — just needed limit change
+  - ReviewCard already shows reviewer name, avatar, rating stars, comment, date (timeago), and task category badge — no changes needed
+  - SubmitReviewScreen was writing directly to Firestore bypassing ProfileRepository — now properly uses repository pattern
+  - FakeQuery `limit()` must return a new FakeQuery with filtered results to work with chained `where().where().limit().get()`
+  - The `ServiceCategory` type (not `AppCategory`) is the correct class from `category_constants.dart`
 ---

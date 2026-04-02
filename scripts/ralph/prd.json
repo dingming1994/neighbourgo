@@ -90,7 +90,7 @@
         "flutter analyze 0 errors",
         "Write integration test: submit review, verify it appears on public profile, verify cannot submit duplicate"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-085",
