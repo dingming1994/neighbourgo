@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
 import '../../data/repositories/bid_repository.dart';
@@ -85,11 +86,9 @@ class _BidTab extends ConsumerWidget {
 
     return bidsAsync.when(
       loading: () => const _BidsLoadingList(),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Error: $e', style: const TextStyle(color: AppColors.error)),
-        ),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(_myBidsProvider),
       ),
       data: (allBids) {
         final bids = allBids.where((b) => b.status == status).toList();

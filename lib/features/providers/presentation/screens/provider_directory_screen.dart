@@ -12,6 +12,7 @@ import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
@@ -146,7 +147,7 @@ class _ProviderDirectoryScreenState
     if (state.isLoading) return const _LoadingList();
 
     if (state.error != null) {
-      return _ErrorView(
+      return ErrorState(
         message: state.error!,
         onRetry: () =>
             ref.read(providerListNotifierProvider.notifier).refresh(),
@@ -659,46 +660,3 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 52, color: AppColors.error),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Something went wrong',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              width: 160,
-              child: OutlinedButton(
-                onPressed: onRetry,
-                child: const Text('Try Again'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

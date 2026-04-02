@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../domain/models/chat_model.dart';
@@ -26,7 +27,10 @@ class ChatListScreen extends ConsumerWidget {
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(currentUserProvider),
+        ),
         data: (user) {
           if (user == null) {
             return const Center(child: Text('Please sign in'));
@@ -48,13 +52,9 @@ class _ChatList extends ConsumerWidget {
 
     return chatsAsync.when(
       loading: () => const _ChatLoadingList(),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Failed to load chats: $e',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary)),
-        ),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(chatsStreamProvider(userId)),
       ),
       data: (chats) {
         if (chats.isEmpty) {

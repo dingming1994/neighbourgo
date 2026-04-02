@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
@@ -64,7 +65,10 @@ class _SavedTasksTab extends ConsumerWidget {
 
     return favAsync.when(
       loading: () => const _ShimmerList(),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(favoritesProvider),
+      ),
       data: (items) {
         final taskItems =
             items.where((f) => f.type == 'task').toList();
@@ -104,7 +108,10 @@ class _SavedProvidersTab extends ConsumerWidget {
 
     return favAsync.when(
       loading: () => const _ShimmerList(),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(favoritesProvider),
+      ),
       data: (items) {
         final providerItems =
             items.where((f) => f.type == 'provider').toList();

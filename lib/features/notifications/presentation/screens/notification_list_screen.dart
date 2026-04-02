@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/providers/notification_providers.dart';
 
@@ -26,7 +27,10 @@ class NotificationListScreen extends ConsumerWidget {
       ),
       body: notifAsync.when(
         loading: () => const _NotificationLoadingList(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(notificationsProvider),
+        ),
         data: (notifications) {
           if (notifications.isEmpty) {
             return const Center(
