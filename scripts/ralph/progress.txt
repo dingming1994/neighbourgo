@@ -10,6 +10,7 @@ Started: Fri  3 Apr 2026 01:59:25 +08
 - Country code picker widget is in `lib/features/auth/presentation/widgets/country_code_picker.dart` — reusable `Country` model and `supportedCountries` list
 - Phone auth tests use `testPhone()` helper for large surface size (480x1200) and overflow suppression
 - BidRepository.hasExistingBid() queries by providerId — use for duplicate checks before any bid-related writes
+- Image validation: use `ImageValidator.validate(file)` from `core/utils/image_validator.dart` before any upload — checks size (<=10MB) and extension (jpg/jpeg/png/heic/webp)
 - FakeCollectionReference/FakeQuery in bid_repository_test.dart support `.where()` filtering via `_WhereClause` list
 - `bidsStreamProvider` (in bid_list_section.dart) is the canonical way to watch bids for a task — reuse it rather than creating new providers
 ---
@@ -87,4 +88,25 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - `createOrGetChat` is idempotent — safe to call from `createChatWithMessage` without worrying about duplicates
   - Chat auto-creation on bid acceptance should be best-effort (try/catch) to avoid blocking the checkout flow
   - SnackBar actions with navigation work even when another push happens immediately after — Flutter queues them
+---
+
+## 2026-04-03 07:00 - US-083
+- Created `ImageValidator` utility in `lib/core/utils/image_validator.dart` with `validate()` and `validateAll()` methods
+- Checks file extension (jpg/jpeg/png/heic/webp) and size (<= 10MB) before any upload
+- Applied validation in repository layer (guard + throw): ChatRepository.uploadChatImage(), ProfileRepository.uploadAvatar(), ProfileRepository.uploadGalleryPhoto(), TaskRepository.createTask()
+- Applied validation in presentation layer (SnackBar + prevent upload): ChatThreadScreen._sendImage(), PostTaskScreen._pick(), PhotoGalleryScreen._pickAndUpload()
+- PostTaskScreen filters out invalid files but keeps valid ones; other screens block entirely on invalid input
+- Files changed:
+  - `lib/core/utils/image_validator.dart` (new)
+  - `lib/features/chat/data/repositories/chat_repository.dart`
+  - `lib/features/profile/data/repositories/profile_repository.dart`
+  - `lib/features/tasks/data/repositories/task_repository.dart`
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart`
+  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+- **Learnings for future iterations:**
+  - Validation is applied at both repository (throws Exception) and presentation (SnackBar) layers for defense-in-depth
+  - `ImagePicker` already does some compression (imageQuality param), but does NOT validate file type or size
+  - PostTaskScreen uses multi-image picker — need to validate each file individually and filter out bad ones rather than rejecting all
+  - `file.lengthSync()` works for size checking in Dart — no async needed
 ---

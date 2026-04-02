@@ -75,7 +75,7 @@
         "If image is > 10MB, do not attempt upload at all",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-084",
