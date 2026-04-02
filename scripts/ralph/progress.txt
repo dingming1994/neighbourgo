@@ -102,3 +102,28 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - Neighbourhood filter uses case-insensitive `contains` match since task/provider data may have varying formats
   - Singapore neighbourhood list is hardcoded in both filter sheets — could be extracted to a shared constant if needed
 ---
+
+## 2026-04-03 — US-074: UI Polish — Design Consistency, Animations, Empty States
+- Added shimmer loading skeletons to ChatListScreen, NotificationListScreen, MyTasksScreen, MyBidsScreen (all previously used CircularProgressIndicator)
+- Replaced ChatListScreen icon-based empty state with emoji (💬) + consistent text styling
+- Enhanced NotificationListScreen empty state with larger emoji (🔔 at 56px) + subtitle
+- Fixed NotificationListScreen AppBar to match standard pattern (bgCard, elevation 0, fontWeight w700)
+- Added pull-to-refresh (RefreshIndicator) to ChatListScreen, NotificationListScreen, MyTasksScreen, MyBidsScreen, ServiceListingsScreen
+- Fixed text overflow in _RecommendedTaskCard and _ProviderTaskCard neighbourhood text (added Expanded + maxLines + ellipsis)
+- Fixed text overflow in _JobOfferCard posterName and neighbourhood text
+- Updated test to match new emoji empty state in ChatListScreen
+- Files modified:
+  - `lib/features/chat/presentation/screens/chat_list_screen.dart` — shimmer, emoji empty state, pull-to-refresh
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart` — shimmer, AppBar fix, empty state polish, pull-to-refresh
+  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart` — shimmer, pull-to-refresh
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart` — shimmer, pull-to-refresh
+  - `lib/features/services/presentation/screens/service_listings_screen.dart` — pull-to-refresh
+  - `lib/features/home/presentation/screens/provider_home_screen.dart` — text overflow fixes
+  - `lib/features/home/presentation/widgets/job_offers_section.dart` — text overflow fixes
+  - `test/widgets/profile_chat_nav_test.dart` — updated empty state assertion
+- **Learnings for future iterations:**
+  - Shimmer pattern for list tiles: Row with circle (avatar) + Column of rectangles; for card lists: single Container with card height
+  - Pull-to-refresh with StreamProviders: use `ref.invalidate(provider)` inside `onRefresh` callback
+  - Always add `physics: AlwaysScrollableScrollPhysics()` when wrapping ListView in RefreshIndicator so it works even with short lists
+  - Pre-existing test failures (4) unchanged: EditProfileScreen tests + task_repository_test watchMyPostedTasks
+---

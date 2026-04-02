@@ -81,7 +81,7 @@
         "All buttons have loading states, all forms have validation",
         "flutter analyze 0 errors, no rendering exceptions"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-075",
