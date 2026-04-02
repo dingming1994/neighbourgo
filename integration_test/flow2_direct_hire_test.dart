@@ -35,10 +35,11 @@ void main() {
 
   late String aliceId;
   late String benId;
-  final firestore = FirebaseFirestore.instance;
+  late final FirebaseFirestore firestore;
 
   setUpAll(() async {
     await initializeTestApp();
+    firestore = FirebaseFirestore.instance;
 
     // Create Ben (provider) with serviceCategories, rates, availability
     final ben = await signInTestUser(
@@ -177,6 +178,12 @@ void main() {
       // Verify Ben's profile in Firestore
       // ════════════════════════════════════════════════════════════════════
 
+      // Sign in as Alice to start the test (setUpAll signs out at the end)
+      await signInTestUser(
+        email: 'alice-flow2@test.com',
+        password: 'test1234',
+      );
+
       final benDoc = await firestore.collection('users').doc(benId).get();
       final benData = benDoc.data()!;
       expect(benData['role'], 'provider');
@@ -228,15 +235,15 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      expect(find.text('Ben Lim'), findsOneWidget,
+      expect(find.text('Ben Lim'), findsWidgets,
           reason: 'Ben should appear in provider directory');
 
-      // Tap Ben's card to view profile
-      await tester.tap(find.text('Ben Lim'));
+      // Tap Ben's card to view profile (use .first since name may appear in multiple places)
+      await tester.tap(find.text('Ben Lim').first);
       await settle(tester);
 
       // Verify we're on Ben's profile
-      expect(find.text('Ben Lim'), findsOneWidget,
+      expect(find.text('Ben Lim'), findsWidgets,
           reason: 'Should be on Ben\'s profile');
       expect(find.textContaining('Experienced cleaner'), findsOneWidget,
           reason: 'Ben\'s headline should be visible');

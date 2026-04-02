@@ -1,10 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/repositories/auth_repository.dart';
-import '../../domain/providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -34,7 +34,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    final firebaseUser = ref.read(authStateProvider).valueOrNull;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser != null) {
       // Check if the user has completed onboarding (role + profile)
       final userModel = await AuthRepository().fetchCurrentUser();

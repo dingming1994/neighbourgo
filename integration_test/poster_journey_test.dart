@@ -500,11 +500,13 @@ void main() {
       GoRouter.of(ctx12).go('/home');
       await settle(tester, seconds: 2);
 
-      // Completed task should NOT appear in Active Tasks
+      // Active Tasks section should show empty state (task is completed)
+      // Note: the task title may still appear in the "Pending Reviews" section,
+      // which is expected — the poster needs to review the provider.
       if (find.text('Active Tasks').evaluate().isNotEmpty) {
-        expect(find.text('Deep clean 3-room HDB'), findsNothing,
+        expect(find.text('No active tasks. Post your first task!'), findsOneWidget,
             reason:
-                'Completed task should not appear in Active Tasks');
+                'Active Tasks should show empty state after task is completed');
       }
 
       // Verify profile shows 'Alice Tan'
