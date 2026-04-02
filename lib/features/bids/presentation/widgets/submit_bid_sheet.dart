@@ -52,7 +52,14 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final user = ref.read(currentUserProvider).valueOrNull;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: not logged in'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     try {
@@ -103,7 +110,8 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
       ),
       child: Form(
         key: _formKey,
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -240,12 +248,18 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
             ),
             const SizedBox(height: 8),
 
-            AppButton(
-              label:     'Submit Bid',
-              isLoading: _isSubmitting,
-              onPressed: _submit,
+            SafeArea(
+              child: AppButton(
+                label:     'Submit Bid',
+                isLoading: _isSubmitting,
+                onPressed: () {
+                  debugPrint('=== SUBMIT BID TAPPED ===');
+                  _submit();
+                },
+              ),
             ),
           ],
+        ),
         ),
       ),
     );

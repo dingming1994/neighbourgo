@@ -138,11 +138,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => TaskDetailScreen(taskId: state.pathParameters['taskId']!),
       ),
 
-      // ── Profile screens ────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.publicProfile,
-        builder: (_, state) => PublicProfileScreen(userId: state.pathParameters['userId']!),
-      ),
+      // ── Profile screens (edit before :userId to avoid wildcard match) ────
       GoRoute(
         path: AppRoutes.editProfile,
         builder: (_, __) => const EditProfileScreen(),
@@ -154,6 +150,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.verificationCentre,
         builder: (_, __) => const VerificationCentreScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.publicProfile,
+        builder: (_, state) => PublicProfileScreen(userId: state.pathParameters['userId']!),
       ),
 
       // ── Chat ──────────────────────────────────────────────────────────────

@@ -82,9 +82,15 @@ class AuthRepository {
     final now = DateTime.now();
 
     if (!snap.exists) {
-      // New user
+      // New user — serialize nested Freezed objects properly
+      final data = user.toJson();
+      if (data['stats'] is ProviderStats) {
+        data['stats'] = (data['stats'] as ProviderStats).toJson();
+      }
+      // Remove null nested objects that Firestore can't handle
+      data.removeWhere((k, v) => v == null);
       await ref.set({
-        ...user.toJson(),
+        ...data,
         'createdAt':    Timestamp.fromDate(now),
         'lastActiveAt': Timestamp.fromDate(now),
       });

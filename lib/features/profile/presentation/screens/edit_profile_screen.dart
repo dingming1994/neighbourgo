@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -158,10 +159,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  UserModel? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = ref.read(currentUserProvider).valueOrNull
+        ?? await AuthRepository().fetchCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _user = user;
+        _initFromUser(user);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserProvider);
-
     return Scaffold(
       backgroundColor: AppColors.bgLight,
       appBar: AppBar(
@@ -185,15 +203,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         ],
       ),
-      body: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Not signed in'));
-          }
-          _initFromUser(user);
-          return Form(
+      body: _user == null
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
             key: _formKey,
             autovalidateMode: _autovalidateMode,
             child: ListView(
@@ -201,7 +213,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               children: [
                 // ── Avatar ────────────────────────────────────────────
                 _AvatarPicker(
-                  existingUrl: user.avatarUrl,
+                  existingUrl: _user!.avatarUrl,
                   pickedFile: _pickedAvatar,
                   onTap: _pickAvatar,
                 ),
@@ -328,17 +340,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _addTag,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _addTag,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Add'),
                       ),
-                      child: const Text('Add'),
                     ),
                   ],
                 ),
@@ -486,9 +501,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 40),
               ],
             ),
-          );
-        },
-      ),
+          ),
     );
   }
 }
