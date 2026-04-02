@@ -160,6 +160,26 @@ class ChatRepository {
     return chatId;
   }
 
+  // ── Create chat and send initial message ────────────────────────────────
+  Future<String> createChatWithMessage({
+    required String taskId,
+    required String posterId,
+    required String providerId,
+    required String senderId,
+    required String messageText,
+  }) async {
+    final chatId = await createOrGetChat(taskId, posterId, providerId);
+    final message = MessageModel(
+      messageId: '',
+      chatId: chatId,
+      senderId: senderId,
+      text: messageText,
+      timestamp: DateTime.now(),
+    );
+    await sendMessage(chatId, message);
+    return chatId;
+  }
+
   // ── Create or get existing chat ───────────────────────────────────────────
   Future<String> createOrGetChat(
       String taskId, String posterId, String providerId) async {

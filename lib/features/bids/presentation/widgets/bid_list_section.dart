@@ -136,8 +136,41 @@ class _BidCardState extends ConsumerState<_BidCard> {
             widget.bid.providerId,
             widget.bid.providerName,
           );
-      // Navigate to checkout after accepting the bid
+
+      // Auto-create chat with initial message
+      String? chatId;
+      try {
+        chatId = await ref.read(chatRepositoryProvider).createChatWithMessage(
+              taskId: widget.taskId,
+              posterId: widget.posterId,
+              providerId: widget.bid.providerId,
+              senderId: widget.posterId,
+              messageText:
+                  'Hi! I accepted your bid for this task. Let\'s discuss the details.',
+            );
+      } catch (_) {
+        // Chat creation is best-effort — don't block checkout
+      }
+
       if (mounted) {
+        // Show SnackBar with action to message provider
+        if (chatId != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Bid accepted! Chat created with ${widget.bid.providerName}'),
+              action: SnackBarAction(
+                label: 'Message Provider',
+                onPressed: () {
+                  context.push(
+                    AppRoutes.chatThread.replaceFirst(':chatId', chatId!),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+
+        // Navigate to checkout
         context.push(
           AppRoutes.checkout.replaceFirst(':taskId', widget.taskId),
           extra: {
