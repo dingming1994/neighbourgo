@@ -7,6 +7,8 @@ Started: Fri  3 Apr 2026 01:59:25 +08
 - TaskListScreen and ProviderDirectoryScreen use custom StateNotifier pattern (not StreamProvider) — their error handling is in `_buildBody()` method
 - Screens using StreamProvider.autoDispose use `.when(loading:, error:, data:)` pattern
 - Pre-existing test failures in `test/widgets/profile_chat_nav_test.dart` (EditProfileScreen Firebase init) — not related to feature work
+- Country code picker widget is in `lib/features/auth/presentation/widgets/country_code_picker.dart` — reusable `Country` model and `supportedCountries` list
+- Phone auth tests use `testPhone()` helper for large surface size (480x1200) and overflow suppression
 ---
 
 ## 2026-04-03 02:00 - US-079
@@ -28,4 +30,21 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - ChatListScreen has two `.when()` calls: one for user auth state and one for chats stream — both need error handling
   - FavoritesScreen uses the same `favoritesProvider` for both tabs (tasks and providers), filtering client-side
   - The `_FavoriteTaskCard` and `_FavoriteProviderCard` have their own `.when()` error handlers that return `SizedBox.shrink()` — these are acceptable for individual card loading failures
+---
+
+## 2026-04-03 03:15 - US-080
+- Created `Country` model and `showCountryCodePicker()` bottom sheet in `lib/features/auth/presentation/widgets/country_code_picker.dart`
+- 10 countries supported: SG, MY, AU, US, UK, IN, PH, ID, HK, TH (default: Singapore +65)
+- Updated `PhoneAuthScreen`: replaced hardcoded `_countryCode` string with `_selectedCountry` Country object, wired up `_pickCountry()` to GestureDetector
+- Added `FilteringTextInputFormatter.digitsOnly` to phone TextField
+- Updated validator: min 7 digits, max 15 digits (international standard)
+- Removed the TODO comment from the country code picker GestureDetector
+- Files changed:
+  - `lib/features/auth/presentation/widgets/country_code_picker.dart` (new)
+  - `lib/features/auth/presentation/screens/phone_auth_screen.dart`
+  - `test/widgets/auth_screens_test.dart` (5 new tests)
+- **Learnings for future iterations:**
+  - Phone auth screen uses `_selectedCountry.dialCode` to build the full phone number — any future changes to phone format must update both `_sendOtp()` and `_handleStateChange()`
+  - The `testPhone()` helper in auth_screens_test.dart sets surface size to 480x1200 and suppresses overflow errors — use it for all phone auth screen tests
+  - `AppConstants.phonePrefix` still exists but is no longer used by PhoneAuthScreen — it may be referenced elsewhere
 ---
