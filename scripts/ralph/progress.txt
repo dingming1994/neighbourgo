@@ -15,6 +15,7 @@ Started: Fri  3 Apr 2026 00:50:32 +08
 - Client-side search: use `discoverSearchQueryProvider` (shared StateProvider) — embedded screens read it only when `embedded: true`
 - Querying subcollections across parents requires `collectionGroup()` + COLLECTION_GROUP index in firestore.indexes.json
 - Profile menu items can be role-gated: `if (user.isProvider)` before `_MenuItem`
+- Favorites stored in `users/{uid}/favorites/{itemId}` subcollection; use `favoriteIdsProvider` (Set) for O(1) membership checks in card widgets
 
 ---
 
@@ -126,4 +127,25 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - Pull-to-refresh with StreamProviders: use `ref.invalidate(provider)` inside `onRefresh` callback
   - Always add `physics: AlwaysScrollableScrollPhysics()` when wrapping ListView in RefreshIndicator so it works even with short lists
   - Pre-existing test failures (4) unchanged: EditProfileScreen tests + task_repository_test watchMyPostedTasks
+---
+
+## 2026-04-03 — US-075: Favorites — Save Providers and Tasks
+- Implemented full favorites/bookmark system: repository, provider, screen, card integration
+- Files created:
+  - `lib/features/favorites/data/repositories/favorites_repository.dart` — Firestore CRUD for users/{uid}/favorites subcollection
+  - `lib/features/favorites/domain/providers/favorites_provider.dart` — StreamProvider + favoriteIdsProvider (O(1) lookup Set) + toggleFavorite helper
+  - `lib/features/favorites/presentation/screens/favorites_screen.dart` — TabBar with Saved Tasks / Saved Providers, shimmer loading, empty states, pull-to-refresh
+- Files modified:
+  - `lib/core/constants/app_constants.dart` — added `favorites` route
+  - `lib/core/router/app_router.dart` — added FavoritesScreen route + import
+  - `lib/features/profile/presentation/screens/profile_screen.dart` — added Favorites menu item (visible to all roles)
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart` — converted TaskCard to ConsumerWidget, added heart icon toggle
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` — converted _ProviderCard to ConsumerWidget, added heart icon toggle
+  - `firestore.rules` — added favorites subcollection rules under users/{uid}
+- **Learnings for future iterations:**
+  - Favorites are stored as subcollection under users (users/{uid}/favorites/{itemId}) — no collection group query needed since we only read one user's favorites
+  - The `favoriteIdsProvider` provides O(1) lookup via Set<String> — use it in card widgets to check favorite state without extra queries
+  - TaskCard was converted from StatelessWidget to ConsumerWidget to access Riverpod providers — any widget needing provider access must be Consumer-based
+  - Heart icon uses `AppColors.error` (red) for both filled and outline states for visual consistency
+  - Pre-existing test failures (4) unchanged
 ---
