@@ -184,3 +184,26 @@ Started: Fri  3 Apr 2026 00:50:32 +08
   - Settings screen uses local state for notification toggles (not persisted to Firestore yet) — future story could wire to user preferences
   - Pre-existing test failures (4) unchanged
 ---
+
+## 2026-04-03 — US-078: Final Integration Tests — All New Features
+- Created comprehensive widget + unit test file: `test/features/new_features_test.dart` (33 tests)
+- Tests cover all new feature screens:
+  - **MyTasksScreen** (6 tests): title/tabs, empty states for all 3 tabs, task card rendering with status badges
+  - **MyBidsScreen** (6 tests): title/tabs, empty states for all 3 tabs, bid card with amount/message/status
+  - **FavoritesScreen** (6 tests): title/tabs, empty states, favorited task/provider cards, heart toggle
+  - **ServiceListingsScreen** (5 tests): empty state, listing card, category filters, AppBar, multiple listings
+  - **Search filtering** (3 tests): client-side filtering for tasks, providers, service listings by keyword
+  - **Regression** (7 tests): TaskModel, BidModel, ServiceListingModel roundtrips + FavoriteItem
+- Ran full test suite: 278 pass, 4 fail (same pre-existing failures)
+- flutter analyze: 0 errors
+- Files created:
+  - `test/features/new_features_test.dart`
+- Files modified:
+  - `scripts/ralph/prd.json` — set US-078 passes: true
+- **Learnings for future iterations:**
+  - Widget tests for screens with Riverpod: override `currentUserProvider` with `Stream.value(user)` + repository providers with fake implementations
+  - Fake repositories should extend the real class and override stream methods with `Stream.value(data)` — quick and deterministic
+  - Private providers (prefixed `_`) inside screen files can't be directly overridden — override the repository they depend on instead
+  - TabBar tests: use `tester.tap(find.text('TabName'))` + `pumpAndSettle()` to switch tabs
+  - `_testScreen` helper with enlarged surface (480x1200) + overflow suppression keeps screen tests clean
+---
