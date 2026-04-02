@@ -72,6 +72,10 @@ class TaskDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                 ],
 
+                // ── Timeline ─────────────────────────────────────────────
+                _TaskTimeline(task: task),
+                const SizedBox(height: 20),
+
                 // ── Category & Urgency ────────────────────────────────────
                 Row(children: [
                   Text(cat?.emoji ?? '📋',
@@ -972,6 +976,239 @@ class _LeaveReviewCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _TaskTimeline
+// ─────────────────────────────────────────────────────────────────────────────
+class _TaskTimeline extends StatelessWidget {
+  final TaskModel task;
+  const _TaskTimeline({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = _buildSteps();
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          for (int i = 0; i < steps.length; i++) ...[
+            Expanded(child: _StepItem(step: steps[i])),
+            if (i < steps.length - 1)
+              Expanded(
+                flex: 0,
+                child: Container(
+                  width: 20,
+                  height: 2,
+                  color: steps[i].isCompleted
+                      ? AppColors.success
+                      : AppColors.divider,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<_TimelineStep> _buildSteps() {
+    final isCancelled = task.status == TaskStatus.cancelled;
+    final isDisputed = task.status == TaskStatus.disputed;
+
+    if (isCancelled) {
+      return [
+        _TimelineStep(
+          label: 'Posted',
+          icon: Icons.check_circle,
+          color: AppColors.success,
+          isCompleted: true,
+          timestamp: task.createdAt,
+        ),
+        _TimelineStep(
+          label: 'Cancelled',
+          icon: Icons.cancel,
+          color: AppColors.error,
+          isCompleted: true,
+          timestamp: task.updatedAt,
+        ),
+      ];
+    }
+
+    if (isDisputed) {
+      final currentIndex = _statusIndex(task.status);
+      final steps = _defaultSteps();
+      // Mark steps up to the disputed point, then add disputed step
+      final result = <_TimelineStep>[];
+      for (int i = 0; i < steps.length; i++) {
+        if (i < currentIndex) {
+          result.add(steps[i].copyWith(isCompleted: true));
+        } else {
+          break;
+        }
+      }
+      result.add(_TimelineStep(
+        label: 'Disputed',
+        icon: Icons.warning_rounded,
+        color: AppColors.warning,
+        isCompleted: true,
+        timestamp: task.updatedAt,
+      ));
+      return result;
+    }
+
+    final currentIndex = _statusIndex(task.status);
+    return _defaultSteps().asMap().entries.map((entry) {
+      final i = entry.key;
+      final step = entry.value;
+      if (i < currentIndex) {
+        return step.copyWith(isCompleted: true);
+      } else if (i == currentIndex) {
+        return step.copyWith(isCurrent: true);
+      }
+      return step;
+    }).toList();
+  }
+
+  List<_TimelineStep> _defaultSteps() {
+    return [
+      _TimelineStep(
+        label: 'Posted',
+        icon: Icons.check_circle,
+        color: AppColors.success,
+        timestamp: task.createdAt,
+      ),
+      _TimelineStep(
+        label: 'Bidding',
+        icon: Icons.gavel,
+        color: AppColors.success,
+      ),
+      _TimelineStep(
+        label: 'Matched',
+        icon: Icons.handshake,
+        color: AppColors.success,
+      ),
+      _TimelineStep(
+        label: 'In Progress',
+        icon: Icons.play_circle_filled,
+        color: AppColors.success,
+      ),
+      _TimelineStep(
+        label: 'Completed',
+        icon: Icons.check_circle,
+        color: AppColors.success,
+        timestamp: task.completedAt,
+      ),
+    ];
+  }
+
+  int _statusIndex(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.open:
+        return 0;
+      case TaskStatus.assigned:
+        return 2;
+      case TaskStatus.inProgress:
+        return 3;
+      case TaskStatus.completed:
+        return 4;
+      case TaskStatus.cancelled:
+      case TaskStatus.disputed:
+        return -1;
+    }
+  }
+}
+
+class _TimelineStep {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isCompleted;
+  final bool isCurrent;
+  final DateTime? timestamp;
+
+  const _TimelineStep({
+    required this.label,
+    required this.icon,
+    required this.color,
+    this.isCompleted = false,
+    this.isCurrent = false,
+    this.timestamp,
+  });
+
+  _TimelineStep copyWith({bool? isCompleted, bool? isCurrent}) {
+    return _TimelineStep(
+      label: label,
+      icon: icon,
+      color: color,
+      isCompleted: isCompleted ?? this.isCompleted,
+      isCurrent: isCurrent ?? this.isCurrent,
+      timestamp: timestamp,
+    );
+  }
+}
+
+class _StepItem extends StatelessWidget {
+  final _TimelineStep step;
+  const _StepItem({required this.step});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color iconColor;
+    final IconData displayIcon;
+
+    if (step.isCompleted) {
+      iconColor = step.color;
+      displayIcon = step.icon;
+    } else if (step.isCurrent) {
+      iconColor = AppColors.primary;
+      displayIcon = step.icon;
+    } else {
+      iconColor = AppColors.textHint;
+      displayIcon = Icons.circle_outlined;
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(displayIcon, size: 22, color: iconColor),
+        const SizedBox(height: 4),
+        Text(
+          step.label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight:
+                step.isCurrent ? FontWeight.w700 : FontWeight.w500,
+            color: step.isCompleted || step.isCurrent
+                ? AppColors.textPrimary
+                : AppColors.textHint,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (step.isCompleted && step.timestamp != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            _formatDate(step.timestamp!),
+            style: const TextStyle(
+              fontSize: 8,
+              color: AppColors.textHint,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
 
