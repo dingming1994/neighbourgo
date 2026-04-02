@@ -104,7 +104,7 @@
         "Bid amount TextField: set keyboardType to numberWithOptions(decimal: true), add formatter to allow only valid currency input (digits + one decimal point + max 2 decimal places)",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

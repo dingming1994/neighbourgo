@@ -15,6 +15,7 @@ Started: Fri  3 Apr 2026 01:59:25 +08
 - `bidsStreamProvider` (in bid_list_section.dart) is the canonical way to watch bids for a task — reuse it rather than creating new providers
 - Review duplicate check: use `ProfileRepository.hasExistingReview()` before any review-related writes — queries by taskId + reviewerId
 - `ServiceCategory` (not `AppCategory`) is the type returned by `AppCategories.getById()` in `category_constants.dart`
+- Budget validation: min $5, max $10,000 in PostTaskScreen; bid validation: min $1, max 2x task budget in SubmitBidSheet (requires `taskBudget` param)
 ---
 
 ## 2026-04-03 02:00 - US-079
@@ -134,4 +135,23 @@ Started: Fri  3 Apr 2026 01:59:25 +08
   - SubmitReviewScreen was writing directly to Firestore bypassing ProfileRepository — now properly uses repository pattern
   - FakeQuery `limit()` must return a new FakeQuery with filtered results to work with chained `where().where().limit().get()`
   - The `ServiceCategory` type (not `AppCategory`) is the correct class from `category_constants.dart`
+---
+
+## 2026-04-03 10:00 - US-085
+- Added max $10,000 validation to PostTaskScreen budget min field (already had min $5)
+- Added max budget field validation (min $5, max $10,000, must be >= min)
+- Added `flutter/services.dart` import and currency input formatters (`FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))`) to both min and max budget TextFormFields
+- Changed budget keyboardType from `TextInputType.number` to `TextInputType.numberWithOptions(decimal: true)`
+- Added `taskBudget` required parameter to SubmitBidSheet
+- Updated bid amount validator: min $1, max 2x task budget with clear error messages
+- Passed `task.budgetMin` from TaskDetailScreen to SubmitBidSheet
+- Files changed:
+  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
+  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+- **Learnings for future iterations:**
+  - SubmitBidSheet is only instantiated in one place (TaskDetailScreen) — easy to add required parameters
+  - PostTaskScreen `_StepBudget` uses separate TextEditingControllers for min/max — validators access `_min` field directly for cross-field validation
+  - The bid amount TextField already had correct `numberWithOptions(decimal: true)` keyboard and currency formatter — budget fields did not
+  - Pre-existing test failures (4): `profile_chat_nav_test.dart` EditProfileScreen (Firebase init) and `task_repository_test.dart` watchMyPostedTasks — not related to this work
 ---
