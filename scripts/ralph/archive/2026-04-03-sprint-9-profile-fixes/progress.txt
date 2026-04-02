@@ -1,0 +1,107 @@
+# Ralph Progress Log
+Started: Wed  1 Apr 2026 23:43:59 +08
+---
+
+## Codebase Patterns
+- EmptyState widget lives at `lib/core/widgets/empty_state.dart`; also re-exported from `loading_overlay.dart` for backward compat
+- Use `CachedNetworkImage` (from `cached_network_image` package) instead of `Image.network()` — always provide `placeholder` and `errorWidget`
+- When creating TextEditingControllers dynamically (e.g. in a Map), dispose them when removed from the map, not just in `dispose()`
+- Profile screens are at `lib/features/profile/presentation/screens/`
+- `AppCategories.all` and `AppCategories.getById()` in `category_constants.dart` for category lookups
+- `serviceRates` values in Firestore may be String (legacy) or double (new) — always handle both types when reading
+- Use `ref.invalidate(provider)` to force-refresh a StreamProvider after a write that should update the UI immediately
+- `VerificationBadge` enum and its extensions (`label`, `emoji`) live in `user_model.dart` — use them for badge display
+
+---
+
+## 2026-04-01 - US-059
+- Created shared `EmptyState` widget at `lib/core/widgets/empty_state.dart` (extracted from `photo_gallery_screen.dart`)
+- Updated `loading_overlay.dart` to re-export `empty_state.dart` so `public_profile_screen.dart` (which imports `loading_overlay.dart`) continues to work
+- Replaced `Image.network()` with `CachedNetworkImage` in `photo_gallery_screen.dart` with placeholder and error widget
+- Fixed empty caption overlay: changed condition to `caption != null && caption!.isNotEmpty`
+- Fixed rate controller memory leak in `edit_profile_screen.dart`: controllers for deselected categories are now disposed immediately in the `onSelected` callback
+- Files changed:
+  - `lib/core/widgets/empty_state.dart` (new)
+  - `lib/core/widgets/loading_overlay.dart` (removed EmptyState, added re-export)
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
+- **Learnings for future iterations:**
+  - `loading_overlay.dart` already had an EmptyState with an `action` parameter — check existing widgets before creating new ones
+  - `public_profile_screen.dart` gets EmptyState via `loading_overlay.dart` import, not a direct import
+  - The `_rateControllers` map in `edit_profile_screen.dart` has controllers created in `build()` via `putIfAbsent` — disposal needs to happen both in `dispose()` and when categories are deselected
+---
+
+## 2026-04-01 - US-060
+- Added loading state to `_deletePhoto()`: tracks `_deletingPhotoId`, shows spinner overlay on tile, disables long-press menu during operation
+- Added loading state to `_setCover()`: tracks `_settingCoverId`, shows "Setting cover photo..." snackbar then "Cover photo updated!" on success
+- Implemented fullscreen photo view: `_FullscreenPhotoPage` with `PageView` + `PhotoView` (pinch-to-zoom), swipeable between photos, shows page counter in AppBar
+- Cover photo persistence verified correct: `isCover: user.photos.isEmpty && photos.isEmpty` in `_pickAndUpload` + `addGalleryPhoto` with `arrayUnion` preserves the flag
+- Added explicit `BackButton()` to `PhotoGalleryScreen` AppBar
+- Files changed:
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+- **Learnings for future iterations:**
+  - `photo_view` package uses `PhotoViewComputedScale.contained` / `.covered` for min/max scale — no need for raw double values
+  - `CachedNetworkImageProvider` (not `CachedNetworkImage` widget) is used when passing to `PhotoView.imageProvider`
+  - Loading overlay pattern: track the ID of the item being operated on (e.g. `_deletingPhotoId`) rather than a simple bool, so you can show the spinner on the right tile
+---
+
+## 2026-04-01 - US-061
+- Implemented fullscreen photo view on PublicProfileScreen: `_FullscreenPhotoPage` with `PageView` + `PhotoView` (same pattern as PhotoGalleryScreen), replaces TODO in `_PhotoGrid.onTap`
+- Added Report User flow: confirmation dialog → snackbar "Report submitted. We will review this." (UI-only, no backend)
+- Added Block User flow: confirmation dialog → snackbar "User blocked." (UI-only, no backend)
+- Made empty states consistent: Skills section always shows (displays "No skills listed" when empty), About Me section always shows (displays italic placeholder when bio is null)
+- Added `photo_view` import to public_profile_screen.dart
+- Files changed:
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+- **Learnings for future iterations:**
+  - The `_FullscreenPhotoPage` pattern is duplicated between `photo_gallery_screen.dart` and `public_profile_screen.dart` — consider extracting to a shared widget if a third screen needs it
+  - `_PhotoGrid` is a private widget in `public_profile_screen.dart` used for both category showcase photos and general gallery photos
+  - Pre-existing `withOpacity` deprecation warnings exist throughout the codebase — use `.withValues()` instead if cleaning up
+---
+
+## 2026-04-01 - US-062
+- Changed service rates storage: `hourlyRate` now saved as `double` via `double.tryParse()` instead of raw String. Falls back to String if parsing fails.
+- Updated `_RatesAvailabilitySection` in `public_profile_screen.dart` to handle both `double` and `String` values for backward compatibility with existing Firestore data
+- Improved error handling on save failure: specific messages for permission denied, network errors, and generic failures. Form values are retained (already were — `Navigator.pop` only on success).
+- Added field-level validation: `AutovalidateMode` switches from `disabled` to `onUserInteraction` after first failed submit, so required fields show red `errorBorder` when empty
+- Added `errorBorder` and `focusedErrorBorder` to `_Field` widget for consistent red border styling
+- Files changed:
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+- **Learnings for future iterations:**
+  - The `_Field` widget in `edit_profile_screen.dart` is a local widget wrapping `TextFormField` — add border customizations there, not on individual fields
+  - `serviceRates` in Firestore may contain mixed types (String from old saves, double from new saves) — always handle both when reading
+  - Form already retains values on failure because `Navigator.pop` is only called in the `try` success path
+---
+
+## 2026-04-02 - US-063
+- Added `ref.invalidate(currentUserProvider)` after role update in `_RolePickerSheetState._save()` to force immediate UI refresh on ProfileScreen and HomeScreen
+- Added stats empty state: when user is a provider but `stats == null`, shows italic message "Your stats will appear after completing your first task" instead of hiding the section
+- Replaced VerificationCentreScreen stub with full implementation: lists all 8 `VerificationBadge` values with emoji, label, status chip (green "Verified" / grey "Not Verified"), and "Verify" button for unverified badges
+- Tapping "Verify" shows snackbar: "Verification coming soon — we will notify you when available"
+- Removed unused `profile_repository.dart` import from `profile_screen.dart`
+- Files changed:
+  - `lib/features/profile/presentation/screens/profile_screen.dart`
+  - `lib/features/profile/presentation/screens/verification_centre_screen.dart`
+- **Learnings for future iterations:**
+  - `ref.invalidate(provider)` is the Riverpod pattern for forcing a StreamProvider to re-fetch — works because `currentUserProvider` watches Firestore and the stream restarts
+  - `VerificationBadge` enum already has `.label` and `.emoji` extensions in `user_model.dart` — no need to define display strings separately
+  - The `user.isProvider` extension helper (in `UserModelExt`) checks both `provider` and `both` roles — use it instead of manual role checks
+---
+
+## 2026-04-02 - US-064
+- Final verification: all profile screens compile and work correctly
+- `flutter analyze`: 0 errors (only pre-existing warnings/infos in test files — sealed class warnings, prefer_const_constructors infos)
+- `flutter test`: 242/242 tests pass
+- No TODO comments remaining in any profile screen files
+- Code review checklist:
+  - ProfileScreen: renders, role picker refreshes UI via `ref.invalidate`, stats empty state for new providers ✅
+  - EditProfileScreen: saves all fields, service rates as double, field-level validation, controllers properly disposed ✅
+  - PublicProfileScreen: handles empty states (skills, bio, reviews), report/block dialogs, fullscreen photo view ✅
+  - PhotoGalleryScreen: loads/deletes/covers photos with loading states, fullscreen view, CachedNetworkImage ✅
+  - VerificationCentreScreen: renders all 8 badge rows with status chips and verify buttons ✅
+- No code changes required — this was a verification-only story
+- **Learnings for future iterations:**
+  - Pre-existing warnings in test files (sealed class, immutable) are from fake/mock implementations of Firebase classes — these are expected and not fixable without switching to a proper mocking library
+  - All 17 original profile bugs from Sprint 9 are now resolved across US-059 through US-063
+---

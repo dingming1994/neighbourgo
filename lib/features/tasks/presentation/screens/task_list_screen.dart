@@ -6,6 +6,9 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../data/models/task_model.dart';
 import '../../domain/providers/task_list_provider.dart';
+import '../widgets/task_filter_sheet.dart';
+import '../../../discover/presentation/screens/discover_screen.dart';
+import '../../../favorites/domain/providers/favorites_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -44,10 +47,66 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
     }
   }
 
+  List<TaskModel> _applyFiltersAndSort(
+      List<TaskModel> tasks, TaskFilterState filter) {
+    var result = tasks.toList();
+
+    // Budget filter
+    if (filter.budgetMin != null) {
+      result = result
+          .where((t) => t.budgetMin >= filter.budgetMin!)
+          .toList();
+    }
+    if (filter.budgetMax != null) {
+      result = result
+          .where((t) => t.budgetMin <= filter.budgetMax!)
+          .toList();
+    }
+
+    // Neighbourhood filter
+    if (filter.neighbourhood != null) {
+      final n = filter.neighbourhood!.toLowerCase();
+      result = result
+          .where((t) =>
+              (t.neighbourhood ?? t.locationLabel).toLowerCase().contains(n))
+          .toList();
+    }
+
+    // Sort
+    switch (filter.sort) {
+      case TaskSortOption.newest:
+        result.sort((a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      case TaskSortOption.priceLowHigh:
+        result.sort((a, b) => a.budgetMin.compareTo(b.budgetMin));
+      case TaskSortOption.priceHighLow:
+        result.sort((a, b) => b.budgetMin.compareTo(a.budgetMin));
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(taskListNotifierProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
+    final filter = ref.watch(taskFilterProvider);
+    final searchQuery =
+        widget.embedded ? ref.watch(discoverSearchQueryProvider) : '';
+
+    // Apply client-side search filter
+    var filteredTasks = state.tasks;
+    if (searchQuery.isNotEmpty) {
+      filteredTasks = filteredTasks.where((t) {
+        return t.title.toLowerCase().contains(searchQuery) ||
+            t.description.toLowerCase().contains(searchQuery);
+      }).toList();
+    }
+
+    // Apply advanced filters & sort
+    filteredTasks = _applyFiltersAndSort(filteredTasks, filter);
+
+    final filteredState = state.copyWith(tasks: filteredTasks);
 
     final body = Column(
       children: [
@@ -57,8 +116,10 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
             ref.read(selectedCategoryProvider.notifier).state = id;
             ref.read(taskListNotifierProvider.notifier).selectCategory(id);
           },
+          filterCount: filter.activeCount,
+          onFilterTap: () => showTaskFilterSheet(context, ref),
         ),
-        Expanded(child: _buildBody(state)),
+        Expanded(child: _buildBody(filteredState)),
       ],
     );
 
@@ -140,8 +201,15 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
 class _CategoryFilterBar extends StatelessWidget {
   final String? selected;
   final void Function(String?) onSelect;
+  final int filterCount;
+  final VoidCallback? onFilterTap;
 
-  const _CategoryFilterBar({required this.selected, required this.onSelect});
+  const _CategoryFilterBar({
+    required this.selected,
+    required this.onSelect,
+    this.filterCount = 0,
+    this.onFilterTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -149,36 +217,50 @@ class _CategoryFilterBar extends StatelessWidget {
       color: AppColors.bgCard,
       child: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  emoji: '✨',
-                  selected: selected == null,
-                  onTap: () => onSelect(null),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                ...AppCategories.all.map(
-                  (cat) => Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterChip(
-                      label: cat.label,
-                      emoji: cat.emoji,
-                      selected: selected == cat.id,
-                      color: cat.color,
-                      onTap: () =>
-                          onSelect(selected == cat.id ? null : cat.id),
-                    ),
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        emoji: '✨',
+                        selected: selected == null,
+                        onTap: () => onSelect(null),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      ...AppCategories.all.map(
+                        (cat) => Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.sm),
+                          child: _FilterChip(
+                            label: cat.label,
+                            emoji: cat.emoji,
+                            selected: selected == cat.id,
+                            color: cat.color,
+                            onTap: () =>
+                                onSelect(selected == cat.id ? null : cat.id),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (onFilterTap != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  child: _FilterIconButton(
+                    count: filterCount,
+                    onTap: onFilterTap!,
+                  ),
+                ),
+            ],
           ),
           const Divider(height: 1),
         ],
@@ -238,17 +320,75 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _FilterIconButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _FilterIconButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: count > 0
+                  ? AppColors.primary.withValues(alpha: 0.12)
+                  : AppColors.bgMint,
+              borderRadius: AppRadius.chip,
+              border: Border.all(
+                color: count > 0 ? AppColors.primary : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: count > 0 ? AppColors.primary : AppColors.textSecondary,
+            ),
+          ),
+          if (count > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Task Card
 // ─────────────────────────────────────────────────────────────────────────────
-class TaskCard extends StatelessWidget {
+class TaskCard extends ConsumerWidget {
   final TaskModel task;
   final VoidCallback onTap;
 
   const TaskCard({super.key, required this.task, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(favoriteIdsProvider).contains(task.id);
     final category = AppCategories.getById(task.categoryId);
     final categoryColor =
         AppColors.categoryColors[task.categoryId] ?? AppColors.primary;
@@ -295,7 +435,7 @@ class TaskCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category badge + urgency
+                  // Category badge + urgency + favorite
                   Row(
                     children: [
                       _CategoryBadge(
@@ -307,6 +447,15 @@ class TaskCard extends StatelessWidget {
                       Text(
                         task.urgencyDisplay,
                         style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () => toggleFavorite(ref, itemId: task.id, type: 'task'),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_outline,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
                       ),
                     ],
                   ),

@@ -110,9 +110,52 @@ class ProviderListNotifier extends StateNotifier<ProviderListState> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Filter & Sort
+// ─────────────────────────────────────────────────────────────────────────────
+enum ProviderSortOption { highestRated, mostReviews, newest }
+
+class ProviderFilterState {
+  final double? minRating;
+  final String? neighbourhood;
+  final ProviderSortOption sort;
+
+  const ProviderFilterState({
+    this.minRating,
+    this.neighbourhood,
+    this.sort = ProviderSortOption.highestRated,
+  });
+
+  ProviderFilterState copyWith({
+    double? minRating,
+    String? neighbourhood,
+    ProviderSortOption? sort,
+    bool clearMinRating = false,
+    bool clearNeighbourhood = false,
+  }) =>
+      ProviderFilterState(
+        minRating: clearMinRating ? null : (minRating ?? this.minRating),
+        neighbourhood:
+            clearNeighbourhood ? null : (neighbourhood ?? this.neighbourhood),
+        sort: sort ?? this.sort,
+      );
+
+  int get activeCount {
+    int count = 0;
+    if (minRating != null) count++;
+    if (neighbourhood != null) count++;
+    if (sort != ProviderSortOption.highestRated) count++;
+    return count;
+  }
+
+  static const empty = ProviderFilterState();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Providers
 // ─────────────────────────────────────────────────────────────────────────────
 final providerDirectoryCategoryProvider = StateProvider<String?>((ref) => null);
+final providerFilterProvider = StateProvider<ProviderFilterState>(
+    (ref) => const ProviderFilterState());
 
 final providerListNotifierProvider =
     StateNotifierProvider.autoDispose<ProviderListNotifier, ProviderListState>(

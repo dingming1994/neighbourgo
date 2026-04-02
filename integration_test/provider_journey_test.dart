@@ -196,8 +196,8 @@ void main() {
       // Verify provider home screen
       expect(find.textContaining('Hi, Ben!'), findsOneWidget,
           reason: 'Provider home screen should greet Ben');
-      expect(find.text('Open Tasks'), findsOneWidget,
-          reason: 'Provider home should show Open Tasks section');
+      expect(find.text('All Open Tasks'), findsOneWidget,
+          reason: 'Provider home should show All Open Tasks section');
 
       // ════════════════════════════════════════════════════════════════════════
       // STEP 5 — Browse tasks: find seeded task
@@ -319,7 +319,7 @@ void main() {
       await settle(tester, seconds: 2);
       if (find.byType(SingleChildScrollView).evaluate().isNotEmpty) {
         await tester.drag(
-          find.byType(SingleChildScrollView),
+          find.byType(SingleChildScrollView).first,
           const Offset(0, -300),
           warnIfMissed: false,
         );
@@ -370,7 +370,7 @@ void main() {
       // Scroll down to see bid section
       if (find.byType(SingleChildScrollView).evaluate().isNotEmpty) {
         await tester.drag(
-          find.byType(SingleChildScrollView),
+          find.byType(SingleChildScrollView).first,
           const Offset(0, -300),
         );
         await settle(tester);

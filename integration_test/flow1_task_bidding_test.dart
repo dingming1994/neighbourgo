@@ -34,10 +34,11 @@ void main() {
 
   late String aliceId;
   late String benId;
-  final firestore = FirebaseFirestore.instance;
+  late final FirebaseFirestore firestore;
 
   setUpAll(() async {
     await initializeTestApp();
+    firestore = FirebaseFirestore.instance;
 
     // Create Alice (poster)
     final alice = await signInTestUser(
@@ -264,18 +265,20 @@ void main() {
       // STEP 2: Ben discovers task and submits bid (S$55)
       // ════════════════════════════════════════════════════════════════════
 
+      // Sign out Alice, sign in Ben, and restart the app fresh
       await signOutTestUser();
       await signInTestUser(
         email: 'ben-flow1@test.com',
         password: 'test1234',
       );
 
+      // Re-launch the app for Ben's session using the standard helper
       await launchAndLogin(
         tester,
         displayName: 'Ben Lim',
         headline: 'Experienced cleaner',
         neighbourhood: 'Bedok',
-        roleLabel: 'I can help',
+        roleLabel: 'I want to earn',
       );
 
       expect(find.text('Home'), findsOneWidget,

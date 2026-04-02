@@ -25,6 +25,12 @@ import '../../features/notifications/presentation/screens/notification_list_scre
 import '../../features/payment/checkout_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../../features/providers/presentation/screens/provider_directory_screen.dart';
+import '../../features/services/presentation/screens/create_service_screen.dart';
+import '../../features/services/presentation/screens/service_detail_screen.dart';
+import '../../features/tasks/presentation/screens/my_tasks_screen.dart';
+import '../../features/bids/presentation/screens/my_bids_screen.dart';
+import '../../features/favorites/presentation/screens/favorites_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../constants/app_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,11 +70,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation != AppRoutes.emailAuth &&
           state.matchedLocation != AppRoutes.phoneAuth &&
           state.matchedLocation != AppRoutes.otpVerify) {
-        // Check if the user has completed onboarding before sending to home
-        final userModel = ref.read(currentUserProvider).valueOrNull;
-        if (userModel == null || !userModel.isProfileComplete) {
-          return AppRoutes.roleSelect;
-        }
         return AppRoutes.home;
       }
       return null;
@@ -113,16 +114,46 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: AppRoutes.home,    builder: (_, __) => const HomeScreen()),
           GoRoute(path: AppRoutes.taskList, builder: (_, __) => const DiscoverScreen()),
-          GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const _MyTasksTab()),
+          GoRoute(path: AppRoutes.myTasks,  builder: (_, __) => const MyTasksScreen()),
           GoRoute(path: AppRoutes.chatList, builder: (_, __) => const ChatListScreen()),
           GoRoute(path: AppRoutes.myProfile, builder: (_, __) => const ProfileScreen()),
         ],
+      ),
+
+      // ── Settings ──────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (_, __) => const SettingsScreen(),
+      ),
+
+      // ── Favorites ──────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.favorites,
+        builder: (_, __) => const FavoritesScreen(),
+      ),
+
+      // ── My Bids (provider bid history) ─────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.myBids,
+        builder: (_, __) => const MyBidsScreen(),
       ),
 
       // ── Provider directory ──────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.providers,
         builder: (_, __) => const ProviderDirectoryScreen(),
+      ),
+
+      // ── Service listings ──────────────────────────────────────────────────
+      // createService must come before serviceDetail to avoid :listingId match
+      GoRoute(
+        path: AppRoutes.createService,
+        builder: (_, __) => const CreateServiceScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.serviceDetail,
+        builder: (_, state) =>
+            ServiceDetailScreen(listingId: state.pathParameters['listingId']!),
       ),
 
       // ── Task screens (full-screen, outside shell) ──────────────────────────
@@ -207,14 +238,4 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Stub tab builders – replaced by real screens in their feature modules
-class _MyTasksTab  extends StatelessWidget { const _MyTasksTab();  @override Widget build(BuildContext ctx) => const _TabPlaceholder('My Tasks'); }
-
-class _TabPlaceholder extends StatelessWidget {
-  final String label;
-  const _TabPlaceholder(this.label);
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Text(label, style: Theme.of(context).textTheme.headlineMedium),
-  );
-}
+// (Stubs removed – real screens imported from feature modules)

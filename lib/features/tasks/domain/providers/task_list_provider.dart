@@ -110,9 +110,58 @@ class TaskListNotifier extends StateNotifier<TaskListState> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Filter & Sort
+// ─────────────────────────────────────────────────────────────────────────────
+enum TaskSortOption { newest, priceLowHigh, priceHighLow }
+
+class TaskFilterState {
+  final double? budgetMin;
+  final double? budgetMax;
+  final String? neighbourhood;
+  final TaskSortOption sort;
+
+  const TaskFilterState({
+    this.budgetMin,
+    this.budgetMax,
+    this.neighbourhood,
+    this.sort = TaskSortOption.newest,
+  });
+
+  TaskFilterState copyWith({
+    double? budgetMin,
+    double? budgetMax,
+    String? neighbourhood,
+    TaskSortOption? sort,
+    bool clearBudgetMin = false,
+    bool clearBudgetMax = false,
+    bool clearNeighbourhood = false,
+  }) =>
+      TaskFilterState(
+        budgetMin: clearBudgetMin ? null : (budgetMin ?? this.budgetMin),
+        budgetMax: clearBudgetMax ? null : (budgetMax ?? this.budgetMax),
+        neighbourhood:
+            clearNeighbourhood ? null : (neighbourhood ?? this.neighbourhood),
+        sort: sort ?? this.sort,
+      );
+
+  int get activeCount {
+    int count = 0;
+    if (budgetMin != null) count++;
+    if (budgetMax != null) count++;
+    if (neighbourhood != null) count++;
+    if (sort != TaskSortOption.newest) count++;
+    return count;
+  }
+
+  static const empty = TaskFilterState();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Providers
 // ─────────────────────────────────────────────────────────────────────────────
 final selectedCategoryProvider = StateProvider<String?>((ref) => null);
+final taskFilterProvider = StateProvider<TaskFilterState>(
+    (ref) => const TaskFilterState());
 
 final taskListNotifierProvider =
     StateNotifierProvider.autoDispose<TaskListNotifier, TaskListState>((ref) {

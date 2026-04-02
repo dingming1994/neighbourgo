@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -46,7 +47,7 @@ class _ChatList extends ConsumerWidget {
     final chatsAsync = ref.watch(chatsStreamProvider(userId));
 
     return chatsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _ChatLoadingList(),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -57,36 +58,102 @@ class _ChatList extends ConsumerWidget {
       ),
       data: (chats) {
         if (chats.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.chat_bubble_outline,
-                    size: 64, color: AppColors.textHint.withOpacity(0.4)),
-                const SizedBox(height: 16),
-                const Text('No messages yet',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary)),
-                const SizedBox(height: 8),
-                const Text('Start a conversation by bidding on a task',
-                    style: TextStyle(color: AppColors.textHint)),
-              ],
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(40),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('💬', style: TextStyle(fontSize: 56)),
+                  SizedBox(height: 16),
+                  Text('No messages yet',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary)),
+                  SizedBox(height: 8),
+                  Text('Start a conversation by bidding on a task',
+                      style: TextStyle(color: AppColors.textHint)),
+                ],
+              ),
             ),
           );
         }
 
-        return ListView.separated(
-          itemCount: chats.length,
-          separatorBuilder: (_, __) =>
-              const Divider(height: 1, indent: 72),
-          itemBuilder: (context, i) => _ChatTile(
-            chat: chats[i],
-            currentUserId: userId,
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            ref.invalidate(chatsStreamProvider(userId));
+          },
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: chats.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, indent: 72),
+            itemBuilder: (context, i) => _ChatTile(
+              chat: chats[i],
+              currentUserId: userId,
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _ChatLoadingList extends StatelessWidget {
+  const _ChatLoadingList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 6,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+      itemBuilder: (_, __) => Shimmer.fromColors(
+        baseColor: AppColors.divider,
+        highlightColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: AppColors.bgCard,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      width: 160,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 220,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

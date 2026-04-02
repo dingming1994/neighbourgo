@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../auth/data/models/user_model.dart';
+import '../../../favorites/domain/providers/favorites_provider.dart';
 import '../../domain/providers/provider_list_provider.dart';
+import '../widgets/provider_filter_sheet.dart';
+import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -46,10 +49,69 @@ class _ProviderDirectoryScreenState
     }
   }
 
+  List<UserModel> _applyFiltersAndSort(
+      List<UserModel> providers, ProviderFilterState filter) {
+    var result = providers.toList();
+
+    // Min rating filter
+    if (filter.minRating != null) {
+      result = result
+          .where((p) => (p.stats?.avgRating ?? 0) >= filter.minRating!)
+          .toList();
+    }
+
+    // Neighbourhood filter
+    if (filter.neighbourhood != null) {
+      final n = filter.neighbourhood!.toLowerCase();
+      result = result
+          .where((p) =>
+              (p.neighbourhood ?? '').toLowerCase().contains(n))
+          .toList();
+    }
+
+    // Sort
+    switch (filter.sort) {
+      case ProviderSortOption.highestRated:
+        result.sort((a, b) =>
+            (b.stats?.avgRating ?? 0).compareTo(a.stats?.avgRating ?? 0));
+      case ProviderSortOption.mostReviews:
+        result.sort((a, b) =>
+            (b.stats?.totalReviews ?? 0).compareTo(a.stats?.totalReviews ?? 0));
+      case ProviderSortOption.newest:
+        result.sort((a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(providerListNotifierProvider);
     final selectedCategory = ref.watch(providerDirectoryCategoryProvider);
+    final filter = ref.watch(providerFilterProvider);
+    final searchQuery =
+        widget.embedded ? ref.watch(discoverSearchQueryProvider) : '';
+
+    // Apply client-side search filter
+    var filteredProviders = state.providers;
+    if (searchQuery.isNotEmpty) {
+      filteredProviders = filteredProviders.where((p) {
+        final name = (p.displayName ?? '').toLowerCase();
+        final headline = (p.headline ?? '').toLowerCase();
+        final categories = p.serviceCategories
+            .map((c) => c.toLowerCase())
+            .join(' ');
+        return name.contains(searchQuery) ||
+            headline.contains(searchQuery) ||
+            categories.contains(searchQuery);
+      }).toList();
+    }
+
+    // Apply advanced filters & sort
+    filteredProviders = _applyFiltersAndSort(filteredProviders, filter);
+
+    final filteredState = state.copyWith(providers: filteredProviders);
 
     final body = Column(
       children: [
@@ -59,8 +121,10 @@ class _ProviderDirectoryScreenState
             ref.read(providerDirectoryCategoryProvider.notifier).state = id;
             ref.read(providerListNotifierProvider.notifier).selectCategory(id);
           },
+          filterCount: filter.activeCount,
+          onFilterTap: () => showProviderFilterSheet(context, ref),
         ),
-        Expanded(child: _buildBody(state)),
+        Expanded(child: _buildBody(filteredState)),
       ],
     );
 
@@ -138,8 +202,15 @@ class _ProviderDirectoryScreenState
 class _CategoryFilterBar extends StatelessWidget {
   final String? selected;
   final void Function(String?) onSelect;
+  final int filterCount;
+  final VoidCallback? onFilterTap;
 
-  const _CategoryFilterBar({required this.selected, required this.onSelect});
+  const _CategoryFilterBar({
+    required this.selected,
+    required this.onSelect,
+    this.filterCount = 0,
+    this.onFilterTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -147,36 +218,50 @@ class _CategoryFilterBar extends StatelessWidget {
       color: AppColors.bgCard,
       child: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  emoji: '✨',
-                  selected: selected == null,
-                  onTap: () => onSelect(null),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                ...AppCategories.all.map(
-                  (cat) => Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterChip(
-                      label: cat.label,
-                      emoji: cat.emoji,
-                      selected: selected == cat.id,
-                      color: cat.color,
-                      onTap: () =>
-                          onSelect(selected == cat.id ? null : cat.id),
-                    ),
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        emoji: '✨',
+                        selected: selected == null,
+                        onTap: () => onSelect(null),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      ...AppCategories.all.map(
+                        (cat) => Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.sm),
+                          child: _FilterChip(
+                            label: cat.label,
+                            emoji: cat.emoji,
+                            selected: selected == cat.id,
+                            color: cat.color,
+                            onTap: () =>
+                                onSelect(selected == cat.id ? null : cat.id),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (onFilterTap != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  child: _FilterIconButton(
+                    count: filterCount,
+                    onTap: onFilterTap!,
+                  ),
+                ),
+            ],
           ),
           const Divider(height: 1),
         ],
@@ -237,17 +322,75 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _FilterIconButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _FilterIconButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: count > 0
+                  ? AppColors.primary.withValues(alpha: 0.12)
+                  : AppColors.bgMint,
+              borderRadius: AppRadius.chip,
+              border: Border.all(
+                color: count > 0 ? AppColors.primary : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: count > 0 ? AppColors.primary : AppColors.textSecondary,
+            ),
+          ),
+          if (count > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider Card
 // ─────────────────────────────────────────────────────────────────────────────
-class _ProviderCard extends StatelessWidget {
+class _ProviderCard extends ConsumerWidget {
   final UserModel provider;
   final VoidCallback onTap;
 
   const _ProviderCard({required this.provider, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(favoriteIdsProvider).contains(provider.uid);
     final stats = provider.stats;
     final avgRating = stats?.avgRating ?? 0.0;
     final completedTasks = stats?.completedTasks ?? 0;
@@ -325,6 +468,18 @@ class _ProviderCard extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () => toggleFavorite(ref,
+                            itemId: provider.uid, type: 'provider'),
+                        child: Icon(
+                          isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_outline,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
+                      ),
                     ],
                   ),
 

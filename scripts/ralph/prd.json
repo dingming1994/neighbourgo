@@ -1,66 +1,143 @@
 {
-  "featureName": "Sprint 10 — Comprehensive Quality Pass",
-  "description": "Rebuild Cloud Functions to fix emulator crash, fix remaining layout constraint issues, scan all screens for overflow risks, and run integration tests to verify nothing is broken.",
-  "branchName": "ralph/sprint-10-quality-pass",
+  "featureName": "Sprint 11-15 — Overnight Feature & Polish Marathon",
+  "description": "Comprehensive overnight development: implement missing core features, polish UI, fix all bugs, and make the app production-ready.",
+  "branchName": "ralph/overnight-marathon",
   "userStories": [
     {
-      "id": "US-065",
-      "title": "Rebuild Cloud Functions — Fix onUserCreate Emulator Crash",
-      "description": "Run `cd functions && npm run build` (tsc) to recompile TypeScript Cloud Functions. Fix any TypeScript compilation errors so onUserCreate and all other functions work correctly in the Firebase emulator. The compiled output goes to functions/lib/.",
+      "id": "US-070",
+      "title": "Provider Service Listings — Publish & Browse Services",
+      "description": "Provider can create service listings (like product cards) that Clients can browse. Each listing has: service category, title, description, photos, hourly/fixed rate, availability. Clients see these in the Provider Directory and can hire directly from a listing.",
       "acceptanceCriteria": [
-        "Running `cd functions && npm run build` completes with zero errors",
-        "functions/lib/index.js exists and is up-to-date with functions/src/index.ts",
-        "onUserCreate function is properly exported and callable in the emulator (no runtime crash on user creation)",
-        "All other exported functions (if any) compile without errors",
-        "No TypeScript strict-mode warnings remain"
+        "Create ServiceListing model (Freezed): id, providerId, providerName, categoryId, title, description, photoUrls, hourlyRate, fixedRate, availability, neighbourhood, createdAt, isActive",
+        "Create Firestore collection 'service_listings' with security rules",
+        "Create create_service_screen.dart — form to create/edit a service listing",
+        "Create service_detail_screen.dart — full view with Hire button",
+        "Create service_card.dart — card widget for grids/lists",
+        "Add 'My Services' section to ProviderHomeScreen with Add button",
+        "In ProviderDirectoryScreen show service listings (or add Services tab)",
+        "Add routes: /services/create, /services/:listingId",
+        "Hire button creates direct-hire task pre-filled with provider + category + rate",
+        "flutter analyze 0 errors",
+        "Write and run integration test: provider creates listing, client browses and hires"
       ],
-      "passes": false,
-      "dependsOn": []
+      "passes": true
     },
     {
-      "id": "US-066",
-      "title": "Fix Size(double.infinity, 52) in poster_home_screen.dart",
-      "description": "Replace `Size(double.infinity, 52)` at line 77 of poster_home_screen.dart with a properly constrained size. Use `Size.fromHeight(52)` or `Size(double.maxFinite, 52)` depending on the widget context. The current pattern can cause layout issues in certain parent constraints.",
+      "id": "US-071",
+      "title": "Global Search — Search Tasks and Providers",
+      "description": "Search bar on Discover screen for searching tasks by title/description and providers by name/skills.",
       "acceptanceCriteria": [
-        "poster_home_screen.dart no longer contains `Size(double.infinity, 52)`",
-        "The 'Post a Task' button still renders full-width within its parent padding and is 52 logical pixels tall",
-        "flutter analyze shows 0 errors on poster_home_screen.dart",
-        "No visual regression — button appearance is unchanged"
+        "Add search bar at top of DiscoverScreen above Tasks/Providers toggle",
+        "Tasks search: client-side filter where title or description contains query",
+        "Providers search: filter by displayName, headline, or serviceCategories",
+        "Show results in same list format",
+        "Clear button, empty state, debounce 300ms",
+        "flutter analyze 0 errors"
       ],
-      "passes": false,
-      "dependsOn": []
+      "passes": true
     },
     {
-      "id": "US-067",
-      "title": "Scan All Screens for Layout Overflow Risks and Fix",
-      "description": "Audit every screen in lib/features/*/presentation/screens/ for layout overflow risks: unbounded Row children without Expanded/Flexible, Size(double.infinity, ...) patterns, unconstrained Column inside horizontal scroll, Text without overflow handling in bounded containers. Fix any issues found.",
+      "id": "US-072",
+      "title": "My Tasks & My Bids History Pages",
+      "description": "Complete history pages for both roles. Client sees all posted tasks. Provider sees all submitted bids.",
       "acceptanceCriteria": [
-        "No remaining `Size(double.infinity, ...)` patterns anywhere in lib/ (use Size.fromHeight or constrained alternatives)",
-        "All Row widgets with text children use Expanded or Flexible to prevent horizontal overflow",
-        "All Text widgets in constrained containers have overflow: TextOverflow.ellipsis or maxLines set",
-        "No unbounded Container or SizedBox with double.infinity width inside horizontally unbounded parents",
-        "flutter analyze shows 0 errors across all modified files",
-        "Document all changes made in the commit message"
+        "Create my_tasks_screen.dart replacing _MyTasksTab placeholder",
+        "3 tabs: Active, Completed, Cancelled with task cards + status badges",
+        "Create my_bids_screen.dart for provider bid history",
+        "3 sections: Pending, Accepted, Rejected bids",
+        "Each bid card shows task title, amount, status, date",
+        "Add My Bids to Provider Profile menu",
+        "Replace placeholder in app_router.dart",
+        "flutter analyze 0 errors"
       ],
-      "passes": false,
-      "dependsOn": []
+      "passes": true
     },
     {
-      "id": "US-068",
-      "title": "Run Integration Tests — Verify Nothing Is Broken",
-      "description": "Run the 5 core integration tests (auth_flow_test, post_task_test, bidding_flow_test, chat_flow_test, edit_profile_test) plus flutter analyze and flutter test. Fix any test failures caused by changes in US-065 through US-067 or pre-existing regressions.",
+      "id": "US-073",
+      "title": "Enhanced Filtering — Price, Rating, Sort",
+      "description": "Advanced filters for tasks and providers: price range, minimum rating, sort options.",
       "acceptanceCriteria": [
-        "flutter analyze completes with 0 errors",
-        "flutter test completes with all unit tests passing",
-        "integration_test/auth_flow_test.dart passes or is verified runnable",
-        "integration_test/post_task_test.dart passes or is verified runnable",
-        "integration_test/bidding_flow_test.dart passes or is verified runnable",
-        "integration_test/chat_flow_test.dart passes or is verified runnable",
-        "integration_test/edit_profile_test.dart passes or is verified runnable",
-        "No regressions introduced by Sprint 10 changes"
+        "Filter bottom sheet on TaskListScreen: budget range slider, category, neighbourhood",
+        "Sort: newest, price low-high, price high-low",
+        "Filter on ProviderDirectoryScreen: min rating, category, neighbourhood",
+        "Sort providers: highest rated, most reviews, newest",
+        "Active filter count badge on filter icon",
+        "Clear all filters button",
+        "flutter analyze 0 errors"
       ],
-      "passes": false,
-      "dependsOn": ["US-065", "US-066", "US-067"]
+      "passes": true
+    },
+    {
+      "id": "US-074",
+      "title": "UI Polish — Design Consistency, Animations, Empty States",
+      "description": "Polish all screens: consistent spacing/typography/colors, shimmer loading, empty states, pull-to-refresh, fix layout issues.",
+      "acceptanceCriteria": [
+        "Audit all screens for consistent 16px padding, Inter font, AppColors usage",
+        "Add shimmer loading skeletons on all list screens",
+        "Ensure ALL lists have emoji + message empty states",
+        "Fix text overflow: maxLines + ellipsis on all card titles/descriptions",
+        "Consistent AppBar styles across all screens",
+        "Pull-to-refresh on tasks, providers, chats, notifications lists",
+        "All buttons have loading states, all forms have validation",
+        "flutter analyze 0 errors, no rendering exceptions"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-075",
+      "title": "Favorites — Save Providers and Tasks",
+      "description": "Bookmark/favorite system for providers and tasks.",
+      "acceptanceCriteria": [
+        "Heart icon on task cards and provider cards, toggle favorite",
+        "Store in Firestore users/{uid}/favorites subcollection",
+        "Create favorites_screen.dart with tabs: Saved Tasks, Saved Providers",
+        "Add to Profile menu, add route /favorites",
+        "Filled heart for favorited, outline for not",
+        "flutter analyze 0 errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-076",
+      "title": "Task Status Timeline — Visual Progress Tracker",
+      "description": "Horizontal stepper on TaskDetailScreen showing task lifecycle.",
+      "acceptanceCriteria": [
+        "Create _TaskTimeline widget: Posted, Bidding, Matched, In Progress, Completed",
+        "Current step primary color, past green checkmark, future grey",
+        "Timestamp under completed steps",
+        "Handle cancelled (red X) and disputed (warning)",
+        "Place at top of TaskDetailScreen below photos",
+        "flutter analyze 0 errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-077",
+      "title": "Settings Page — Preferences & Account",
+      "description": "Settings with notification prefs, account management, app info.",
+      "acceptanceCriteria": [
+        "Create settings_screen.dart",
+        "Sections: Notifications toggle, Account (change password, delete account), About (version, terms, privacy)",
+        "Delete account with confirmation dialog",
+        "Add to Profile menu before Sign Out, add route /settings",
+        "flutter analyze 0 errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-078",
+      "title": "Final Integration Tests — All New Features",
+      "description": "Comprehensive tests for all new features + regression check on existing features.",
+      "acceptanceCriteria": [
+        "Test: provider creates service listing, client finds and hires",
+        "Test: search tasks and providers by keyword",
+        "Test: My Tasks and My Bids history pages load correctly",
+        "Test: favorites toggle and favorites page",
+        "Run ALL existing tests for regression",
+        "flutter analyze 0 errors, flutter test all pass",
+        "Fix any bugs found, commit all"
+      ],
+      "passes": true
     }
   ]
 }

@@ -137,11 +137,15 @@ class _JobOfferCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   if (task.posterName != null)
-                    Text(
-                      'by ${task.posterName}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                    Expanded(
+                      child: Text(
+                        'by ${task.posterName}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                 ],
@@ -153,11 +157,15 @@ class _JobOfferCard extends StatelessWidget {
                   const Icon(Icons.location_on_outlined,
                       size: 14, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
-                  Text(
-                    task.neighbourhood!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                  Expanded(
+                    child: Text(
+                      task.neighbourhood!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ]),
