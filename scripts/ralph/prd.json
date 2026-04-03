@@ -114,7 +114,7 @@
         "Group by date: Today, Yesterday, Earlier",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

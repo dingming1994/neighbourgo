@@ -137,3 +137,23 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - ServiceListingModel has no rating field — used "★ New" placeholder; real ratings would need model changes + Firestore migration
   - Direct hire flow is consistent: push `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, `preSelectedCategory` extras
 ---
+
+## 2026-04-03 - US-100
+- Redesigned NotificationListScreen with date grouping, action buttons, swipe-to-dismiss, and mark all read
+- **Changes:**
+  1. Date grouping: Notifications grouped into Today, Yesterday, Earlier sections with styled headers
+  2. Action buttons: Per-type contextual buttons — "View Bids" (bid_received), "View Task" (bid_accepted/rejected/completed), "Reply" (new_message), "Leave Review" (review_received)
+  3. Swipe-to-dismiss: `Dismissible` widget with endToStart direction marks notification as read
+  4. Mark All Read: `TextButton.icon` in AppBar, only shown when unreadCount > 0, uses batch Firestore write
+  5. Providers: Added `markNotificationAsRead()` and `markAllNotificationsAsRead()` helper functions with shared `_itemsCol()` accessor
+  6. Unread badge: Already existed on NotificationBell (no changes needed)
+- Files changed:
+  - `lib/features/notifications/domain/providers/notification_providers.dart` (+19 lines: markNotificationAsRead, markAllNotificationsAsRead, _itemsCol helper)
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart` (rewrite: +269 lines, -66 lines: _NotificationGroup model, _groupByDate, _DateGroup, redesigned _NotificationTile with Dismissible, _ActionButton, shared _navigateByType)
+- **Learnings for future iterations:**
+  - Firestore batch writes are the right pattern for "mark all read" — avoids N individual writes
+  - `Dismissible` widget needs a `ValueKey` on the notification ID for proper list reconciliation
+  - The notification bell widget already had unread count badge — check existing code before adding features
+  - Notification types map cleanly to action labels: bid_received→View Bids, new_message→Reply, review_received→Leave Review
+  - Date grouping with `DateTime(y,m,d)` comparison to `today`/`yesterday` is cleaner than string formatting
+---
