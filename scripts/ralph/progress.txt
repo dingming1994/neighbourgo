@@ -118,3 +118,22 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - `BoxShadow` with `Colors.black.withValues(alpha: 0.06)` and `blurRadius: 8` matches the subtle shadow style used in task detail cards (US-097 `_SectionCard`)
   - For star ratings, use `floor()` for full stars, check `% 1 >= 0.5` for half star, rest are outline
 ---
+
+## 2026-04-03 - US-099
+- Converted Services tab from list view to 2-column grid with redesigned cards
+- **Changes:**
+  1. ServiceListingsScreen: Replaced `ListView.separated` with `GridView.builder` (2 columns, `childAspectRatio: 0.58`)
+  2. ServiceCard: Redesigned for compact grid layout — cover photo with `AspectRatio(16/10)`, title, provider name, rating badge ("New"), price, location, and full-width Hire button
+  3. Hire button on card: Direct-hire flow via `AppRoutes.postTask` with extras (same pattern as US-098 provider cards)
+  4. Box shadow on cards matching the subtle shadow style from US-097/US-098
+  5. Shimmer loading: Updated to 2-column grid with 6 placeholder cards
+- Files changed:
+  - `lib/features/services/presentation/widgets/service_card.dart` (complete rewrite for grid layout)
+  - `lib/features/services/presentation/screens/service_listings_screen.dart` (ListView→GridView, shimmer grid)
+- **Learnings for future iterations:**
+  - DiscoverScreen already had 3 tabs (Tasks, Providers, Services) with `DiscoverSegment` enum — no tab addition needed
+  - ServiceListingsScreen supports `embedded` mode for use inside DiscoverScreen
+  - `childAspectRatio: 0.58` works well for service cards with photo + details + button in 2-column grid
+  - ServiceListingModel has no rating field — used "★ New" placeholder; real ratings would need model changes + Firestore migration
+  - Direct hire flow is consistent: push `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, `preSelectedCategory` extras
+---

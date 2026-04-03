@@ -100,7 +100,7 @@
         "Shimmer loading",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-100",
