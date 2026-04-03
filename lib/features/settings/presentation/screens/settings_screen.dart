@@ -50,37 +50,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    // Second confirmation
+    // Second confirmation — requires typing DELETE
     final doubleConfirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Final Confirmation'),
-        content: const Text(
-          'This is your last chance. Type DELETE to confirm account deletion.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Yes, Delete My Account'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (ctx) => _DeleteConfirmationDialog(),
     );
 
     if (doubleConfirmed != true || !mounted) return;
 
     try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
       await FirebaseAuth.instance.currentUser?.delete();
       if (mounted) {
+        Navigator.of(context).pop(); // dismiss spinner
         ref.read(signOutProvider)();
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        Navigator.of(context).pop(); // dismiss spinner
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to delete account: ${e.message}')),
         );
@@ -315,6 +309,73 @@ class _ActionTile extends StatelessWidget {
               ? const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20)
               : null),
       onTap: onTap,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Delete confirmation dialog with TextField validation
+// ─────────────────────────────────────────────────────────────────────────────
+class _DeleteConfirmationDialog extends StatefulWidget {
+  @override
+  State<_DeleteConfirmationDialog> createState() =>
+      _DeleteConfirmationDialogState();
+}
+
+class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
+  final _controller = TextEditingController();
+  bool _isValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final valid = _controller.text == 'DELETE';
+      if (valid != _isValid) setState(() => _isValid = valid);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Final Confirmation'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'This is your last chance. Type DELETE to confirm account deletion.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Type DELETE to confirm',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _isValid ? () => Navigator.pop(context, true) : null,
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.error,
+            disabledForegroundColor: AppColors.error.withValues(alpha: 0.38),
+          ),
+          child: const Text('Yes, Delete My Account'),
+        ),
+      ],
     );
   }
 }
