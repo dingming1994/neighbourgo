@@ -66,12 +66,17 @@ class ServiceListingsScreen extends ConsumerWidget {
                 onRefresh: () async {
                   ref.invalidate(_serviceListingsProvider);
                 },
-                child: ListView.separated(
+                child: GridView.builder(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(AppSpacing.md),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 0.58,
+                  ),
                   itemCount: listings.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (_, i) => ServiceCard(listing: listings[i]),
                 ),
               );
@@ -206,15 +211,19 @@ class _LoadingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return GridView.builder(
       padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: AppSpacing.sm,
+        mainAxisSpacing: AppSpacing.sm,
+        childAspectRatio: 0.58,
+      ),
+      itemCount: 6,
       itemBuilder: (_, __) => Shimmer.fromColors(
         baseColor: AppColors.divider,
         highlightColor: Colors.white,
         child: Container(
-          height: 200,
           decoration: BoxDecoration(
             color: AppColors.bgCard,
             borderRadius: AppRadius.card,
