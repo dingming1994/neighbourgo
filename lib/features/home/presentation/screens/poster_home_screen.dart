@@ -86,38 +86,57 @@ class PosterHomeScreen extends ConsumerWidget {
           // ── Pending Reviews ────────────────────────────────────────────
           PendingReviewsSection(provider: posterPendingReviewsProvider),
 
-          // ── Section header ───────────────────────────────────────────────
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('Active Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            ),
-          ),
-
-          // ── Task list ────────────────────────────────────────────────────
-          tasksAsync.when(
-            loading: () => const SliverToBoxAdapter(
+          // ── Status-grouped task sections ──────────────────────────────
+          ...tasksAsync.when(
+            loading: () => [const SliverToBoxAdapter(
               child: Center(child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: CircularProgressIndicator(),
               )),
-            ),
-            error: (e, _) => SliverToBoxAdapter(
+            )],
+            error: (e, _) => [SliverToBoxAdapter(
               child: Center(child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text('Error loading tasks: $e', style: const TextStyle(color: AppColors.error)),
               )),
-            ),
+            )],
             data: (tasks) {
               if (tasks.isEmpty) {
-                return const SliverToBoxAdapter(child: _EmptyTasksState());
+                return [const SliverToBoxAdapter(child: _EmptyTasksState())];
               }
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => _PosterTaskCard(task: tasks[i]),
-                  childCount: tasks.length,
-                ),
-              );
+              final needsAction = tasks.where((t) => t.isOpen && t.bidCount > 0).toList();
+              final inProgress  = tasks.where((t) => t.isAssigned).toList();
+              final open        = tasks.where((t) => t.isOpen && t.bidCount == 0).toList();
+
+              return [
+                if (needsAction.isNotEmpty) ...[
+                  _SectionHeader(title: 'Needs Your Action', count: needsAction.length, color: AppColors.warning),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _NeedsActionTaskCard(task: needsAction[i]),
+                      childCount: needsAction.length,
+                    ),
+                  ),
+                ],
+                if (inProgress.isNotEmpty) ...[
+                  _SectionHeader(title: 'In Progress', count: inProgress.length, color: AppColors.primary),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _InProgressTaskCard(task: inProgress[i]),
+                      childCount: inProgress.length,
+                    ),
+                  ),
+                ],
+                if (open.isNotEmpty) ...[
+                  _SectionHeader(title: 'Open', count: open.length, color: AppColors.textSecondary),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _PosterTaskCard(task: open[i]),
+                      childCount: open.length,
+                    ),
+                  ),
+                ],
+              ];
             },
           ),
 
@@ -239,4 +258,198 @@ class _Chip extends StatelessWidget {
     decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
     child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section header with count badge
+// ─────────────────────────────────────────────────────────────────────────────
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  final Color color;
+  const _SectionHeader({required this.title, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) => SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            child: Text('$count', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Needs Action card — shows bid count + Review Bids button
+// ─────────────────────────────────────────────────────────────────────────────
+class _NeedsActionTaskCard extends StatelessWidget {
+  final TaskModel task;
+  const _NeedsActionTaskCard({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final category = AppCategories.all.where((c) => c.id == task.categoryId).firstOrNull;
+    final emoji = category?.emoji ?? '📌';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: GestureDetector(
+        onTap: () => context.push('/tasks/${task.id}'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _Chip(label: category?.label ?? task.categoryId, color: AppColors.primaryLight.withOpacity(0.15)),
+                  const SizedBox(width: 8),
+                  _Chip(label: task.budgetDisplay, color: AppColors.primary.withOpacity(0.1)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.gavel, size: 16, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${task.bidCount} bid${task.bidCount == 1 ? '' : 's'} to review',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.warning),
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    height: 32,
+                    child: ElevatedButton(
+                      onPressed: () => context.push('/tasks/${task.id}'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warning,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Review Bids', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// In Progress card — shows provider name + Message quick action
+// ─────────────────────────────────────────────────────────────────────────────
+class _InProgressTaskCard extends StatelessWidget {
+  final TaskModel task;
+  const _InProgressTaskCard({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final category = AppCategories.all.where((c) => c.id == task.categoryId).firstOrNull;
+    final emoji = category?.emoji ?? '📌';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: GestureDetector(
+        onTap: () => context.push('/tasks/${task.id}'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _Chip(label: category?.label ?? task.categoryId, color: AppColors.primaryLight.withOpacity(0.15)),
+                  const SizedBox(width: 8),
+                  _Chip(label: task.budgetDisplay, color: AppColors.primary.withOpacity(0.1)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      task.assignedProviderName ?? 'Provider',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/tasks/${task.id}'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 14),
+                      label: const Text('Message', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

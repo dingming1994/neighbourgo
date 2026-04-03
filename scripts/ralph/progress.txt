@@ -1,157 +1,159 @@
 # Ralph Progress Log
-Started: Fri  3 Apr 2026 01:59:25 +08
+Started: Fri  3 Apr 2026 13:36:39 +08
 ---
 
 ## Codebase Patterns
-- AsyncValue.when() error branches should use the shared `ErrorState` widget from `core/widgets/error_state.dart` with `ref.invalidate(provider)` for retry
-- TaskListScreen and ProviderDirectoryScreen use custom StateNotifier pattern (not StreamProvider) — their error handling is in `_buildBody()` method
-- Screens using StreamProvider.autoDispose use `.when(loading:, error:, data:)` pattern
-- Pre-existing test failures in `test/widgets/profile_chat_nav_test.dart` (EditProfileScreen Firebase init) — not related to feature work
-- Country code picker widget is in `lib/features/auth/presentation/widgets/country_code_picker.dart` — reusable `Country` model and `supportedCountries` list
-- Phone auth tests use `testPhone()` helper for large surface size (480x1200) and overflow suppression
-- BidRepository.hasExistingBid() queries by providerId — use for duplicate checks before any bid-related writes
-- Image validation: use `ImageValidator.validate(file)` from `core/utils/image_validator.dart` before any upload — checks size (<=10MB) and extension (jpg/jpeg/png/heic/webp)
-- FakeCollectionReference/FakeQuery in bid_repository_test.dart support `.where()` filtering via `_WhereClause` list
-- `bidsStreamProvider` (in bid_list_section.dart) is the canonical way to watch bids for a task — reuse it rather than creating new providers
-- Review duplicate check: use `ProfileRepository.hasExistingReview()` before any review-related writes — queries by taskId + reviewerId
-- `ServiceCategory` (not `AppCategory`) is the type returned by `AppCategories.getById()` in `category_constants.dart`
-- Budget validation: min $5, max $10,000 in PostTaskScreen; bid validation: min $1, max 2x task budget in SubmitBidSheet (requires `taskBudget` param)
+- FakeCollectionReference.where() delegates to a shared FakeQuery — when chaining multiple .where() calls, the first is on the collection and the rest on FakeQuery. Both must track state.
+- currentUserProvider is a StreamProvider<UserModel?> — use `ref.read(currentUserProvider.future)` to await the first emission instead of `.valueOrNull` with a raw fallback.
+- Empty catch blocks should use `debugPrint` for best-effort operations (storage deletion, Firestore lookups) rather than silently swallowing errors.
+- To conditionally render multiple slivers from an AsyncValue, use `...asyncValue.when(data: (x) => [sliver1, sliver2])` with spread.
+- TaskModel extension has `isOpen`, `isAssigned`, `isCompleted` getters — prefer these over raw enum comparison.
+
+## 2026-04-03 - US-093
+- Fixed 4 failing unit tests and 3 empty catch blocks
+- **Tests fixed:**
+  1. `TaskRepository watchMyPostedTasks filters by posterId` — FakeQuery/FakeCollectionReference only tracked the *last* .where() field, overwriting 'posterId' with 'status'. Added `allWhereFields` list and `whereValues` map to track all chained .where() calls.
+  2-4. Three `EditProfileScreen` tests (Display Name/Headline/Bio, Service Categories, Save button) — `_loadUser()` fell through to `AuthRepository().fetchCurrentUser()` which hits real Firebase. Changed to `await ref.read(currentUserProvider.future)`.
+- **Empty catch blocks fixed:**
+  1. `lib/features/profile/data/repositories/profile_repository.dart:107` — storage photo deletion
+  2. `lib/features/chat/data/repositories/chat_repository.dart:150` — existing chat check
+  3. `lib/features/chat/data/repositories/chat_repository.dart:211` — task title fetch
+- Files changed:
+  - `test/tasks/task_repository_test.dart` (FakeQuery + FakeCollectionReference + assertion)
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart` (_loadUser + removed unused import)
+  - `lib/features/profile/data/repositories/profile_repository.dart` (empty catch + debugPrint import)
+  - `lib/features/chat/data/repositories/chat_repository.dart` (2 empty catches + debugPrint import)
+- **Learnings for future iterations:**
+  - When test fakes chain query methods, ensure state tracking happens at every entry point (collection and query level)
+  - StreamProvider.future is the clean way to await a provider's first value in async init methods
+  - The EditProfileScreen tests require currentUserProvider to be overridden — the stream must emit before the widget reads it
 ---
 
-## 2026-04-03 02:00 - US-079
-- Created reusable `ErrorState` widget in `lib/core/widgets/error_state.dart` with error icon, message, and retry button
-- Replaced plain `Text('Error: $e')` with `ErrorState` widget in: MyTasksScreen, MyBidsScreen, ChatListScreen (2 places), NotificationListScreen, FavoritesScreen (2 tabs)
-- Replaced private `_ErrorView` classes in TaskListScreen and ProviderDirectoryScreen with shared `ErrorState`
-- All retry buttons use `ref.invalidate(provider)` to re-fetch data
+## 2026-04-03 - US-094
+- Added `_ProfileCompletionCard` widget to ProviderHomeScreen
+- Card appears when `user.completeness < 70`, disappears at >= 70
+- Shows progress bar (completed/total), checklist of 7 items: avatar, display name, headline, bio, categories, photos, availability
+- Incomplete items shown first with unchecked icon, tappable → navigates to EditProfileScreen
+- Complete items shown with green checkmark and strikethrough
+- "Complete Your Profile" CTA button at bottom
 - Files changed:
-  - `lib/core/widgets/error_state.dart` (new)
-  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart`
-  - `lib/features/tasks/presentation/screens/task_list_screen.dart`
-  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
-  - `lib/features/chat/presentation/screens/chat_list_screen.dart`
-  - `lib/features/notifications/presentation/screens/notification_list_screen.dart`
-  - `lib/features/favorites/presentation/screens/favorites_screen.dart`
-  - `lib/features/providers/presentation/screens/provider_directory_screen.dart`
+  - `lib/features/home/presentation/screens/provider_home_screen.dart` (+194 lines: import, card insertion in slivers, _ChecklistItem class, _ProfileCompletionCard widget)
 - **Learnings for future iterations:**
-  - The `_ErrorView` in TaskListScreen and ProviderDirectoryScreen was duplicated — now consolidated into `ErrorState`
-  - ChatListScreen has two `.when()` calls: one for user auth state and one for chats stream — both need error handling
-  - FavoritesScreen uses the same `favoritesProvider` for both tabs (tasks and providers), filtering client-side
-  - The `_FavoriteTaskCard` and `_FavoriteProviderCard` have their own `.when()` error handlers that return `SizedBox.shrink()` — these are acceptable for individual card loading failures
+  - UserModel already has a `completeness` getter (0–100 score) in user_model.dart — no need to recalculate
+  - ProviderHomeScreen uses CustomScrollView with slivers — new sections go as SliverToBoxAdapter
+  - Use `AppColors.primary.withValues(alpha: 0.3)` for border styling (not withOpacity — matches existing code style)
+  - The _NoServiceCategoriesPrompt is a good reference widget for card-style prompts on this screen
 ---
 
-## 2026-04-03 03:15 - US-080
-- Created `Country` model and `showCountryCodePicker()` bottom sheet in `lib/features/auth/presentation/widgets/country_code_picker.dart`
-- 10 countries supported: SG, MY, AU, US, UK, IN, PH, ID, HK, TH (default: Singapore +65)
-- Updated `PhoneAuthScreen`: replaced hardcoded `_countryCode` string with `_selectedCountry` Country object, wired up `_pickCountry()` to GestureDetector
-- Added `FilteringTextInputFormatter.digitsOnly` to phone TextField
-- Updated validator: min 7 digits, max 15 digits (international standard)
-- Removed the TODO comment from the country code picker GestureDetector
+## 2026-04-03 - US-095
+- Replaced flat "Active Tasks" list on PosterHomeScreen with three status-grouped sections
+- **Sections added:**
+  1. "Needs Your Action" — open tasks with bidCount > 0, warning-colored border, "Review Bids" button
+  2. "In Progress" — assigned/inProgress tasks, shows provider name + "Message" button
+  3. "Open" — open tasks with bidCount == 0, uses original card style
+- Each section has a header with count badge (colored pill)
+- Empty sections are hidden; "Post a Task" CTA and PendingReviewsSection remain at top
+- Used spread operator (`...`) with `tasksAsync.when()` returning `List<Widget>` to output multiple slivers
 - Files changed:
-  - `lib/features/auth/presentation/widgets/country_code_picker.dart` (new)
-  - `lib/features/auth/presentation/screens/phone_auth_screen.dart`
-  - `test/widgets/auth_screens_test.dart` (5 new tests)
+  - `lib/features/home/presentation/screens/poster_home_screen.dart` (+234 lines, -21 lines: _SectionHeader, _NeedsActionTaskCard, _InProgressTaskCard widgets; refactored task list section)
 - **Learnings for future iterations:**
-  - Phone auth screen uses `_selectedCountry.dialCode` to build the full phone number — any future changes to phone format must update both `_sendOtp()` and `_handleStateChange()`
-  - The `testPhone()` helper in auth_screens_test.dart sets surface size to 480x1200 and suppresses overflow errors — use it for all phone auth screen tests
-  - `AppConstants.phonePrefix` still exists but is no longer used by PhoneAuthScreen — it may be referenced elsewhere
+  - TaskModel has `isOpen` and `isAssigned` extension getters — use them for status grouping instead of comparing enums directly
+  - To return multiple slivers from `.when()`, use spread (`...tasksAsync.when(...)`) returning `List<Widget>` — can't return a single sliver
+  - PosterHomeScreen keeps Post a Task CTA and PendingReviewsSection above the grouped sections
+  - `AppColors.warning` is the convention for "action needed" UI elements (matches PendingReviewsSection pattern)
 ---
 
-## 2026-04-03 04:30 - US-081
-- Added `hasExistingBid()` method to BidRepository that queries by providerId before allowing submission
-- `submitBid()` now throws if provider already has a bid on the task (server-side guard)
-- SubmitBidSheet now watches `bidsStreamProvider` and shows read-only `_ExistingBidView` if provider already bid (shows amount, proposal, status)
-- Submit button disabled while `_isSubmitting` is true (prevents double-tap)
-- TaskDetailScreen: "Submit Bid" button hidden when provider already has a bid (watches bids stream, uses `Builder` widget)
-- `_ProviderBidView` (already existed) continues to show the existing bid details below
-- Added `where()` support to FakeCollectionReference and FakeQuery in test fakes
-- 3 new tests: duplicate throws, different provider succeeds, hasExistingBid returns correct values
+## 2026-04-03 - US-096
+- Added date separators (Today, Yesterday, formatted date) between messages on different days
+- Improved auto-scroll: only auto-scrolls when user is near bottom; tracks message count changes
+- Added scroll-to-bottom FAB that appears when user scrolls up
+- Grouped consecutive messages from same sender within 2-minute window:
+  - Tighter vertical spacing between grouped bubbles
+  - Adjusted bubble corner radii for visual continuity
+  - HH:MM time + read receipts only shown on last message in group
+- Replaced `timeago` import with `intl` for `DateFormat` in date separators
 - Files changed:
-  - `lib/features/bids/data/repositories/bid_repository.dart`
-  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
-  - `test/bids/bid_repository_test.dart`
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart` (+201 lines, -67 lines: _DateSeparator widget, grouping logic, FAB, scroll listener)
 - **Learnings for future iterations:**
-  - The `bidsStreamProvider` from `bid_list_section.dart` is widely used — import it rather than creating new providers
-  - TaskDetailScreen uses `Builder` widget pattern to watch additional providers inline without extracting a new widget
-  - FakeQuery now supports `_WhereClause` list for filtering — extend this pattern for future where() needs in tests
-  - The `_ExistingBidView` is a private widget in submit_bid_sheet.dart — if reuse is needed, extract to its own file
+  - ChatThreadScreen uses ListView.builder with ScrollController — add listeners in initState, remove in dispose
+  - `intl` package is already in pubspec.yaml — use `DateFormat` for formatted dates
+  - Pre-existing `withOpacity` deprecation warnings exist in this file (4 instances) — they are info-level, not errors
+  - Message grouping window of 2 minutes works well for chat UX — same sender + within 2 min = grouped
+  - `FloatingActionButton.small` is good for in-content action buttons like scroll-to-bottom
 ---
 
-## 2026-04-03 05:45 - US-082
-- Added `createChatWithMessage()` to ChatRepository — creates/gets chat and sends an initial message in one call
-- Modified `_accept()` in BidListSection to auto-create chat after bid acceptance with message: "Hi! I accepted your bid for this task. Let's discuss the details."
-- Shows SnackBar with "Message Provider" action button after bid acceptance
-- Chat creation is best-effort (wrapped in try/catch) — does not block checkout navigation
-- 2 new tests in chat_repository_test.dart: createChatWithMessage creates chat + sends message, reuses existing chat + still sends message
+## 2026-04-03 - US-097
+- Redesigned TaskDetailScreen with sticky bottom bar, card containers, and visual hierarchy
+- **Changes:**
+  1. Sticky bottom bar: Moved action buttons (Submit Bid, Mark Complete, Start Work, Message) to `Scaffold.bottomNavigationBar` with shadow
+  2. Card containers: Created `_SectionCard` widget wrapping budget, description, details, timeline, and poster info sections with subtle box shadow
+  3. Budget: Large `headlineMedium` font in primary color with dedicated card
+  4. Category chip + urgency badge: Horizontal row below photos with colored `_UrgencyBadge` widget (ASAP=red, Today=amber, Flexible=green)
+  5. 'Posted X ago': Uses `timeago` package near title
+  6. Category placeholder: `_CategoryPlaceholder` widget with emoji + label when no photos
 - Files changed:
-  - `lib/features/chat/data/repositories/chat_repository.dart`
-  - `lib/features/bids/presentation/widgets/bid_list_section.dart`
-  - `test/chat/chat_repository_test.dart`
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` (+287 lines, -137 lines: new widgets _SectionCard, _UrgencyBadge, _CategoryPlaceholder; restructured body layout; sticky bottomNavigationBar)
 - **Learnings for future iterations:**
-  - `createOrGetChat` is idempotent — safe to call from `createChatWithMessage` without worrying about duplicates
-  - Chat auto-creation on bid acceptance should be best-effort (try/catch) to avoid blocking the checkout flow
-  - SnackBar actions with navigation work even when another push happens immediately after — Flutter queues them
+  - `Scaffold.bottomNavigationBar` is the cleanest way to add a sticky bottom bar — no need for Stack/Positioned
+  - `timeago` package is already in pubspec.yaml — use `timeago.format(dateTime)` for relative time strings
+  - Action buttons logic must be computed before the Scaffold return to use in both body and bottomNavigationBar
+  - TaskModel has `budgetDisplay` extension getter that already formats the S$ budget range nicely
+  - Pre-existing warnings in test files (sealed class, const constructors) are info/warning level only — no errors
 ---
 
-## 2026-04-03 07:00 - US-083
-- Created `ImageValidator` utility in `lib/core/utils/image_validator.dart` with `validate()` and `validateAll()` methods
-- Checks file extension (jpg/jpeg/png/heic/webp) and size (<= 10MB) before any upload
-- Applied validation in repository layer (guard + throw): ChatRepository.uploadChatImage(), ProfileRepository.uploadAvatar(), ProfileRepository.uploadGalleryPhoto(), TaskRepository.createTask()
-- Applied validation in presentation layer (SnackBar + prevent upload): ChatThreadScreen._sendImage(), PostTaskScreen._pick(), PhotoGalleryScreen._pickAndUpload()
-- PostTaskScreen filters out invalid files but keeps valid ones; other screens block entirely on invalid input
+## 2026-04-03 - US-098
+- Redesigned provider directory cards with new layout and Quick Hire button
+- **Changes:**
+  1. Card elevation: Replaced flat border with box shadow (`blurRadius: 8, offset: (0,2)`) for depth
+  2. Avatar online indicator: Moved from inline dot to overlay badge on avatar (green dot with white border)
+  3. Rating stars: Added 5-star visual display (filled/half/outline) with numeric rating and review count
+  4. Neighbourhood + rate row: Combined location and starting rate on same line for compactness
+  5. Hire button: Added `ElevatedButton` on bottom-right that initiates direct-hire flow via `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, and `preSelectedCategory` extras
+  6. Kept favorite heart, headline, category chips
 - Files changed:
-  - `lib/core/utils/image_validator.dart` (new)
-  - `lib/features/chat/data/repositories/chat_repository.dart`
-  - `lib/features/profile/data/repositories/profile_repository.dart`
-  - `lib/features/tasks/data/repositories/task_repository.dart`
-  - `lib/features/chat/presentation/screens/chat_thread_screen.dart`
-  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
-  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` (+124 lines, -53 lines: redesigned `_ProviderCard` widget)
 - **Learnings for future iterations:**
-  - Validation is applied at both repository (throws Exception) and presentation (SnackBar) layers for defense-in-depth
-  - `ImagePicker` already does some compression (imageQuality param), but does NOT validate file type or size
-  - PostTaskScreen uses multi-image picker — need to validate each file individually and filter out bad ones rather than rejecting all
-  - `file.lengthSync()` works for size checking in Dart — no async needed
+  - Direct hire flow is triggered by pushing `AppRoutes.postTask` with extras map containing `directHireProviderId`, `directHireProviderName`, and optional `preSelectedCategory`
+  - `UserModel.stats?.totalReviews` gives review count; `stats?.avgRating` gives 0.0–5.0 rating
+  - `BoxShadow` with `Colors.black.withValues(alpha: 0.06)` and `blurRadius: 8` matches the subtle shadow style used in task detail cards (US-097 `_SectionCard`)
+  - For star ratings, use `floor()` for full stars, check `% 1 >= 0.5` for half star, rest are outline
 ---
 
-## 2026-04-03 08:30 - US-084
-- Added `hasExistingReview()`, `fetchExistingReview()`, and `submitReview()` methods to ProfileRepository
-- `submitReview()` checks for existing review before creating — throws if duplicate
-- SubmitReviewScreen now checks for existing review on init, shows read-only `_ExistingReviewView` if already submitted
-- Moved review creation from inline Firestore writes to ProfileRepository (proper abstraction)
-- Updated PublicProfileScreen `userReviewsProvider` limit from 5 to 10 (AC: latest 10, sorted by date)
-- Reviews section already existed on PublicProfileScreen with ReviewCard (name, avatar, stars, comment, date, category badge) and empty state
-- Updated FakeQuery in profile tests to support `_WhereClause` filtering (matching bid test pattern)
-- Added `add()` method and `limit()` delegation to FakeCollectionReference
-- 7 new tests: hasExistingReview (true/false), fetchExistingReview (found/null), submitReview (success/duplicate throws/different reviewer succeeds)
+## 2026-04-03 - US-099
+- Converted Services tab from list view to 2-column grid with redesigned cards
+- **Changes:**
+  1. ServiceListingsScreen: Replaced `ListView.separated` with `GridView.builder` (2 columns, `childAspectRatio: 0.58`)
+  2. ServiceCard: Redesigned for compact grid layout — cover photo with `AspectRatio(16/10)`, title, provider name, rating badge ("New"), price, location, and full-width Hire button
+  3. Hire button on card: Direct-hire flow via `AppRoutes.postTask` with extras (same pattern as US-098 provider cards)
+  4. Box shadow on cards matching the subtle shadow style from US-097/US-098
+  5. Shimmer loading: Updated to 2-column grid with 6 placeholder cards
 - Files changed:
-  - `lib/features/profile/data/repositories/profile_repository.dart`
-  - `lib/features/reviews/presentation/screens/submit_review_screen.dart`
-  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
-  - `test/profile/profile_repository_test.dart`
+  - `lib/features/services/presentation/widgets/service_card.dart` (complete rewrite for grid layout)
+  - `lib/features/services/presentation/screens/service_listings_screen.dart` (ListView→GridView, shimmer grid)
 - **Learnings for future iterations:**
-  - PublicProfileScreen already had a Reviews section with RatingSummary + ReviewCard widgets — just needed limit change
-  - ReviewCard already shows reviewer name, avatar, rating stars, comment, date (timeago), and task category badge — no changes needed
-  - SubmitReviewScreen was writing directly to Firestore bypassing ProfileRepository — now properly uses repository pattern
-  - FakeQuery `limit()` must return a new FakeQuery with filtered results to work with chained `where().where().limit().get()`
-  - The `ServiceCategory` type (not `AppCategory`) is the correct class from `category_constants.dart`
+  - DiscoverScreen already had 3 tabs (Tasks, Providers, Services) with `DiscoverSegment` enum — no tab addition needed
+  - ServiceListingsScreen supports `embedded` mode for use inside DiscoverScreen
+  - `childAspectRatio: 0.58` works well for service cards with photo + details + button in 2-column grid
+  - ServiceListingModel has no rating field — used "★ New" placeholder; real ratings would need model changes + Firestore migration
+  - Direct hire flow is consistent: push `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, `preSelectedCategory` extras
 ---
 
-## 2026-04-03 10:00 - US-085
-- Added max $10,000 validation to PostTaskScreen budget min field (already had min $5)
-- Added max budget field validation (min $5, max $10,000, must be >= min)
-- Added `flutter/services.dart` import and currency input formatters (`FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))`) to both min and max budget TextFormFields
-- Changed budget keyboardType from `TextInputType.number` to `TextInputType.numberWithOptions(decimal: true)`
-- Added `taskBudget` required parameter to SubmitBidSheet
-- Updated bid amount validator: min $1, max 2x task budget with clear error messages
-- Passed `task.budgetMin` from TaskDetailScreen to SubmitBidSheet
+## 2026-04-03 - US-100
+- Redesigned NotificationListScreen with date grouping, action buttons, swipe-to-dismiss, and mark all read
+- **Changes:**
+  1. Date grouping: Notifications grouped into Today, Yesterday, Earlier sections with styled headers
+  2. Action buttons: Per-type contextual buttons — "View Bids" (bid_received), "View Task" (bid_accepted/rejected/completed), "Reply" (new_message), "Leave Review" (review_received)
+  3. Swipe-to-dismiss: `Dismissible` widget with endToStart direction marks notification as read
+  4. Mark All Read: `TextButton.icon` in AppBar, only shown when unreadCount > 0, uses batch Firestore write
+  5. Providers: Added `markNotificationAsRead()` and `markAllNotificationsAsRead()` helper functions with shared `_itemsCol()` accessor
+  6. Unread badge: Already existed on NotificationBell (no changes needed)
 - Files changed:
-  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
-  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `lib/features/notifications/domain/providers/notification_providers.dart` (+19 lines: markNotificationAsRead, markAllNotificationsAsRead, _itemsCol helper)
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart` (rewrite: +269 lines, -66 lines: _NotificationGroup model, _groupByDate, _DateGroup, redesigned _NotificationTile with Dismissible, _ActionButton, shared _navigateByType)
 - **Learnings for future iterations:**
-  - SubmitBidSheet is only instantiated in one place (TaskDetailScreen) — easy to add required parameters
-  - PostTaskScreen `_StepBudget` uses separate TextEditingControllers for min/max — validators access `_min` field directly for cross-field validation
-  - The bid amount TextField already had correct `numberWithOptions(decimal: true)` keyboard and currency formatter — budget fields did not
-  - Pre-existing test failures (4): `profile_chat_nav_test.dart` EditProfileScreen (Firebase init) and `task_repository_test.dart` watchMyPostedTasks — not related to this work
+  - Firestore batch writes are the right pattern for "mark all read" — avoids N individual writes
+  - `Dismissible` widget needs a `ValueKey` on the notification ID for proper list reconciliation
+  - The notification bell widget already had unread count badge — check existing code before adding features
+  - Notification types map cleanly to action labels: bid_received→View Bids, new_message→Reply, review_received→Leave Review
+  - Date grouping with `DateTime(y,m,d)` comparison to `today`/`yesterday` is cleaner than string formatting
 ---

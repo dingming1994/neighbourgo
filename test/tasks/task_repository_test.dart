@@ -58,6 +58,8 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
   String? lastOrderByField;
   bool? lastDescending;
   int? lastLimit;
+  final List<String> allWhereFields = [];
+  final Map<String, dynamic> whereValues = {};
 
   FakeQuery(this._results);
 
@@ -74,9 +76,12 @@ class FakeQuery extends Fake implements Query<Map<String, dynamic>> {
       Iterable<Object?>? whereIn,
       Iterable<Object?>? whereNotIn,
       bool? isNull}) {
-    lastWhereField = field as String;
+    final fieldName = field as String;
+    lastWhereField = fieldName;
     lastWhereValue = isEqualTo;
     lastWhereIn = whereIn;
+    allWhereFields.add(fieldName);
+    whereValues[fieldName] = isEqualTo ?? whereIn;
     return this;
   }
 
@@ -182,9 +187,12 @@ class FakeCollectionReference extends Fake
       Iterable<Object?>? whereIn,
       Iterable<Object?>? whereNotIn,
       bool? isNull}) {
-    _query.lastWhereField = field as String;
+    final fieldName = field as String;
+    _query.lastWhereField = fieldName;
     _query.lastWhereValue = isEqualTo;
     _query.lastWhereIn = whereIn;
+    _query.allWhereFields.add(fieldName);
+    _query.whereValues[fieldName] = isEqualTo ?? whereIn;
     return _query;
   }
 
@@ -376,8 +384,8 @@ void main() {
         expect(tasks.length, 1);
         expect(tasks.first.posterId, 'user-abc');
         // Verify query was built with posterId filter
-        expect(col.query.lastWhereField, 'posterId');
-        expect(col.query.lastWhereValue, 'user-abc');
+        expect(col.query.allWhereFields, contains('posterId'));
+        expect(col.query.whereValues['posterId'], 'user-abc');
       });
     });
 

@@ -30,130 +30,138 @@ class ServiceCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: AppRadius.card,
-          border: Border.all(color: AppColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Photo banner
-            if (listing.photoUrls.isNotEmpty)
-              SizedBox(
-                height: 140,
-                width: double.infinity,
-                child: CachedNetworkImage(
-                  imageUrl: listing.photoUrls.first,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: AppColors.bgMint),
-                  errorWidget: (_, __, ___) =>
-                      Container(color: AppColors.bgMint),
-                ),
-              )
-            else
-              Container(
-                height: 80,
-                width: double.infinity,
-                color: catColor.withValues(alpha: 0.1),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 36)),
-                ),
-              ),
+            // Cover photo
+            AspectRatio(
+              aspectRatio: 16 / 10,
+              child: listing.photoUrls.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: listing.photoUrls.first,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) =>
+                          Container(color: AppColors.bgMint),
+                      errorWidget: (_, __, ___) =>
+                          Container(color: AppColors.bgMint),
+                    )
+                  : Container(
+                      color: catColor.withValues(alpha: 0.1),
+                      child: Center(
+                        child:
+                            Text(emoji, style: const TextStyle(fontSize: 32)),
+                      ),
+                    ),
+            ),
 
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category chip
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: catColor.withValues(alpha: 0.12),
-                      borderRadius: AppRadius.chip,
-                    ),
-                    child: Text(
-                      '${category?.emoji ?? ""} ${category?.label ?? listing.categoryId}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: catColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
                   // Title
                   Text(
                     listing.title,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+
+                  // Provider name
+                  Text(
+                    listing.providerName,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
 
-                  // Description
-                  Text(
-                    listing.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Rate + neighbourhood
+                  // Rating row
                   Row(
                     children: [
-                      Text(
-                        listing.rateDisplay,
-                        style: const TextStyle(
-                          fontSize: 13,
+                      const Icon(Icons.star_rounded,
+                          size: 14, color: Colors.amber),
+                      const SizedBox(width: 2),
+                      const Text(
+                        'New',
+                        style: TextStyle(
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const Spacer(),
                       if (listing.neighbourhood != null &&
                           listing.neighbourhood!.isNotEmpty) ...[
                         const Icon(Icons.location_on_outlined,
-                            size: 14, color: AppColors.textHint),
-                        const SizedBox(width: 2),
-                        Text(
-                          listing.neighbourhood!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                            size: 12, color: AppColors.textHint),
+                        const SizedBox(width: 1),
+                        Flexible(
+                          child: Text(
+                            listing.neighbourhood!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textHint,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ],
                   ),
+                  const SizedBox(height: 6),
 
-                  // Provider name
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline,
-                          size: 14, color: AppColors.textHint),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          listing.providerName,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  // Price
+                  Text(
+                    listing.rateDisplay,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Hire button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 30,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.push(AppRoutes.postTask, extra: {
+                          'directHireProviderId': listing.providerId,
+                          'directHireProviderName': listing.providerName,
+                          'preSelectedCategory': listing.categoryId,
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
+                      child: const Text('Hire'),
+                    ),
                   ),
                 ],
               ),

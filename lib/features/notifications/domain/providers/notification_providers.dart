@@ -70,3 +70,26 @@ final unreadNotificationCountProvider = StreamProvider.autoDispose<int>((ref) {
       .snapshots()
       .map((snap) => snap.docs.length);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Actions
+// ─────────────────────────────────────────────────────────────────────────────
+CollectionReference<Map<String, dynamic>> _itemsCol(String uid) =>
+    FirebaseFirestore.instance
+        .collection(AppConstants.notificationsCol)
+        .doc(uid)
+        .collection('items');
+
+Future<void> markNotificationAsRead(String uid, String notificationId) async {
+  await _itemsCol(uid).doc(notificationId).update({'isRead': true});
+}
+
+Future<void> markAllNotificationsAsRead(String uid) async {
+  final snap = await _itemsCol(uid).where('isRead', isEqualTo: false).get();
+  if (snap.docs.isEmpty) return;
+  final batch = FirebaseFirestore.instance.batch();
+  for (final doc in snap.docs) {
+    batch.update(doc.reference, {'isRead': true});
+  }
+  await batch.commit();
+}

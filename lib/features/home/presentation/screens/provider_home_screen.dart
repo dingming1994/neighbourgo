@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../profile/presentation/widgets/provider_stats_widget.dart';
@@ -142,6 +143,12 @@ class ProviderHomeScreen extends ConsumerWidget {
             child: ProviderStatsWidget(stats: user?.stats),
           ),
 
+          // ── Profile completion checklist ───────────────────────────────
+          if (user != null && user.completeness < 70)
+            SliverToBoxAdapter(
+              child: _ProfileCompletionCard(user: user),
+            ),
+
           // ── Job Offers (Direct Hire) ────────────────────────────────────
           const JobOffersSection(),
 
@@ -228,6 +235,193 @@ class ProviderHomeScreen extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Profile completion card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ChecklistItem {
+  final IconData icon;
+  final String label;
+  final bool complete;
+  const _ChecklistItem({required this.icon, required this.label, required this.complete});
+}
+
+class _ProfileCompletionCard extends StatelessWidget {
+  final UserModel user;
+  const _ProfileCompletionCard({required this.user});
+
+  List<_ChecklistItem> _buildChecklist() {
+    return [
+      _ChecklistItem(
+        icon: Icons.photo_camera_outlined,
+        label: 'Add a profile photo',
+        complete: user.avatarUrl != null,
+      ),
+      _ChecklistItem(
+        icon: Icons.person_outlined,
+        label: 'Set your display name',
+        complete: user.displayName != null && user.displayName!.isNotEmpty,
+      ),
+      _ChecklistItem(
+        icon: Icons.short_text,
+        label: 'Write a headline',
+        complete: user.headline != null && user.headline!.isNotEmpty,
+      ),
+      _ChecklistItem(
+        icon: Icons.description_outlined,
+        label: 'Add a bio',
+        complete: user.bio != null && user.bio!.isNotEmpty,
+      ),
+      _ChecklistItem(
+        icon: Icons.category_outlined,
+        label: 'Select service categories',
+        complete: user.serviceCategories.isNotEmpty,
+      ),
+      _ChecklistItem(
+        icon: Icons.collections_outlined,
+        label: 'Upload portfolio photos',
+        complete: user.photos.isNotEmpty,
+      ),
+      _ChecklistItem(
+        icon: Icons.schedule_outlined,
+        label: 'Set your availability',
+        complete: user.availableDays.isNotEmpty,
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _buildChecklist();
+    final completed = items.where((i) => i.complete).length;
+    final progress = completed / items.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                const Icon(Icons.rocket_launch_outlined, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Complete Your Profile',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Text(
+                  '$completed/${items.length}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'A complete profile helps you get more jobs.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Checklist
+            ...items.where((i) => !i.complete).map((item) => GestureDetector(
+              onTap: () => context.push(AppRoutes.editProfile),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.radio_button_unchecked,
+                      size: 18,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(item.icon, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
+                  ],
+                ),
+              ),
+            )),
+            ...items.where((i) => i.complete).map((item) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(item.icon, size: 16, color: AppColors.textHint),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textHint,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            const SizedBox(height: 12),
+            // CTA
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.push(AppRoutes.editProfile),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('Complete Your Profile', style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

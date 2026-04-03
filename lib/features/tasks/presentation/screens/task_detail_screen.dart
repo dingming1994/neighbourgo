@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../data/models/task_model.dart';
@@ -51,196 +52,244 @@ class TaskDetailScreen extends ConsumerWidget {
         final isInProgress = task.status == TaskStatus.inProgress ||
             task.status == TaskStatus.assigned;
 
+        // Build sticky bottom bar actions
+        final bottomActions = <Widget>[];
+        if (isPoster) {
+          if (isInProgress) {
+            bottomActions.add(_MarkCompleteButton(taskId: taskId, task: task));
+          }
+          if ((isInProgress || task.status == TaskStatus.completed) &&
+              task.assignedProviderId != null) {
+            bottomActions.add(_MessageButton(
+              taskId: taskId, posterId: task.posterId,
+              providerId: task.assignedProviderId!, label: 'Message Provider',
+            ));
+          }
+        } else if (isProvider) {
+          if (task.isDirectHire &&
+              task.assignedProviderId == currentUser?.uid &&
+              task.status == TaskStatus.assigned) {
+            // Direct hire buttons handled inline (Accept/Decline)
+          } else if (isOpen) {
+            final bidsAsync = ref.watch(bidsStreamProvider(taskId));
+            final hasBid = bidsAsync.whenOrNull(
+              data: (bids) => bids.any((b) => b.providerId == currentUser!.uid),
+            ) ?? false;
+            if (!hasBid) {
+              bottomActions.add(AppButton(
+                label: 'Submit Bid',
+                onPressed: () => showModalBottomSheet(
+                  context: context, isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (_) => SubmitBidSheet(taskId: taskId, taskBudget: task.budgetMin),
+                ),
+              ));
+            }
+          }
+          if (task.assignedProviderId == currentUser?.uid &&
+              task.status == TaskStatus.assigned &&
+              !task.isDirectHire) {
+            bottomActions.add(_StartWorkButton(taskId: taskId));
+          }
+          if (task.assignedProviderId == currentUser?.uid) {
+            bottomActions.add(_MessageButton(
+              taskId: taskId, posterId: task.posterId,
+              providerId: currentUser!.uid, label: 'Message Poster',
+            ));
+          }
+        }
+
+        final postedAgo = task.createdAt != null
+            ? timeago.format(task.createdAt!)
+            : null;
+
         return Scaffold(
           appBar: AppBar(
             title: Text(task.title),
             leading: Navigator.canPop(context)
-                ? null  // default back button
+                ? null
                 : IconButton(
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () => context.go(AppRoutes.home),
                   ),
           ),
+          // ── Sticky bottom bar ─────────────────────────────────────
+          bottomNavigationBar: bottomActions.isEmpty ? null : Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            decoration: const BoxDecoration(
+              color: AppColors.bgCard,
+              boxShadow: [BoxShadow(color: Color(0x1A000000), blurRadius: 8, offset: Offset(0, -2))],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < bottomActions.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  bottomActions[i],
+                ],
+              ],
+            ),
+          ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Photos ────────────────────────────────────────────────
+                // ── Photos or Category Placeholder ───────────────────
                 if (task.photoUrls.isNotEmpty) ...[
                   _PhotoCarousel(photoUrls: task.photoUrls),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                ] else ...[
+                  _CategoryPlaceholder(category: cat),
+                  const SizedBox(height: 12),
                 ],
 
-                // ── Timeline ─────────────────────────────────────────────
-                _TaskTimeline(task: task),
-                const SizedBox(height: 20),
-
-                // ── Category & Urgency ────────────────────────────────────
+                // ── Category chip + Urgency badge ────────────────────
                 Row(children: [
-                  Text(cat?.emoji ?? '📋',
-                      style: const TextStyle(fontSize: 28)),
-                  const SizedBox(width: 10),
-                  Chip(
-                    label: Text(cat?.label ?? task.categoryId),
-                    backgroundColor:
-                        (cat?.color ?? AppColors.primary).withValues(alpha: 0.1),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: (cat?.color ?? AppColors.primary).withValues(alpha: 0.1),
+                      borderRadius: AppRadius.chip,
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(cat?.emoji ?? '📋', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 4),
+                      Text(cat?.label ?? task.categoryId,
+                        style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600,
+                          color: cat?.color ?? AppColors.primary,
+                        ),
+                      ),
+                    ]),
                   ),
-                  const Spacer(),
-                  Text(task.urgencyDisplay),
+                  const SizedBox(width: 8),
+                  _UrgencyBadge(urgency: task.urgency),
                 ]),
                 const SizedBox(height: 16),
 
-                // ── Title ─────────────────────────────────────────────────
+                // ── Title + Posted ago ───────────────────────────────
                 Text(task.title,
-                    style:
-                        Theme.of(context).textTheme.headlineSmall),
+                    style: Theme.of(context).textTheme.headlineSmall),
+                if (postedAgo != null) ...[
+                  const SizedBox(height: 4),
+                  Text('Posted $postedAgo',
+                    style: const TextStyle(fontSize: 13, color: AppColors.textHint)),
+                ],
+                const SizedBox(height: 16),
+
+                // ── Budget card ──────────────────────────────────────
+                _SectionCard(
+                  child: Row(children: [
+                    const Icon(Icons.attach_money, color: AppColors.primary, size: 28),
+                    const SizedBox(width: 8),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Budget', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                        Text(
+                          task.budgetDisplay,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    )),
+                  ]),
+                ),
                 const SizedBox(height: 12),
 
-                // ── Description ───────────────────────────────────────────
-                Text(task.description,
-                    style: const TextStyle(height: 1.6)),
-                const SizedBox(height: 20),
-
-                // ── Info rows ─────────────────────────────────────────────
-                _InfoRow(Icons.location_on_outlined, task.locationLabel),
-                _InfoRow(Icons.attach_money, task.budgetDisplay),
-                _InfoRow(Icons.info_outline, _statusLabel(task.status)),
-                if (task.neighbourhood != null)
-                  _InfoRow(Icons.near_me_outlined, task.neighbourhood!),
-                if (task.estimatedDurationMins != null)
-                  _InfoRow(
-                    Icons.schedule_outlined,
-                    'Est. ${task.estimatedDurationMins} mins',
+                // ── Description card ─────────────────────────────────
+                _SectionCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Description',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text(task.description, style: const TextStyle(height: 1.6)),
+                    ],
                   ),
+                ),
+                const SizedBox(height: 12),
 
-                // ── Poster info ───────────────────────────────────────────
+                // ── Details card ─────────────────────────────────────
+                _SectionCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Details',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      _InfoRow(Icons.location_on_outlined, task.locationLabel),
+                      _InfoRow(Icons.info_outline, _statusLabel(task.status)),
+                      if (task.neighbourhood != null)
+                        _InfoRow(Icons.near_me_outlined, task.neighbourhood!),
+                      if (task.estimatedDurationMins != null)
+                        _InfoRow(Icons.schedule_outlined, 'Est. ${task.estimatedDurationMins} mins'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ── Timeline card ────────────────────────────────────
+                _SectionCard(child: _TaskTimeline(task: task)),
+                const SizedBox(height: 12),
+
+                // ── Poster info card ─────────────────────────────────
                 if (task.posterName != null) ...[
-                  const SizedBox(height: 20),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  _PosterInfo(
-                    posterName:      task.posterName!,
-                    posterAvatarUrl: task.posterAvatarUrl,
+                  _SectionCard(
+                    child: _PosterInfo(
+                      posterName: task.posterName!,
+                      posterAvatarUrl: task.posterAvatarUrl,
+                    ),
                   ),
+                  const SizedBox(height: 12),
                 ],
 
-                const SizedBox(height: 28),
-
-                // ── Leave a Review prompt (completed tasks) ─────────────
+                // ── Leave a Review prompt (completed tasks) ──────────
                 if (task.status == TaskStatus.completed && currentUser != null) ...[
                   if (isPoster && task.assignedProviderId != null) ...[
                     _LeaveReviewCard(
-                      taskId:           taskId,
-                      reviewedUserId:   task.assignedProviderId!,
+                      taskId: taskId,
+                      reviewedUserId: task.assignedProviderId!,
                       reviewedUserName: task.assignedProviderName ?? 'Provider',
-                      taskCategory:     task.categoryId,
+                      taskCategory: task.categoryId,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                   ] else if (isProvider) ...[
                     _LeaveReviewCard(
-                      taskId:           taskId,
-                      reviewedUserId:   task.posterId,
+                      taskId: taskId,
+                      reviewedUserId: task.posterId,
                       reviewedUserName: task.posterName ?? 'Poster',
-                      taskCategory:     task.categoryId,
+                      taskCategory: task.categoryId,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                   ],
                 ],
 
-                // ── Work in Progress banner ───────────────────────────────
+                // ── Work in Progress banner ──────────────────────────
                 if (task.status == TaskStatus.inProgress) ...[
                   _WorkInProgressBanner(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                 ],
 
-                // ── Role-based section ────────────────────────────────────
+                // ── Role-based inline sections ───────────────────────
                 if (isPoster) ...[
-                  // Mark Complete button (when inProgress/assigned)
-                  if (isInProgress) ...[
-                    _MarkCompleteButton(
-                      taskId: taskId,
-                      task:   task,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Message provider button (when assigned)
-                  if ((isInProgress || task.status == TaskStatus.completed) &&
-                      task.assignedProviderId != null) ...[
-                    _MessageButton(
-                      taskId:      taskId,
-                      posterId:    task.posterId,
-                      providerId:  task.assignedProviderId!,
-                      label:       'Message Provider',
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  const Divider(),
-                  const SizedBox(height: 16),
                   BidListSection(taskId: taskId, posterId: task.posterId),
                 ] else if (isProvider) ...[
-                  // Provider view — Direct Hire Accept/Decline
                   if (task.isDirectHire &&
                       task.assignedProviderId == currentUser.uid &&
                       task.status == TaskStatus.assigned) ...[
                     _DirectHireResponseButtons(taskId: taskId),
                     const SizedBox(height: 12),
                   ] else ...[
-                    // Normal bid-based flow
-                    // Check if provider already has a bid on this task
-                    Builder(builder: (context) {
-                      final bidsAsync = ref.watch(bidsStreamProvider(taskId));
-                      final hasBid = bidsAsync.whenOrNull(
-                        data: (bids) => bids.any((b) => b.providerId == currentUser.uid),
-                      ) ?? false;
-
-                      if (isOpen && !hasBid) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: AppButton(
-                            label: 'Submit Bid',
-                            onPressed: () => showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(20)),
-                              ),
-                              builder: (_) =>
-                                  SubmitBidSheet(taskId: taskId, taskBudget: task.budgetMin),
-                            ),
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-
-                    // Show provider's own bid if any
                     _ProviderBidView(
-                      taskId:     taskId,
-                      providerId: currentUser.uid,
-                      posterId:   task.posterId,
-                      taskStatus: task.status,
-                    ),
-
-                    // Start Work button (when assigned to this provider, status == assigned)
-                    if (task.assignedProviderId == currentUser.uid &&
-                        task.status == TaskStatus.assigned) ...[
-                      const SizedBox(height: 12),
-                      _StartWorkButton(taskId: taskId),
-                    ],
-                  ],
-
-                  // Message poster button (when assigned to this provider)
-                  if (task.assignedProviderId == currentUser.uid) ...[
-                    const SizedBox(height: 12),
-                    _MessageButton(
-                      taskId:     taskId,
-                      posterId:   task.posterId,
-                      providerId: currentUser.uid,
-                      label:      'Message Poster',
+                      taskId: taskId, providerId: currentUser.uid,
+                      posterId: task.posterId, taskStatus: task.status,
                     ),
                   ],
 
@@ -253,20 +302,22 @@ class TaskDetailScreen extends ConsumerWidget {
                         borderRadius: AppRadius.card,
                       ),
                       child: Row(children: [
-                        const Icon(Icons.lock_outline,
-                            color: AppColors.primary),
+                        const Icon(Icons.lock_outline, color: AppColors.primary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'This task is ${_statusLabel(task.status)} and no longer accepting bids',
-                            style: const TextStyle(
-                                color: AppColors.primary),
+                            style: const TextStyle(color: AppColors.primary),
                           ),
                         ),
                       ]),
                     ),
                   ],
                 ],
+
+                // Bottom padding so content isn't hidden behind sticky bar
+                if (bottomActions.isNotEmpty)
+                  const SizedBox(height: 16),
               ],
             ),
           ),
@@ -1220,6 +1271,105 @@ class _StepItem extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     return '${dt.day}/${dt.month}/${dt.year}';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _SectionCard — Card container with subtle shadow
+// ─────────────────────────────────────────────────────────────────────────────
+class _SectionCard extends StatelessWidget {
+  final Widget child;
+  const _SectionCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: AppRadius.card,
+        boxShadow: const [
+          BoxShadow(color: Color(0x0D000000), blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _UrgencyBadge — Colored urgency badge
+// ─────────────────────────────────────────────────────────────────────────────
+class _UrgencyBadge extends StatelessWidget {
+  final TaskUrgency urgency;
+  const _UrgencyBadge({required this.urgency});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final String label;
+    switch (urgency) {
+      case TaskUrgency.asap:
+        color = AppColors.error;
+        label = 'ASAP';
+      case TaskUrgency.today:
+        color = AppColors.warning;
+        label = 'Today';
+      case TaskUrgency.flexible:
+        color = AppColors.success;
+        label = 'Flexible';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppRadius.chip,
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _CategoryPlaceholder — Shown when no photos
+// ─────────────────────────────────────────────────────────────────────────────
+class _CategoryPlaceholder extends StatelessWidget {
+  final ServiceCategory? category;
+  const _CategoryPlaceholder({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: (category?.color ?? AppColors.primary).withValues(alpha: 0.08),
+        borderRadius: AppRadius.card,
+        border: Border.all(
+          color: (category?.color ?? AppColors.primary).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(category?.emoji ?? '📋', style: const TextStyle(fontSize: 48)),
+          const SizedBox(height: 8),
+          Text(
+            category?.label ?? 'Task',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: (category?.color ?? AppColors.primary).withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
