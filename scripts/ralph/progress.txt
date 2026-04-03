@@ -12,6 +12,8 @@ Started: Fri  3 Apr 2026 14:19:53 +08
 - Reusable `ErrorState` widget exists at `core/widgets/error_state.dart` — use it for all error branches instead of inline `Text('Error: $e')`
 - Use `ref.invalidate(provider)` in Riverpod error retry callbacks to re-fetch data
 - ServiceDetailScreen now uses a `serviceDetailProvider` StreamProvider (converted from raw StreamBuilder) for consistency
+- `CreateServiceScreen` supports both create and edit mode via optional `existingListing` param — reuse this pattern for other create/edit screens
+- Pass complex model objects to GoRouter routes via `state.extra` (not URL params)
 ---
 
 ## 2026-04-03 - US-101
@@ -73,4 +75,27 @@ Started: Fri  3 Apr 2026 14:19:53 +08
   - Each tab screen (Tasks, Providers, Services) has its own `_EmptyView` and `_buildBody` — changes must be applied to all three separately
   - `ServiceListingsScreen` uses `StreamProvider` + `.when()` pattern (different from Tasks/Providers which use `StateNotifier`), so result count widget is inserted differently (inside the `data:` callback as a wrapping `Column`)
   - Manual browser verification needed — no tests cover search UX states
+---
+
+## 2026-04-03 - US-105
+- Added Edit (pencil) and Delete (trash) icon buttons to `ServiceDetailScreen` SliverAppBar, visible only when `currentUser.uid == listing.providerId`
+- Extended `CreateServiceScreen` with optional `existingListing` parameter for edit mode — pre-populates all form fields (category, title, description, pricing, availability, photos)
+- Existing photos shown as network images with remove buttons; new photos can be added alongside them (max 6 total)
+- Added `uploadPhotos()` helper to `ServiceListingRepository` to handle photo uploads separately from creation
+- Edit mode calls `updateListing()` with field map and shows "Service listing updated!" snackbar
+- Delete shows confirmation dialog; confirming calls `deleteListing()`, shows snackbar, and pops back
+- Non-owners see no edit/delete buttons (controlled by `isOwnListing` check)
+- Added `editService` route (`/services/:listingId/edit`) to `AppRoutes` and `app_router.dart`; passes `ServiceListingModel` via `extra`
+- Files changed:
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `lib/features/services/presentation/screens/create_service_screen.dart`
+  - `lib/features/services/data/repositories/service_listing_repository.dart`
+  - `lib/core/constants/app_constants.dart`
+  - `lib/core/router/app_router.dart`
+- **Learnings for future iterations:**
+  - `CreateServiceScreen` now supports both create and edit modes via optional `existingListing` param — reuse this pattern for other screens
+  - GoRouter `extra` is the cleanest way to pass complex objects (like models) to routes without serialization
+  - Repository already had `updateListing` and `deleteListing` methods — always check existing repo methods before adding new ones
+  - Photo management in edit mode needs two lists: `_existingPhotoUrls` (network URLs to keep) and `_photos` (new local files to upload)
+  - Manual browser verification needed — no tests cover service edit/delete flow
 ---
