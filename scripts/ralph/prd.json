@@ -85,7 +85,7 @@
         "Hire button initiates direct-hire flow directly",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-099",

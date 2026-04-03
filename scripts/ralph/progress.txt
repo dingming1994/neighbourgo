@@ -100,3 +100,21 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - TaskModel has `budgetDisplay` extension getter that already formats the S$ budget range nicely
   - Pre-existing warnings in test files (sealed class, const constructors) are info/warning level only — no errors
 ---
+
+## 2026-04-03 - US-098
+- Redesigned provider directory cards with new layout and Quick Hire button
+- **Changes:**
+  1. Card elevation: Replaced flat border with box shadow (`blurRadius: 8, offset: (0,2)`) for depth
+  2. Avatar online indicator: Moved from inline dot to overlay badge on avatar (green dot with white border)
+  3. Rating stars: Added 5-star visual display (filled/half/outline) with numeric rating and review count
+  4. Neighbourhood + rate row: Combined location and starting rate on same line for compactness
+  5. Hire button: Added `ElevatedButton` on bottom-right that initiates direct-hire flow via `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, and `preSelectedCategory` extras
+  6. Kept favorite heart, headline, category chips
+- Files changed:
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` (+124 lines, -53 lines: redesigned `_ProviderCard` widget)
+- **Learnings for future iterations:**
+  - Direct hire flow is triggered by pushing `AppRoutes.postTask` with extras map containing `directHireProviderId`, `directHireProviderName`, and optional `preSelectedCategory`
+  - `UserModel.stats?.totalReviews` gives review count; `stats?.avgRating` gives 0.0–5.0 rating
+  - `BoxShadow` with `Colors.black.withValues(alpha: 0.06)` and `blurRadius: 8` matches the subtle shadow style used in task detail cards (US-097 `_SectionCard`)
+  - For star ratings, use `floor()` for full stars, check `% 1 >= 0.5` for half star, rest are outline
+---
