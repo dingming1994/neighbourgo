@@ -394,7 +394,7 @@ class _ProviderCard extends ConsumerWidget {
     final isFavorite = ref.watch(favoriteIdsProvider).contains(provider.uid);
     final stats = provider.stats;
     final avgRating = stats?.avgRating ?? 0.0;
-    final completedTasks = stats?.completedTasks ?? 0;
+    final totalReviews = stats?.totalReviews ?? 0;
 
     // Top 2 service categories
     final topCategories = provider.serviceCategories.take(2).toList();
@@ -421,31 +421,55 @@ class _ProviderCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: AppRadius.card,
-          border: Border.all(color: AppColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Avatar
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.bgMint,
-              backgroundImage: provider.avatarUrl != null
-                  ? CachedNetworkImageProvider(provider.avatarUrl!)
-                  : null,
-              child: provider.avatarUrl == null
-                  ? const Icon(Icons.person, color: AppColors.primary)
-                  : null,
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.bgMint,
+                  backgroundImage: provider.avatarUrl != null
+                      ? CachedNetworkImageProvider(provider.avatarUrl!)
+                      : null,
+                  child: provider.avatarUrl == null
+                      ? const Icon(Icons.person, color: AppColors.primary)
+                      : null,
+                ),
+                if (provider.isOnline)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.bgCard, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: AppSpacing.md),
 
-            // Info
+            // Center info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name row
+                  // Name + favorite
                   Row(
                     children: [
                       Expanded(
@@ -459,17 +483,6 @@ class _ProviderCard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (provider.isOnline)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(left: 6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      const SizedBox(width: AppSpacing.sm),
                       GestureDetector(
                         onTap: () => toggleFavorite(ref,
                             itemId: provider.uid, type: 'provider'),
@@ -499,25 +512,26 @@ class _ProviderCard extends ConsumerWidget {
                     ),
                   ],
 
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 6),
 
-                  // Neighbourhood + Rating + Tasks
+                  // Rating stars + review count
                   Row(
                     children: [
-                      if (provider.neighbourhood != null) ...[
-                        const Icon(Icons.location_on_outlined,
-                            size: 14, color: AppColors.textHint),
-                        const SizedBox(width: 2),
-                        Text(
-                          provider.neighbourhood!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                      ],
+                      ...List.generate(5, (i) {
+                        if (i < avgRating.floor()) {
+                          return const Icon(Icons.star_rounded,
+                              size: 14, color: AppColors.accent);
+                        } else if (i < avgRating.ceil() &&
+                            avgRating % 1 >= 0.5) {
+                          return const Icon(Icons.star_half_rounded,
+                              size: 14, color: AppColors.accent);
+                        }
+                        return Icon(Icons.star_outline_rounded,
+                            size: 14,
+                            color: AppColors.textHint.withValues(alpha: 0.5));
+                      }),
                       if (avgRating > 0) ...[
-                        const Icon(Icons.star_rounded,
-                            size: 14, color: AppColors.accent),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: 4),
                         Text(
                           avgRating.toStringAsFixed(1),
                           style: Theme.of(context)
@@ -525,15 +539,48 @@ class _ProviderCard extends ConsumerWidget {
                               .bodySmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
                       ],
-                      if (completedTasks > 0) ...[
-                        const Icon(Icons.check_circle_outline_rounded,
+                      if (totalReviews > 0) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '($totalReviews)',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: AppColors.textHint),
+                        ),
+                      ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // Neighbourhood + starting rate
+                  Row(
+                    children: [
+                      if (provider.neighbourhood != null) ...[
+                        const Icon(Icons.location_on_outlined,
                             size: 14, color: AppColors.textHint),
                         const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            provider.neighbourhood!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      if (startingRate != null) ...[
+                        if (provider.neighbourhood != null)
+                          const SizedBox(width: AppSpacing.sm),
                         Text(
-                          '$completedTasks done',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          startingRate,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ],
                     ],
@@ -541,7 +588,7 @@ class _ProviderCard extends ConsumerWidget {
 
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Category chips + starting rate
+                  // Category chips + Hire button
                   Row(
                     children: [
                       ...topCategories.map((catId) {
@@ -570,15 +617,39 @@ class _ProviderCard extends ConsumerWidget {
                         );
                       }),
                       const Spacer(),
-                      if (startingRate != null)
-                        Text(
-                          startingRate,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      SizedBox(
+                        height: 30,
+                        child: ElevatedButton(
+                          onPressed: () => context.push(
+                            AppRoutes.postTask,
+                            extra: {
+                              'directHireProviderId': provider.uid,
+                              'directHireProviderName':
+                                  provider.displayName ?? 'Provider',
+                              'preSelectedCategory':
+                                  provider.serviceCategories.isNotEmpty
+                                      ? provider.serviceCategories.first
+                                      : null,
+                            },
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.button,
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Hire',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ],
