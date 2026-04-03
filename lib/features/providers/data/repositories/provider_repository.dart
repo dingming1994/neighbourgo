@@ -17,18 +17,20 @@ class ProviderRepository {
     String? categoryId,
     int limit = AppConstants.pageSize,
   }) {
+    // Firestore doesn't support whereIn + arrayContains + orderBy together.
+    // Fetch all providers, filter by category client-side.
     Query q = _col
         .where('role', whereIn: [UserRole.provider.name, UserRole.both.name])
         .orderBy('lastActiveAt', descending: true)
         .limit(limit);
 
-    if (categoryId != null) {
-      q = q.where('serviceCategories', arrayContains: categoryId);
-    }
-
-    return q.snapshots().map(
-      (snap) => snap.docs.map((d) => UserModelExt.fromFirestore(d)).toList(),
-    );
+    return q.snapshots().map((snap) {
+      var providers = snap.docs.map((d) => UserModelExt.fromFirestore(d)).toList();
+      if (categoryId != null) {
+        providers = providers.where((p) => p.serviceCategories.contains(categoryId)).toList();
+      }
+      return providers;
+    });
   }
 }
 
