@@ -44,7 +44,7 @@ log "=========================================="
 check_progress
 
 CYCLES=0
-MAX_HOURS=8
+MAX_HOURS=6
 START_TIME=$(date +%s)
 
 while true; do

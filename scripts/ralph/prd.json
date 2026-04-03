@@ -1,120 +1,105 @@
 {
-  "featureName": "Sprint 22-30 — Deep User Experience Polish (6-hour cycle)",
-  "description": "As a deep user of NeighbourGo who is both a Client and Provider, fix the most impactful UX issues: broken tests, missing task status visibility, provider onboarding gaps, chat UX, and visual polish.",
-  "branchName": "ralph/deep-ux-cycle-1",
+  "featureName": "Sprint 31-37 — Bug Fixes, Validation & UX Hardening (6-hour cycle)",
+  "description": "As both a Client and Provider using NeighbourGo daily, fix real bugs (broken delete-account flow, exposed dev login), harden form validation, add error-retry states, improve search UX, and let providers manage their own service listings.",
+  "branchName": "ralph/overnight-cycle-2",
   "userStories": [
     {
-      "id": "US-093",
-      "title": "Fix 4 Failing Unit Tests + 3 Empty Catch Blocks",
-      "description": "The test suite has 4 failures and 3 empty catch blocks remaining. Fix them all.",
+      "id": "US-101",
+      "title": "Fix Delete Account — Require Typing DELETE to Confirm",
+      "description": "The delete-account dialog says 'Type DELETE to confirm' but doesn't actually require the user to type anything — a single tap deletes the account. Add a real TextField that validates the input before enabling the delete button.",
       "acceptanceCriteria": [
-        "Run flutter test, identify all 4 failing tests",
-        "Fix each failing test — update test to match current code or fix code if test exposed a real bug",
-        "Find and fix all 3 remaining empty catch blocks in lib/",
-        "flutter test — 0 failures",
+        "Delete account dialog contains a TextField with hint 'Type DELETE to confirm'",
+        "Delete button is disabled (greyed out) until TextField value equals 'DELETE' (case-sensitive)",
+        "Pressing delete with correct input shows a loading spinner, then signs out on success",
+        "Pressing delete with incorrect input does nothing (button stays disabled)",
+        "Cancel button closes the dialog without side effects",
         "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-094",
-      "title": "Provider Onboarding — Profile Completion Checklist",
-      "description": "New Providers land on ProviderHomeScreen with empty profile. Add a completion checklist card that guides them to set up avatar, categories, rates, photos.",
+      "id": "US-102",
+      "title": "Hide Dev Login Button in Release Builds",
+      "description": "The welcome screen exposes a 'Dev Login (Skip Auth)' button that bypasses authentication. This must only be visible in debug/profile mode, never in release builds.",
       "acceptanceCriteria": [
-        "Create _ProfileCompletionCard widget on ProviderHomeScreen when completenessScore < 70",
-        "Shows progress bar, checklist of missing items (avatar, headline, bio, categories, rates, availability, photo)",
-        "Each item tappable — navigates to EditProfileScreen",
-        "Card disappears when completenessScore >= 70",
-        "CTA button: 'Complete Your Profile'",
-        "flutter analyze 0 errors"
+        "Dev Login button is wrapped in a kDebugMode or kReleaseMode check",
+        "In debug mode: button appears and functions as before",
+        "In release mode: button is completely absent from the widget tree (not just hidden)",
+        "No other auth bypass paths exist in welcome_screen.dart",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-095",
-      "title": "Client Home — Status-Grouped Task Dashboard",
-      "description": "Replace plain task list on PosterHomeScreen with action-oriented sections: Needs Action (new bids), In Progress, Open.",
+      "id": "US-103",
+      "title": "Error States with Retry on Key Screens",
+      "description": "TaskDetailScreen, PublicProfileScreen, ServiceDetailScreen, and ChatThreadScreen show generic 'Error: $e' text with no way to recover. Add a consistent error widget with a Retry button that re-fetches the data.",
       "acceptanceCriteria": [
-        "Group tasks by: 'Needs Your Action' (tasks with bids to review), 'In Progress', 'Open' (waiting for bids)",
-        "Each section has header with count badge",
-        "'Needs Action' cards show bid count + 'Review Bids' button",
-        "'In Progress' cards show provider name + 'Message' quick action",
-        "Empty sections hidden, keep 'Post a Task' CTA at top",
-        "flutter analyze 0 errors"
+        "Create or reuse an ErrorRetryWidget(message, onRetry) in core/widgets/",
+        "TaskDetailScreen error state shows ErrorRetryWidget; tapping Retry calls ref.invalidate on the task provider",
+        "PublicProfileScreen error state shows ErrorRetryWidget; tapping Retry re-fetches the profile",
+        "ServiceDetailScreen error state shows ErrorRetryWidget; tapping Retry re-fetches the listing",
+        "ChatThreadScreen error state shows ErrorRetryWidget; tapping Retry re-fetches messages",
+        "Error message is user-friendly (e.g. 'Something went wrong') not raw exception text",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-096",
-      "title": "Chat UX — Date Separators, Auto-Scroll, Message Grouping",
-      "description": "Improve chat: add date separators, auto-scroll to bottom, group consecutive messages from same sender.",
+      "id": "US-104",
+      "title": "Discover Search — Loading Indicator, No-Results State, Result Count",
+      "description": "When searching in Discover, there's no feedback during the debounce/loading period, no message when no results match, and no indication of how many results were found.",
       "acceptanceCriteria": [
-        "Date separators between messages on different days (Today, Yesterday, date)",
-        "Auto-scroll to bottom on open and new message",
-        "Scroll-to-bottom FAB when scrolled up with new messages",
-        "Show HH:MM time next to each bubble",
-        "Group consecutive messages from same sender (no repeated avatar)",
-        "flutter analyze 0 errors"
+        "While search query is debouncing or loading, show a subtle LinearProgressIndicator below the search bar",
+        "When search returns 0 results, show an empty-state illustration with 'No results for \"query\"' and a suggestion to adjust filters",
+        "When search returns results, show a count label (e.g. '12 tasks found') between search bar and list",
+        "Clearing the search field resets to the default unfiltered view",
+        "Works for all Discover tabs (Tasks, Providers, Services)",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-097",
-      "title": "Task Detail — Sticky Actions + Visual Hierarchy",
-      "description": "Task detail is a wall of text. Move actions to sticky bottom bar, add card containers, prominent budget display.",
+      "id": "US-105",
+      "title": "Service Listing Management — Edit and Delete Own Listings",
+      "description": "Providers can create service listings but cannot edit or delete them afterwards. Add edit and delete capabilities accessible from ServiceDetailScreen when the viewer is the listing owner.",
       "acceptanceCriteria": [
-        "Sticky bottom bar with primary action buttons (Submit Bid / Mark Complete / Message)",
-        "Card containers around each section with subtle shadow",
-        "Budget large font in primary color with S$ prefix",
-        "Category chip + urgency badge in horizontal row below photos",
-        "'Posted X ago' near title",
-        "Category placeholder image when no photos",
-        "flutter analyze 0 errors"
+        "ServiceDetailScreen shows Edit (pencil) and Delete (trash) icons in the AppBar when currentUser is the listing owner",
+        "Edit navigates to CreateServiceScreen pre-populated with existing listing data (title, description, category, pricing, photos)",
+        "Saving edits updates the Firestore document and shows a success snackbar",
+        "Delete shows a confirmation dialog; confirming deletes the document and navigates back",
+        "Non-owners see no edit/delete buttons",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-098",
-      "title": "Provider Directory — Redesigned Cards + Quick Hire",
-      "description": "Provider cards need: rating stars, price, categories, and a Hire button directly on the card.",
+      "id": "US-106",
+      "title": "Form Validation Hardening — Email, Bids, Budget, Profile Rates",
+      "description": "Multiple forms accept invalid input: email validation is too loose, bid amounts have no upper bound warning, task budget has no min/max guidance, and provider rates accept non-numeric values.",
       "acceptanceCriteria": [
-        "Card layout: avatar (left), name + headline + stars (center), Hire button (right)",
-        "Top 2 categories as small chips, starting rate 'From S$XX/hr'",
-        "Neighbourhood with location icon, review count",
-        "Card with elevation/shadow and rounded corners",
-        "Hire button initiates direct-hire flow directly",
-        "flutter analyze 0 errors"
+        "Email auth uses a proper regex that rejects addresses without valid domain (e.g. 'user@' or 'user@.com')",
+        "Submit bid sheet shows a warning chip when bid exceeds 2x the task budget (still allows submission)",
+        "Post task budget step enforces minimum S$5 and shows helper text 'Min S$5'",
+        "EditProfileScreen rate fields only accept numeric input (InputFormatter) and enforce S$1–S$500 range",
+        "All validation errors show inline red helper text below the field",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-099",
-      "title": "Services Tab in Discover — Grid View of Service Listings",
-      "description": "Add 'Services' as third tab in Discover. Show service listings in 2-column grid with photos, prices, hire button.",
+      "id": "US-107",
+      "title": "Actionable Empty States — Chat List, My Tasks, My Bids",
+      "description": "Empty screens show minimal text with no clear call to action. Add contextual empty-state illustrations and CTA buttons that guide users to the logical next step.",
       "acceptanceCriteria": [
-        "Add 'Services' tab in DiscoverScreen (Tasks | Providers | Services)",
-        "2-column grid of service listing cards",
-        "Each card: cover photo, title, provider name, price, rating",
-        "Category filter chips at top",
-        "Tap opens ServiceDetailScreen, Hire button for quick action",
-        "Shimmer loading",
-        "flutter analyze 0 errors"
+        "ChatListScreen empty state: illustration + 'No conversations yet' + 'Browse Tasks' button (navigates to Discover)",
+        "MyTasksScreen empty state (provider): illustration + 'No assigned tasks' + 'Find Tasks' button",
+        "MyBidsScreen empty state: illustration + 'No bids yet' + 'Browse Open Tasks' button",
+        "PosterHomeScreen empty state: illustration + 'Post your first task' + 'Post a Task' button",
+        "Each empty state uses a Lottie animation or SVG illustration consistent with app design",
+        "flutter analyze — 0 errors"
       ],
-      "passes": true
-    },
-    {
-      "id": "US-100",
-      "title": "Notification Improvements — Actions, Grouping, Mark All Read",
-      "description": "Notifications need contextual action buttons, date grouping, swipe to dismiss, and mark all read.",
-      "acceptanceCriteria": [
-        "Unread count badge on notification bell icon",
-        "Action button per notification type: View Bids, View Task, Reply, Leave Review",
-        "Swipe-to-dismiss marks as read",
-        "'Mark All as Read' button in AppBar",
-        "Group by date: Today, Yesterday, Earlier",
-        "flutter analyze 0 errors"
-      ],
-      "passes": true
+      "passes": false
     }
   ]
 }
