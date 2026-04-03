@@ -393,10 +393,11 @@ void main() {
         ],
       ));
       await tester.pumpAndSettle();
-      expect(find.text('No messages yet'), findsOneWidget);
+      expect(find.text('No conversations yet'), findsOneWidget);
       expect(find.text('Start a conversation by bidding on a task'),
           findsOneWidget);
       expect(find.text('💬'), findsOneWidget);
+      expect(find.text('Browse Tasks'), findsOneWidget);
     });
   });
 
@@ -511,9 +512,9 @@ void main() {
         ],
       ));
       await tester.pumpAndSettle();
-      // PosterHomeScreen shows 'My Tasks' and 'Post a Task'
+      // PosterHomeScreen shows 'My Tasks' and 'Post a Task' (appears in both top CTA and empty state)
       expect(find.text('My Tasks'), findsOneWidget);
-      expect(find.text('Post a Task'), findsOneWidget);
+      expect(find.text('Post a Task'), findsAtLeastNWidgets(1));
     });
 
     testScreen('renders ProviderHomeScreen for provider role user',

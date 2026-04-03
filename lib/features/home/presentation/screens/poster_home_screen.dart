@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../tasks/data/models/task_model.dart';
@@ -154,18 +155,19 @@ class _EmptyTasksState extends StatelessWidget {
   const _EmptyTasksState();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 60, horizontal: 32),
-    child: Column(
-      children: [
-        Text('📋', style: TextStyle(fontSize: 48)),
-        SizedBox(height: 16),
-        Text(
-          'No active tasks. Post your first task!',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
-        ),
-      ],
+  Widget build(BuildContext context) => EmptyState(
+    emoji: '📋',
+    title: 'Post your first task',
+    subtitle: 'Get help from neighbours in your area',
+    action: ElevatedButton.icon(
+      onPressed: () => context.push(AppRoutes.postTask),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+      ),
+      icon: const Icon(Icons.add_circle_outline, size: 18),
+      label: const Text('Post a Task'),
     ),
   );
 }

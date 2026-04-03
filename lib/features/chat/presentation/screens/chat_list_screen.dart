@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/chat_repository.dart';
@@ -58,24 +59,19 @@ class _ChatList extends ConsumerWidget {
       ),
       data: (chats) {
         if (chats.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(40),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('💬', style: TextStyle(fontSize: 56)),
-                  SizedBox(height: 16),
-                  Text('No messages yet',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary)),
-                  SizedBox(height: 8),
-                  Text('Start a conversation by bidding on a task',
-                      style: TextStyle(color: AppColors.textHint)),
-                ],
+          return EmptyState(
+            emoji: '💬',
+            title: 'No conversations yet',
+            subtitle: 'Start a conversation by bidding on a task',
+            action: ElevatedButton.icon(
+              onPressed: () => context.push(AppRoutes.taskList),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
               ),
+              icon: const Icon(Icons.search, size: 18),
+              label: const Text('Browse Tasks'),
             ),
           );
         }
