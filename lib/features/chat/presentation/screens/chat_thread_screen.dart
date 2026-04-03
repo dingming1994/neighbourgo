@@ -3,8 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/image_validator.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -23,10 +23,13 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSending = false;
+  bool _showScrollToBottom = false;
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     // Mark messages as read when opening the chat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(currentUserProvider).valueOrNull;
@@ -38,22 +41,41 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final isNearBottom = _scrollController.position.maxScrollExtent -
+            _scrollController.offset <
+        150;
+    if (_showScrollToBottom == isNearBottom) {
+      setState(() => _showScrollToBottom = !isNearBottom);
+    }
+  }
+
+  void _scrollToBottom({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        if (animate) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        } else {
+          _scrollController
+              .jumpTo(_scrollController.position.maxScrollExtent);
+        }
       }
     });
   }
+
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _sendText() async {
     final text = _textController.text.trim();
@@ -196,39 +218,79 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
                   );
                 }
 
-                _scrollToBottom();
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 12, horizontal: 12),
-                  itemCount: messages.length,
-                  itemBuilder: (context, i) {
-                    final msg = messages[i];
-                    final isMe = msg.senderId == currentUser?.uid;
-                    final showTime = i == 0 ||
-                        messages[i]
-                                .timestamp
-                                .difference(messages[i - 1].timestamp)
-                                .inMinutes
-                                .abs() >
-                            10;
-                    return Column(
-                      children: [
-                        if (showTime)
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              timeago.format(msg.timestamp),
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textHint),
+                // Auto-scroll on new messages if near bottom
+                if (messages.length != _lastMessageCount) {
+                  _lastMessageCount = messages.length;
+                  if (!_showScrollToBottom) {
+                    _scrollToBottom();
+                  }
+                }
+
+                return Stack(
+                  children: [
+                    ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
+                      itemCount: messages.length,
+                      itemBuilder: (context, i) {
+                        final msg = messages[i];
+                        final isMe = msg.senderId == currentUser?.uid;
+
+                        // Date separator: show when first message or different day
+                        final showDateSeparator = i == 0 ||
+                            !_isSameDay(
+                                msg.timestamp, messages[i - 1].timestamp);
+
+                        // Message grouping: same sender within 2 minutes
+                        final isFirstInGroup = i == 0 ||
+                            messages[i - 1].senderId != msg.senderId ||
+                            msg.timestamp
+                                    .difference(messages[i - 1].timestamp)
+                                    .inMinutes
+                                    .abs() >
+                                2 ||
+                            showDateSeparator;
+
+                        final isLastInGroup = i == messages.length - 1 ||
+                            messages[i + 1].senderId != msg.senderId ||
+                            messages[i + 1]
+                                    .timestamp
+                                    .difference(msg.timestamp)
+                                    .inMinutes
+                                    .abs() >
+                                2 ||
+                            !_isSameDay(
+                                msg.timestamp, messages[i + 1].timestamp);
+
+                        return Column(
+                          children: [
+                            if (showDateSeparator)
+                              _DateSeparator(date: msg.timestamp),
+                            _MessageBubble(
+                              message: msg,
+                              isMe: isMe,
+                              isFirstInGroup: isFirstInGroup,
+                              isLastInGroup: isLastInGroup,
                             ),
-                          ),
-                        _MessageBubble(message: msg, isMe: isMe),
-                      ],
-                    );
-                  },
+                          ],
+                        );
+                      },
+                    ),
+                    // Scroll-to-bottom FAB
+                    if (_showScrollToBottom)
+                      Positioned(
+                        right: 12,
+                        bottom: 12,
+                        child: FloatingActionButton.small(
+                          onPressed: () => _scrollToBottom(),
+                          backgroundColor: AppColors.bgCard,
+                          elevation: 4,
+                          child: const Icon(Icons.keyboard_arrow_down,
+                              color: AppColors.textSecondary),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -248,22 +310,96 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Date separator
+// ─────────────────────────────────────────────────────────────────────────────
+class _DateSeparator extends StatelessWidget {
+  final DateTime date;
+  const _DateSeparator({required this.date});
+
+  String _label() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final msgDay = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(msgDay).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return DateFormat('d MMM yyyy').format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppColors.divider)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              _label(),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textHint,
+              ),
+            ),
+          ),
+          const Expanded(child: Divider(color: AppColors.divider)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Message bubble
 // ─────────────────────────────────────────────────────────────────────────────
 class _MessageBubble extends StatelessWidget {
   final MessageModel message;
   final bool isMe;
+  final bool isFirstInGroup;
+  final bool isLastInGroup;
 
-  const _MessageBubble({required this.message, required this.isMe});
+  const _MessageBubble({
+    required this.message,
+    required this.isMe,
+    this.isFirstInGroup = true,
+    this.isLastInGroup = true,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Tighter spacing for grouped messages
+    final topMargin = isFirstInGroup ? 4.0 : 1.0;
+    final bottomMargin = isLastInGroup ? 4.0 : 1.0;
+
+    // Adjust bubble corners for grouping
+    const big = Radius.circular(16);
+    const small = Radius.circular(4);
+
+    BorderRadius bubbleRadius;
+    if (isMe) {
+      bubbleRadius = BorderRadius.only(
+        topLeft: big,
+        topRight: isFirstInGroup ? big : small,
+        bottomLeft: big,
+        bottomRight: small,
+      );
+    } else {
+      bubbleRadius = BorderRadius.only(
+        topLeft: isFirstInGroup ? big : small,
+        topRight: big,
+        bottomLeft: small,
+        bottomRight: big,
+      );
+    }
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(
-          top: 4,
-          bottom: 4,
+          top: topMargin,
+          bottom: bottomMargin,
           left: isMe ? 48 : 0,
           right: isMe ? 0 : 48,
         ),
@@ -303,12 +439,7 @@ class _MessageBubble extends StatelessWidget {
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: isMe ? AppColors.primary : AppColors.bgCard,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isMe ? 16 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 16),
-                  ),
+                  borderRadius: bubbleRadius,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.06),
@@ -325,27 +456,30 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _formatTime(message.timestamp),
-                  style: const TextStyle(
-                      fontSize: 10, color: AppColors.textHint),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    message.isRead ? Icons.done_all : Icons.done,
-                    size: 12,
-                    color: message.isRead
-                        ? AppColors.primary
-                        : AppColors.textHint,
+            // Only show time on last message in group
+            if (isLastInGroup) ...[
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _formatTime(message.timestamp),
+                    style: const TextStyle(
+                        fontSize: 10, color: AppColors.textHint),
                   ),
+                  if (isMe) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      message.isRead ? Icons.done_all : Icons.done,
+                      size: 12,
+                      color: message.isRead
+                          ? AppColors.primary
+                          : AppColors.textHint,
+                    ),
+                  ],
                 ],
-              ],
-            ),
+              ),
+            ],
           ],
         ),
       ),
