@@ -14,6 +14,7 @@ Started: Fri  3 Apr 2026 14:19:53 +08
 - ServiceDetailScreen now uses a `serviceDetailProvider` StreamProvider (converted from raw StreamBuilder) for consistency
 - `CreateServiceScreen` supports both create and edit mode via optional `existingListing` param — reuse this pattern for other create/edit screens
 - Pass complex model objects to GoRouter routes via `state.extra` (not URL params)
+- Use `EmptyState(emoji, title, subtitle, action)` from `core/widgets/empty_state.dart` for all empty states — pass CTA buttons via `action` param
 ---
 
 ## 2026-04-03 - US-101
@@ -116,4 +117,30 @@ Started: Fri  3 Apr 2026 14:19:53 +08
   - `FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))` is the standard pattern for decimal currency input across the codebase
   - Warning chips (non-blocking) are preferred over hard validation errors for soft limits — use `onChanged` + `setState` for real-time warning display
   - Manual browser verification needed — no tests cover form validation edge cases
+---
+
+## 2026-04-03 - US-107
+- Replaced all inline empty state implementations with the reusable `EmptyState` widget from `core/widgets/empty_state.dart`
+- Added actionable CTA buttons to primary empty states:
+  - ChatListScreen: "No conversations yet" + "Browse Tasks" button (navigates to Discover)
+  - MyTasksScreen (Active tab): "No assigned tasks" + "Find Tasks" button (navigates to Discover)
+  - MyBidsScreen (Pending tab): "No bids yet" + "Browse Open Tasks" button (navigates to Discover)
+  - PosterHomeScreen: "Post your first task" + "Post a Task" button (navigates to post task flow)
+- Secondary tabs (Completed, Cancelled, Accepted, Rejected) use EmptyState without CTA buttons
+- Updated `_TaskList` and `_BidTab` widget parameters from `emptyMessage` to `emptyTitle`/`emptySubtitle`/`emptyAction`
+- Updated 7 tests in `new_features_test.dart` and `profile_chat_nav_test.dart` to match new empty state text
+- Used `Builder` widget wrapper for CTA buttons in const widget constructors to get a valid `BuildContext` for `context.push()`
+- Files changed:
+  - `lib/features/chat/presentation/screens/chat_list_screen.dart`
+  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+  - `lib/features/home/presentation/screens/poster_home_screen.dart`
+  - `test/features/new_features_test.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+- **Learnings for future iterations:**
+  - `EmptyState` widget in `core/widgets/empty_state.dart` supports an optional `action` widget — use it for CTA buttons instead of creating custom empty states
+  - When replacing empty state text in screens, always search tests for the old text strings — multiple test files may assert on empty state content
+  - Use `Builder` widget to wrap action buttons that need `context.push()` when passed as constructor params (avoids needing a StatelessWidget wrapper)
+  - PosterHomeScreen already has a "Post a Task" CTA at the top — the empty state CTA duplicates this intentionally to guide new users
+  - Manual browser verification needed — no tests cover CTA button navigation
 ---

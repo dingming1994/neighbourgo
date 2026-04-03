@@ -99,7 +99,7 @@
         "Each empty state uses a Lottie animation or SVG illustration consistent with app design",
         "flutter analyze — 0 errors"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
