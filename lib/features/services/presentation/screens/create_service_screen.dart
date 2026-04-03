@@ -11,7 +11,10 @@ import '../../data/models/service_listing_model.dart';
 import '../../data/repositories/service_listing_repository.dart';
 
 class CreateServiceScreen extends ConsumerStatefulWidget {
-  const CreateServiceScreen({super.key});
+  /// Pass an existing listing to enter **edit** mode.
+  final ServiceListingModel? existingListing;
+
+  const CreateServiceScreen({super.key, this.existingListing});
 
   @override
   ConsumerState<CreateServiceScreen> createState() =>
@@ -27,7 +30,32 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   final _fixedRateController = TextEditingController();
   final _availabilityController = TextEditingController();
   final List<File> _photos = [];
+  /// URLs of existing photos kept from the original listing (edit mode only).
+  final List<String> _existingPhotoUrls = [];
   bool _isSubmitting = false;
+
+  bool get _isEditing => widget.existingListing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final listing = widget.existingListing;
+    if (listing != null) {
+      _categoryId = listing.categoryId;
+      _titleController.text = listing.title;
+      _descriptionController.text = listing.description;
+      if (listing.hourlyRate != null) {
+        _hourlyRateController.text = listing.hourlyRate!.toStringAsFixed(0);
+      }
+      if (listing.fixedRate != null) {
+        _fixedRateController.text = listing.fixedRate!.toStringAsFixed(0);
+      }
+      if (listing.availability != null) {
+        _availabilityController.text = listing.availability!;
+      }
+      _existingPhotoUrls.addAll(listing.photoUrls);
+    }
+  }
 
   @override
   void dispose() {
@@ -69,34 +97,71 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
       final user = ref.read(currentUserProvider).valueOrNull;
       if (user == null) return;
 
-      final listing = ServiceListingModel(
-        id: '',
-        providerId: user.uid,
-        providerName: user.displayName ?? 'Provider',
-        categoryId: _categoryId!,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        hourlyRate: _hourlyRateController.text.isNotEmpty
-            ? double.tryParse(_hourlyRateController.text)
-            : null,
-        fixedRate: _fixedRateController.text.isNotEmpty
-            ? double.tryParse(_fixedRateController.text)
-            : null,
-        availability: _availabilityController.text.trim().isNotEmpty
-            ? _availabilityController.text.trim()
-            : null,
-        neighbourhood: user.neighbourhood,
-      );
+      final repo = ref.read(serviceListingRepositoryProvider);
 
-      await ref
-          .read(serviceListingRepositoryProvider)
-          .createListing(listing, photos: _photos);
+      if (_isEditing) {
+        // ── Edit existing listing ────────────────────────────────────────
+        // Upload any new photos
+        final newPhotoUrls = <String>[];
+        if (_photos.isNotEmpty) {
+          newPhotoUrls.addAll(
+            await repo.uploadPhotos(widget.existingListing!.id, _photos),
+          );
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Service listing created!')),
+        final allPhotoUrls = [..._existingPhotoUrls, ...newPhotoUrls];
+
+        await repo.updateListing(widget.existingListing!.id, {
+          'categoryId': _categoryId,
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'hourlyRate': _hourlyRateController.text.isNotEmpty
+              ? double.tryParse(_hourlyRateController.text)
+              : null,
+          'fixedRate': _fixedRateController.text.isNotEmpty
+              ? double.tryParse(_fixedRateController.text)
+              : null,
+          'availability': _availabilityController.text.trim().isNotEmpty
+              ? _availabilityController.text.trim()
+              : null,
+          'photoUrls': allPhotoUrls,
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Service listing updated!')),
+          );
+          context.pop();
+        }
+      } else {
+        // ── Create new listing ───────────────────────────────────────────
+        final listing = ServiceListingModel(
+          id: '',
+          providerId: user.uid,
+          providerName: user.displayName ?? 'Provider',
+          categoryId: _categoryId!,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          hourlyRate: _hourlyRateController.text.isNotEmpty
+              ? double.tryParse(_hourlyRateController.text)
+              : null,
+          fixedRate: _fixedRateController.text.isNotEmpty
+              ? double.tryParse(_fixedRateController.text)
+              : null,
+          availability: _availabilityController.text.trim().isNotEmpty
+              ? _availabilityController.text.trim()
+              : null,
+          neighbourhood: user.neighbourhood,
         );
-        context.pop();
+
+        await repo.createListing(listing, photos: _photos);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Service listing created!')),
+          );
+          context.pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -113,7 +178,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgLight,
-      appBar: AppBar(title: const Text('Create Service Listing')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Service Listing' : 'Create Service Listing')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -180,6 +245,37 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
+                  // Existing photos (edit mode) ─────────────────────────
+                  ..._existingPhotoUrls.asMap().entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(e.value,
+                                  width: 80, height: 80, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: GestureDetector(
+                                onTap: () => setState(
+                                    () => _existingPhotoUrls.removeAt(e.key)),
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(2),
+                                  child: const Icon(Icons.close,
+                                      size: 14, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  // New local photos ────────────────────────────────────
                   ..._photos.asMap().entries.map((e) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: Stack(
@@ -209,7 +305,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                           ],
                         ),
                       )),
-                  if (_photos.length < 6)
+                  if ((_existingPhotoUrls.length + _photos.length) < 6)
                     GestureDetector(
                       onTap: _pickPhotos,
                       child: Container(
@@ -295,7 +391,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Publish Service'),
+                    : Text(_isEditing ? 'Save Changes' : 'Publish Service'),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),

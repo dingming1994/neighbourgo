@@ -55,6 +55,49 @@ class ServiceDetailScreen extends ConsumerWidget {
   }
 }
 
+Future<void> _confirmDelete(
+    BuildContext context, WidgetRef ref, String listingId) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete listing?'),
+      content:
+          const Text('This will permanently delete your service listing.'),
+      actions: [
+        TextButton(
+          onPressed: () => ctx.pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => ctx.pop(true),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    try {
+      await ref
+          .read(serviceListingRepositoryProvider)
+          .deleteListing(listingId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Service listing deleted')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: $e')),
+        );
+      }
+    }
+  }
+}
+
 class _DetailContent extends ConsumerWidget {
   final ServiceListingModel listing;
 
@@ -76,6 +119,25 @@ class _DetailContent extends ConsumerWidget {
           SliverAppBar(
             expandedHeight: listing.photoUrls.isNotEmpty ? 250 : 120,
             pinned: true,
+            actions: isOwnListing
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit listing',
+                      onPressed: () => context.push(
+                        AppRoutes.editService
+                            .replaceFirst(':listingId', listing.id),
+                        extra: listing,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete listing',
+                      onPressed: () =>
+                          _confirmDelete(context, ref, listing.id),
+                    ),
+                  ]
+                : null,
             flexibleSpace: FlexibleSpaceBar(
               background: listing.photoUrls.isNotEmpty
                   ? PageView(
