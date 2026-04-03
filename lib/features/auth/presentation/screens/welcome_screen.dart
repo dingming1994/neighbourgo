@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -139,13 +140,15 @@ class WelcomeScreen extends StatelessWidget {
                     isOutlined: true,
                     onPressed: () => context.push(AppRoutes.phoneAuth),
                   ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    icon: const Icon(Icons.developer_mode, size: 16),
-                    label: const Text('Dev Login (Skip Auth)', style: TextStyle(fontSize: 13)),
-                    style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                    onPressed: () => _devLogin(context),
-                  ),
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      icon: const Icon(Icons.developer_mode, size: 16),
+                      label: const Text('Dev Login (Skip Auth)', style: TextStyle(fontSize: 13)),
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                      onPressed: () => _devLogin(context),
+                    ),
+                  ],
                   const Spacer(),
                   Text(
                     'By continuing, you agree to our Terms of Service and Privacy Policy.',
