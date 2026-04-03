@@ -9,6 +9,9 @@ Started: Fri  3 Apr 2026 14:19:53 +08
 - signOutProvider handles sign-out after account deletion
 - Pre-existing warnings/info in flutter analyze (~169 issues) — all are non-error (unused imports, const suggestions, deprecated members)
 - Use `kDebugMode` from `flutter/foundation.dart` to gate debug-only UI; use `if (cond) ...[widgets]` pattern in Column children
+- Reusable `ErrorState` widget exists at `core/widgets/error_state.dart` — use it for all error branches instead of inline `Text('Error: $e')`
+- Use `ref.invalidate(provider)` in Riverpod error retry callbacks to re-fetch data
+- ServiceDetailScreen now uses a `serviceDetailProvider` StreamProvider (converted from raw StreamBuilder) for consistency
 ---
 
 ## 2026-04-03 - US-101
@@ -34,4 +37,23 @@ Started: Fri  3 Apr 2026 14:19:53 +08
   - The `_devLogin` method remains in the file but is unreachable in release — Dart tree-shaking handles dead code
   - Using `if (condition) ...[widgets]` in Column children is the idiomatic way to conditionally include multiple widgets
   - No existing tests for welcome_screen — manual browser verification needed
+---
+
+## 2026-04-03 - US-103
+- Reused existing `ErrorState` widget from `core/widgets/error_state.dart` (has error icon, user-friendly message, and "Try Again" button)
+- Replaced inline `Text('Error: $e')` with `ErrorState(onRetry: ...)` in 4 screens:
+  - `TaskDetailScreen` — retry calls `ref.invalidate(taskDetailProvider(taskId))`
+  - `PublicProfileScreen` — retry calls `ref.invalidate(publicProfileProvider(userId))` for main profile; also fixed reviews error state with `ref.invalidate(userReviewsProvider(userId))`
+  - `ServiceDetailScreen` — converted from raw `StreamBuilder` to `StreamProvider.family` (`serviceDetailProvider`) for consistency with other screens; retry calls `ref.invalidate(serviceDetailProvider(listingId))`
+  - `ChatThreadScreen` — retry calls `ref.invalidate(messagesStreamProvider(widget.chatId))`
+- Files changed:
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart`
+- **Learnings for future iterations:**
+  - `ErrorState` widget already existed in `core/widgets/` — always check for existing reusable widgets before creating new ones
+  - Converting `StreamBuilder` to `StreamProvider.family` enables `ref.invalidate()` for retry, which is cleaner than rebuilding with setState
+  - PublicProfileScreen has two separate error states (profile + reviews) — both need updating when fixing error handling
+  - Manual browser verification needed — no tests cover these error states
 ---

@@ -43,7 +43,7 @@
         "Error message is user-friendly (e.g. 'Something went wrong') not raw exception text",
         "flutter analyze — 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-104",
