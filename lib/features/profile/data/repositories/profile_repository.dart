@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -104,7 +105,9 @@ class ProfileRepository {
     try {
       final ref = _storage.refFromURL(photo.url);
       await ref.delete();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to delete photo from storage: $e');
+    }
 
     await _db.collection(AppConstants.usersCol).doc(uid).update({
       'photos': FieldValue.arrayRemove([photo.toJson()]),

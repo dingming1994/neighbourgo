@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -168,8 +167,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _loadUser() async {
-    final user = ref.read(currentUserProvider).valueOrNull
-        ?? await AuthRepository().fetchCurrentUser();
+    final user = await ref.read(currentUserProvider.future);
     if (user != null && mounted) {
       setState(() {
         _user = user;

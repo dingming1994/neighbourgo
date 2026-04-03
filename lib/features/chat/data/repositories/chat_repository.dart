@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -147,7 +148,9 @@ class ChatRepository {
     try {
       final existing = await chatRef.get();
       if (existing.exists) return chatId;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to check existing chat: $e');
+    }
 
     await chatRef.set({
       'chatId': chatId,
@@ -208,7 +211,9 @@ class ChatRepository {
                 as String? ??
             'Task';
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to fetch task title: $e');
+    }
 
     final sorted = [posterId, providerId]..sort();
     await chatRef.set({
