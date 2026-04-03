@@ -62,3 +62,22 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - PosterHomeScreen keeps Post a Task CTA and PendingReviewsSection above the grouped sections
   - `AppColors.warning` is the convention for "action needed" UI elements (matches PendingReviewsSection pattern)
 ---
+
+## 2026-04-03 - US-096
+- Added date separators (Today, Yesterday, formatted date) between messages on different days
+- Improved auto-scroll: only auto-scrolls when user is near bottom; tracks message count changes
+- Added scroll-to-bottom FAB that appears when user scrolls up
+- Grouped consecutive messages from same sender within 2-minute window:
+  - Tighter vertical spacing between grouped bubbles
+  - Adjusted bubble corner radii for visual continuity
+  - HH:MM time + read receipts only shown on last message in group
+- Replaced `timeago` import with `intl` for `DateFormat` in date separators
+- Files changed:
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart` (+201 lines, -67 lines: _DateSeparator widget, grouping logic, FAB, scroll listener)
+- **Learnings for future iterations:**
+  - ChatThreadScreen uses ListView.builder with ScrollController — add listeners in initState, remove in dispose
+  - `intl` package is already in pubspec.yaml — use `DateFormat` for formatted dates
+  - Pre-existing `withOpacity` deprecation warnings exist in this file (4 instances) — they are info-level, not errors
+  - Message grouping window of 2 minutes works well for chat UX — same sender + within 2 min = grouped
+  - `FloatingActionButton.small` is good for in-content action buttons like scroll-to-bottom
+---

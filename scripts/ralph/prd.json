@@ -56,7 +56,7 @@
         "Group consecutive messages from same sender (no repeated avatar)",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-097",
