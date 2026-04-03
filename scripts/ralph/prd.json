@@ -71,7 +71,7 @@
         "Category placeholder image when no photos",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-098",

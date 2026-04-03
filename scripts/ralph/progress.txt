@@ -81,3 +81,22 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - Message grouping window of 2 minutes works well for chat UX — same sender + within 2 min = grouped
   - `FloatingActionButton.small` is good for in-content action buttons like scroll-to-bottom
 ---
+
+## 2026-04-03 - US-097
+- Redesigned TaskDetailScreen with sticky bottom bar, card containers, and visual hierarchy
+- **Changes:**
+  1. Sticky bottom bar: Moved action buttons (Submit Bid, Mark Complete, Start Work, Message) to `Scaffold.bottomNavigationBar` with shadow
+  2. Card containers: Created `_SectionCard` widget wrapping budget, description, details, timeline, and poster info sections with subtle box shadow
+  3. Budget: Large `headlineMedium` font in primary color with dedicated card
+  4. Category chip + urgency badge: Horizontal row below photos with colored `_UrgencyBadge` widget (ASAP=red, Today=amber, Flexible=green)
+  5. 'Posted X ago': Uses `timeago` package near title
+  6. Category placeholder: `_CategoryPlaceholder` widget with emoji + label when no photos
+- Files changed:
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` (+287 lines, -137 lines: new widgets _SectionCard, _UrgencyBadge, _CategoryPlaceholder; restructured body layout; sticky bottomNavigationBar)
+- **Learnings for future iterations:**
+  - `Scaffold.bottomNavigationBar` is the cleanest way to add a sticky bottom bar — no need for Stack/Positioned
+  - `timeago` package is already in pubspec.yaml — use `timeago.format(dateTime)` for relative time strings
+  - Action buttons logic must be computed before the Scaffold return to use in both body and bottomNavigationBar
+  - TaskModel has `budgetDisplay` extension getter that already formats the S$ budget range nicely
+  - Pre-existing warnings in test files (sealed class, const constructors) are info/warning level only — no errors
+---
