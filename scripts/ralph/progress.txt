@@ -57,3 +57,20 @@ Started: Fri  3 Apr 2026 14:19:53 +08
   - PublicProfileScreen has two separate error states (profile + reviews) — both need updating when fixing error handling
   - Manual browser verification needed — no tests cover these error states
 ---
+
+## 2026-04-03 - US-104
+- Added `LinearProgressIndicator` below search bar in `discover_screen.dart` that shows during 300ms debounce period (tracks `_isDebouncing` state)
+- Added `_SearchEmptyView` widget to all 3 tab screens showing "No results for 'query'" with `search_off_rounded` icon and suggestion to adjust filters
+- Added `_SearchResultCount` widget showing "N tasks/providers/services found" between category filter bar and list when search has results
+- Clearing search resets to default unfiltered view (already worked, debounce cancel added for cleanliness)
+- Files changed:
+  - `lib/features/discover/presentation/screens/discover_screen.dart`
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart`
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart`
+  - `lib/features/services/presentation/screens/service_listings_screen.dart`
+- **Learnings for future iterations:**
+  - Search is purely client-side (filters already-loaded items) — no server round-trip, so "loading" is really just the debounce delay
+  - Each tab screen (Tasks, Providers, Services) has its own `_EmptyView` and `_buildBody` — changes must be applied to all three separately
+  - `ServiceListingsScreen` uses `StreamProvider` + `.when()` pattern (different from Tasks/Providers which use `StateNotifier`), so result count widget is inserted differently (inside the `data:` callback as a wrapping `Column`)
+  - Manual browser verification needed — no tests cover search UX states
+---

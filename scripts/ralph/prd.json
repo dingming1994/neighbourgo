@@ -57,7 +57,7 @@
         "Works for all Discover tabs (Tasks, Providers, Services)",
         "flutter analyze — 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-105",
