@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/category_constants.dart';
@@ -409,13 +410,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextField(
+                            child: TextFormField(
                               controller: _rateControllers[catId],
-                              keyboardType: TextInputType.number,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                              ],
                               decoration: InputDecoration(
                                 prefixText: 'S\$ ',
                                 hintText: '0',
                                 suffixText: '/hr',
+                                helperText: 'S\$1–S\$500',
+                                helperStyle: const TextStyle(fontSize: 11),
                                 filled: true,
                                 fillColor: AppColors.bgCard,
                                 border: OutlineInputBorder(
@@ -432,6 +438,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     horizontal: 10, vertical: 10),
                                 isDense: true,
                               ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) return null; // optional
+                                final n = double.tryParse(v.trim());
+                                if (n == null) return 'Enter a number';
+                                if (n < 1) return 'Min S\$1';
+                                if (n > 500) return 'Max S\$500';
+                                return null;
+                              },
                             ),
                           ),
                         ],

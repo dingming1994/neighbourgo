@@ -42,6 +42,7 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
 
   _BidDuration _selectedDuration = _BidDuration.oneHour;
   bool         _isSubmitting     = false;
+  bool         _showHighBidWarning = false;
 
   @override
   void dispose() {
@@ -161,16 +162,33 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
                 prefixText: 'S\$ ',
                 hintText:   '0.00',
               ),
+              onChanged: (v) {
+                final n = double.tryParse(v);
+                final exceedsTwice = n != null && n > widget.taskBudget * 2;
+                if (exceedsTwice != _showHighBidWarning) {
+                  setState(() => _showHighBidWarning = exceedsTwice);
+                }
+              },
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Enter a bid amount';
                 final n = double.tryParse(v);
                 if (n == null || n <= 0) return 'Enter a valid amount';
                 if (n < 1) return 'Minimum bid is S\$1';
-                final maxBid = widget.taskBudget * 2;
-                if (n > maxBid) return 'Bid cannot exceed S\$${maxBid.toStringAsFixed(0)}';
                 return null;
               },
             ),
+            if (_showHighBidWarning) ...[
+              const SizedBox(height: 8),
+              Chip(
+                avatar: const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.orange),
+                label: Text(
+                  'Bid exceeds 2× the task budget (S\$${(widget.taskBudget * 2).toStringAsFixed(0)})',
+                  style: const TextStyle(fontSize: 12, color: Colors.orange),
+                ),
+                backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                side: const BorderSide(color: Colors.orange, width: 0.5),
+              ),
+            ],
             const SizedBox(height: 20),
 
             // ── Estimated Duration ────────────────────────────────────────
