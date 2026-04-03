@@ -28,7 +28,7 @@
         "CTA button: 'Complete Your Profile'",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-095",
@@ -42,7 +42,7 @@
         "Empty sections hidden, keep 'Post a Task' CTA at top",
         "flutter analyze 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-096",

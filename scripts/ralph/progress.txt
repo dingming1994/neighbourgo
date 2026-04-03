@@ -6,6 +6,8 @@ Started: Fri  3 Apr 2026 13:36:39 +08
 - FakeCollectionReference.where() delegates to a shared FakeQuery — when chaining multiple .where() calls, the first is on the collection and the rest on FakeQuery. Both must track state.
 - currentUserProvider is a StreamProvider<UserModel?> — use `ref.read(currentUserProvider.future)` to await the first emission instead of `.valueOrNull` with a raw fallback.
 - Empty catch blocks should use `debugPrint` for best-effort operations (storage deletion, Firestore lookups) rather than silently swallowing errors.
+- To conditionally render multiple slivers from an AsyncValue, use `...asyncValue.when(data: (x) => [sliver1, sliver2])` with spread.
+- TaskModel extension has `isOpen`, `isAssigned`, `isCompleted` getters — prefer these over raw enum comparison.
 
 ## 2026-04-03 - US-093
 - Fixed 4 failing unit tests and 3 empty catch blocks
@@ -25,4 +27,38 @@ Started: Fri  3 Apr 2026 13:36:39 +08
   - When test fakes chain query methods, ensure state tracking happens at every entry point (collection and query level)
   - StreamProvider.future is the clean way to await a provider's first value in async init methods
   - The EditProfileScreen tests require currentUserProvider to be overridden — the stream must emit before the widget reads it
+---
+
+## 2026-04-03 - US-094
+- Added `_ProfileCompletionCard` widget to ProviderHomeScreen
+- Card appears when `user.completeness < 70`, disappears at >= 70
+- Shows progress bar (completed/total), checklist of 7 items: avatar, display name, headline, bio, categories, photos, availability
+- Incomplete items shown first with unchecked icon, tappable → navigates to EditProfileScreen
+- Complete items shown with green checkmark and strikethrough
+- "Complete Your Profile" CTA button at bottom
+- Files changed:
+  - `lib/features/home/presentation/screens/provider_home_screen.dart` (+194 lines: import, card insertion in slivers, _ChecklistItem class, _ProfileCompletionCard widget)
+- **Learnings for future iterations:**
+  - UserModel already has a `completeness` getter (0–100 score) in user_model.dart — no need to recalculate
+  - ProviderHomeScreen uses CustomScrollView with slivers — new sections go as SliverToBoxAdapter
+  - Use `AppColors.primary.withValues(alpha: 0.3)` for border styling (not withOpacity — matches existing code style)
+  - The _NoServiceCategoriesPrompt is a good reference widget for card-style prompts on this screen
+---
+
+## 2026-04-03 - US-095
+- Replaced flat "Active Tasks" list on PosterHomeScreen with three status-grouped sections
+- **Sections added:**
+  1. "Needs Your Action" — open tasks with bidCount > 0, warning-colored border, "Review Bids" button
+  2. "In Progress" — assigned/inProgress tasks, shows provider name + "Message" button
+  3. "Open" — open tasks with bidCount == 0, uses original card style
+- Each section has a header with count badge (colored pill)
+- Empty sections are hidden; "Post a Task" CTA and PendingReviewsSection remain at top
+- Used spread operator (`...`) with `tasksAsync.when()` returning `List<Widget>` to output multiple slivers
+- Files changed:
+  - `lib/features/home/presentation/screens/poster_home_screen.dart` (+234 lines, -21 lines: _SectionHeader, _NeedsActionTaskCard, _InProgressTaskCard widgets; refactored task list section)
+- **Learnings for future iterations:**
+  - TaskModel has `isOpen` and `isAssigned` extension getters — use them for status grouping instead of comparing enums directly
+  - To return multiple slivers from `.when()`, use spread (`...tasksAsync.when(...)`) returning `List<Widget>` — can't return a single sliver
+  - PosterHomeScreen keeps Post a Task CTA and PendingReviewsSection above the grouped sections
+  - `AppColors.warning` is the convention for "action needed" UI elements (matches PendingReviewsSection pattern)
 ---
