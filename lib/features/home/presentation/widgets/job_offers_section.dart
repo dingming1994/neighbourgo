@@ -29,7 +29,7 @@ class JobOffersSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offersAsync = ref.watch(directHireOffersProvider);
 
-    return offersAsync.when(
+    return offersAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
       error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
       data: (offers) {

@@ -63,7 +63,7 @@ class _SavedTasksTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final favAsync = ref.watch(favoritesProvider);
 
-    return favAsync.when(
+    return favAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerList(),
       error: (e, _) => ErrorState(
         message: e.toString(),
@@ -106,7 +106,7 @@ class _SavedProvidersTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final favAsync = ref.watch(favoritesProvider);
 
-    return favAsync.when(
+    return favAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerList(),
       error: (e, _) => ErrorState(
         message: e.toString(),
@@ -155,7 +155,7 @@ class _FavoriteTaskCard extends ConsumerWidget {
     final taskAsync = ref.watch(_taskByIdProvider(taskId));
     final favIds = ref.watch(favoriteIdsProvider);
 
-    return taskAsync.when(
+    return taskAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerCard(),
       error: (_, __) => const SizedBox.shrink(),
       data: (task) {
@@ -266,7 +266,7 @@ class _FavoriteProviderCard extends ConsumerWidget {
     final provAsync = ref.watch(_providerByIdProvider(providerId));
     final favIds = ref.watch(favoriteIdsProvider);
 
-    return provAsync.when(
+    return provAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerCard(),
       error: (_, __) => const SizedBox.shrink(),
       data: (provider) {

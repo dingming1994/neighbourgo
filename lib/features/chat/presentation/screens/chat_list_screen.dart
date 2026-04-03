@@ -26,7 +26,7 @@ class ChatListScreen extends ConsumerWidget {
         title: const Text('Messages',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
       ),
-      body: userAsync.when(
+      body: userAsync.when(skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorState(
           message: e.toString(),
@@ -51,7 +51,7 @@ class _ChatList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chatsAsync = ref.watch(chatsStreamProvider(userId));
 
-    return chatsAsync.when(
+    return chatsAsync.when(skipLoadingOnReload: true,
       loading: () => const _ChatLoadingList(),
       error: (e, _) => ErrorState(
         message: e.toString(),

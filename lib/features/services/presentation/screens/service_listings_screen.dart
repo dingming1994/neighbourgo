@@ -46,7 +46,7 @@ class ServiceListingsScreen extends ConsumerWidget {
               ref.read(_serviceCategoryProvider.notifier).state = id,
         ),
         Expanded(
-          child: listingsAsync.when(
+          child: listingsAsync.when(skipLoadingOnReload: true,
             loading: () => const _LoadingList(),
             error: (e, _) => Center(
               child: Text('Error: $e',

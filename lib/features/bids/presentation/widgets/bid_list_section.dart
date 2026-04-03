@@ -39,7 +39,7 @@ class BidListSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(bidsStreamProvider(taskId));
 
-    return bidsAsync.when(
+    return bidsAsync.when(skipLoadingOnReload: true,
       loading: () => const Padding(
         padding: EdgeInsets.all(32),
         child: Center(child: CircularProgressIndicator()),
@@ -275,7 +275,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
                       Consumer(builder: (context, ref, _) {
                         final ratingAsync =
                             ref.watch(providerRatingProvider(bid.providerId));
-                        return ratingAsync.when(
+                        return ratingAsync.when(skipLoadingOnReload: true,
                           loading: () => const SizedBox.shrink(),
                           error: (_, __) => const SizedBox.shrink(),
                           data: (rating) {

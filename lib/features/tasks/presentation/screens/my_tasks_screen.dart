@@ -110,7 +110,7 @@ class _TaskList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(provider);
 
-    return tasksAsync.when(
+    return tasksAsync.when(skipLoadingOnReload: true,
       loading: () => const _MyTasksLoadingList(),
       error: (e, _) => ErrorState(
         message: e.toString(),

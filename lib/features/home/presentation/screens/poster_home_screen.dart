@@ -88,7 +88,7 @@ class PosterHomeScreen extends ConsumerWidget {
           PendingReviewsSection(provider: posterPendingReviewsProvider),
 
           // ── Status-grouped task sections ──────────────────────────────
-          ...tasksAsync.when(
+          ...tasksAsync.when(skipLoadingOnReload: true,
             loading: () => [const SliverToBoxAdapter(
               child: Center(child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),

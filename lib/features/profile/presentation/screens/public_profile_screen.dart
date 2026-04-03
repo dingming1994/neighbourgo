@@ -42,7 +42,7 @@ class PublicProfileScreen extends ConsumerWidget {
     final me           = ref.watch(currentUserProvider).valueOrNull;
     final isMyProfile  = me?.uid == userId;
 
-    return profileAsync.when(
+    return profileAsync.when(skipLoadingOnReload: true,
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
         body: ErrorState(
@@ -280,7 +280,7 @@ class PublicProfileScreen extends ConsumerWidget {
                             : null,
                       ),
                       const SizedBox(height: 12),
-                      reviewsAsync.when(
+                      reviewsAsync.when(skipLoadingOnReload: true,
                         loading: () => const Center(child: CircularProgressIndicator()),
                         error: (e, _) => ErrorState(
                           onRetry: () => ref.invalidate(userReviewsProvider(userId)),

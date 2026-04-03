@@ -108,7 +108,7 @@ class PendingReviewsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reviewsAsync = ref.watch(provider);
 
-    return reviewsAsync.when(
+    return reviewsAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
       error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
       data: (reviews) {

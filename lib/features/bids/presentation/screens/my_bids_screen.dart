@@ -105,7 +105,7 @@ class _BidTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(_myBidsProvider);
 
-    return bidsAsync.when(
+    return bidsAsync.when(skipLoadingOnReload: true,
       loading: () => const _BidsLoadingList(),
       error: (e, _) => ErrorState(
         message: e.toString(),
@@ -167,7 +167,7 @@ class _BidCard extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: titleAsync.when(
+                    child: titleAsync.when(skipLoadingOnReload: true,
                       data: (title) => Text(
                         title,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),

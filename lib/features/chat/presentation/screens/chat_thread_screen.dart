@@ -192,7 +192,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
         children: [
           // ── Message list ──────────────────────────────────────────────
           Expanded(
-            child: messagesAsync.when(
+            child: messagesAsync.when(skipLoadingOnReload: true,
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => ErrorState(

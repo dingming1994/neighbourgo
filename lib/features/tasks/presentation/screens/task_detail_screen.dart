@@ -35,7 +35,7 @@ class TaskDetailScreen extends ConsumerWidget {
     final taskAsync   = ref.watch(taskDetailProvider(taskId));
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
 
-    return taskAsync.when(
+    return taskAsync.when(skipLoadingOnReload: true,
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
@@ -811,7 +811,7 @@ class _ProviderBidView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(bidsStreamProvider(taskId));
 
-    return bidsAsync.when(
+    return bidsAsync.when(skipLoadingOnReload: true,
       loading: () => const SizedBox.shrink(),
       error:   (_, __) => const SizedBox.shrink(),
       data: (bids) {

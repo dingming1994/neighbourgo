@@ -38,7 +38,7 @@ class NotificationListScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: notifAsync.when(
+      body: notifAsync.when(skipLoadingOnReload: true,
         loading: () => const _NotificationLoadingList(),
         error: (e, _) => ErrorState(
           message: e.toString(),

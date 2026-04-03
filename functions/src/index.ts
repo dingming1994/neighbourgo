@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
+import { FieldValue } from "firebase-admin/firestore";
 import Stripe from "stripe";
 
 admin.initializeApp();
@@ -20,7 +21,7 @@ export const onUserCreate = functions
   .region("asia-southeast1")
   .auth.user()
   .onCreate(async (user) => {
-    const now = admin.firestore.FieldValue.serverTimestamp();
+    const now = FieldValue.serverTimestamp();
     await db.collection("users").doc(user.uid).set(
       {
         uid:                user.uid,
@@ -166,14 +167,14 @@ export const releaseEscrow = functions
     await db.collection("tasks").doc(taskId).update({
       status:           "completed",
       isEscrowReleased: true,
-      completedAt:      admin.firestore.FieldValue.serverTimestamp(),
+      completedAt:      FieldValue.serverTimestamp(),
     });
 
     // Update provider earnings
     if (task.assignedProviderId) {
       await db.collection("users").doc(task.assignedProviderId).update({
-        "stats.earningsTotal": admin.firestore.FieldValue.increment(providerPayout),
-        "stats.completedTasks": admin.firestore.FieldValue.increment(1),
+        "stats.earningsTotal": FieldValue.increment(providerPayout),
+        "stats.completedTasks": FieldValue.increment(1),
       });
     }
 

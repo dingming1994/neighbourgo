@@ -29,7 +29,7 @@ class ServiceDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingAsync = ref.watch(serviceDetailProvider(listingId));
 
-    return listingAsync.when(
+    return listingAsync.when(skipLoadingOnReload: true,
       loading: () => Scaffold(
         appBar: AppBar(),
         body: const Center(child: CircularProgressIndicator()),

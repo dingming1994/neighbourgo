@@ -207,7 +207,7 @@ class ProviderHomeScreen extends ConsumerWidget {
           ),
 
           // ── Task list ──────────────────────────────────────────────────────
-          tasksAsync.when(
+          tasksAsync.when(skipLoadingOnReload: true,
             loading: () => const SliverToBoxAdapter(
               child: Center(child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
@@ -435,7 +435,7 @@ class _MyServicesSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingsAsync = ref.watch(_myServiceListingsProvider);
 
-    return listingsAsync.when(
+    return listingsAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
@@ -511,7 +511,7 @@ class _RecommendedSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recAsync = ref.watch(_recommendedTasksProvider);
 
-    return recAsync.when(
+    return recAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
