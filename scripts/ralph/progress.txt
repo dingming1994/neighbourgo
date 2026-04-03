@@ -8,6 +8,7 @@ Started: Fri  3 Apr 2026 14:19:53 +08
 - State management uses Riverpod (ConsumerStatefulWidget / ref.read)
 - signOutProvider handles sign-out after account deletion
 - Pre-existing warnings/info in flutter analyze (~169 issues) — all are non-error (unused imports, const suggestions, deprecated members)
+- Use `kDebugMode` from `flutter/foundation.dart` to gate debug-only UI; use `if (cond) ...[widgets]` pattern in Column children
 ---
 
 ## 2026-04-03 - US-101
@@ -22,4 +23,15 @@ Started: Fri  3 Apr 2026 14:19:53 +08
   - `withValues(alpha:)` is the non-deprecated way to set opacity on colors in Flutter
   - Dialog uses `barrierDismissible: false` to prevent accidental dismissal
   - No existing tests for settings_screen — manual browser verification needed for UI changes
+---
+
+## 2026-04-03 - US-102
+- Wrapped Dev Login button and its SizedBox spacer in `if (kDebugMode) ...[...]` so the button is completely absent from the widget tree in release builds
+- Added `import 'package:flutter/foundation.dart'` for `kDebugMode`
+- Files changed: `lib/features/auth/presentation/screens/welcome_screen.dart`
+- **Learnings for future iterations:**
+  - `kDebugMode` from `flutter/foundation.dart` is the standard way to gate debug-only UI in Flutter
+  - The `_devLogin` method remains in the file but is unreachable in release — Dart tree-shaking handles dead code
+  - Using `if (condition) ...[widgets]` in Column children is the idiomatic way to conditionally include multiple widgets
+  - No existing tests for welcome_screen — manual browser verification needed
 ---

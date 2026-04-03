@@ -28,7 +28,7 @@
         "No other auth bypass paths exist in welcome_screen.dart",
         "flutter analyze — 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-103",
