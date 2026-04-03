@@ -1,0 +1,109 @@
+{
+  "featureName": "Sprint 19-21 — Edge Cases, Confirmations & Silent Failures",
+  "description": "Fix silent failures, add missing confirmation dialogs for destructive actions, harden form validations for service listings, and improve home screen reliability for both Client and Provider roles.",
+  "branchName": "ralph/overnight-cycle-3",
+  "userStories": [
+    {
+      "id": "US-086",
+      "title": "Home Screen Sections — Show Loading & Error States Instead of Blank Space",
+      "description": "JobOffersSection, PendingReviewsSection, and the provider's ServiceListingsSection all return SizedBox.shrink() for both loading and error states. Users see blank gaps with no indication that data is loading or failed. This is confusing — users think there's nothing there rather than a failure.",
+      "acceptanceCriteria": [
+        "In JobOffersSection (home/presentation/widgets/job_offers_section.dart), replace loading SizedBox.shrink() with a shimmer placeholder or CircularProgressIndicator",
+        "In JobOffersSection, replace error SizedBox.shrink() with the existing ErrorState widget from core/widgets/error_state.dart, passing a retry callback that invalidates the provider",
+        "Apply the same loading + error treatment to PendingReviewsSection (home/presentation/widgets/pending_reviews_section.dart)",
+        "Apply the same loading + error treatment to the services listing section in ProviderHomeScreen (home/presentation/screens/provider_home_screen.dart)",
+        "Verify: kill Firestore emulator mid-session — all three sections show error state with retry button, not blank space",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-087",
+      "title": "Confirmation Dialogs for Bid Accept & Reject Actions",
+      "description": "Accepting or rejecting a bid is a significant, irreversible workflow action, but both happen on a single tap with no confirmation. A poster could accidentally reject the best bid or accept the wrong one.",
+      "acceptanceCriteria": [
+        "Before accepting a bid, show an AlertDialog: 'Accept this bid for $X from [provider name]? This will assign them to your task.' with Cancel and Accept buttons",
+        "Before rejecting a bid, show an AlertDialog: 'Reject this bid from [provider name]? They will be notified.' with Cancel and Reject buttons",
+        "The Reject button should use a red/destructive color style",
+        "While the accept/reject API call is in progress, show a loading indicator on the confirmation button and disable both buttons",
+        "If the API call fails, show an error SnackBar and keep the dialog open",
+        "flutter analyze 0 errors",
+        "Write widget test: tap accept button, verify dialog appears, confirm acceptance"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-088",
+      "title": "Enforce Account Deletion Confirmation — Require Typing DELETE",
+      "description": "The account deletion flow in SettingsScreen shows a dialog that says 'Type DELETE to confirm' but the confirmation button is always enabled — user can tap it without typing anything. This defeats the safety mechanism.",
+      "acceptanceCriteria": [
+        "In settings_screen.dart, add a TextField to the second confirmation dialog where user must type 'DELETE'",
+        "The 'Delete My Account' button in the dialog must be disabled until the TextField value exactly matches 'DELETE' (case-sensitive)",
+        "Show helper text below the field: 'Type DELETE to confirm'",
+        "Clear the TextField each time the dialog opens",
+        "The delete button should show a loading indicator while the deletion is in progress",
+        "flutter analyze 0 errors",
+        "Write widget test: open delete dialog, verify button is disabled, type DELETE, verify button becomes enabled"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-089",
+      "title": "Service Listing Validation — Require At Least One Rate & Validate Ranges",
+      "description": "CreateServiceScreen allows providers to submit a service listing with no hourly rate and no fixed rate set. Rate fields also accept negative numbers or absurdly high values. This creates broken listings that clients can't evaluate.",
+      "acceptanceCriteria": [
+        "On form submission in CreateServiceScreen, validate that at least one of hourlyRate or fixedRate is provided — show SnackBar error if both are empty",
+        "Add validators to both rate TextFields: must be a positive number if filled, minimum $1, maximum $10,000",
+        "Show inline validation errors below rate fields (not just SnackBar)",
+        "Add currency input formatter (digits + one decimal point + max 2 decimal places) to both rate fields, matching the pattern used in SubmitBidSheet",
+        "Title field: require minimum 5 characters. Description field: require minimum 20 characters",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-090",
+      "title": "Case-Insensitive Skill Tag Deduplication on Profile",
+      "description": "EditProfileScreen's _addTag() uses case-sensitive .contains() check. A provider can add both '#DogWalking' and '#dogwalking' as separate tags, creating duplicates in their profile. Tags should be case-insensitive and normalized.",
+      "acceptanceCriteria": [
+        "In EditProfileScreen._addTag(), normalize the tag comparison to lowercase before checking for duplicates",
+        "Store tags in their original casing but compare case-insensitively",
+        "If user tries to add a duplicate (case-insensitive), show a SnackBar: 'This skill is already added'",
+        "Trim whitespace from tags before adding",
+        "Validate tag is not empty and not just whitespace after trimming",
+        "Add minimum 2 characters, maximum 30 characters validation for tags",
+        "flutter analyze 0 errors",
+        "Write widget test: add tag 'Cooking', try to add 'cooking', verify duplicate is rejected"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-091",
+      "title": "Bid Duration Field — Add Upper Bound & Better UX",
+      "description": "The custom duration field in SubmitBidSheet validates only that the value is positive, but allows absurd values like 999999 minutes. The bid message field has maxLength: 200 but doesn't show a character counter. These small UX gaps confuse providers during bid submission.",
+      "acceptanceCriteria": [
+        "In SubmitBidSheet, add maximum validation to custom duration: cannot exceed 1440 minutes (24 hours). Show error: 'Duration cannot exceed 24 hours'",
+        "Add a character counter below the bid message TextField showing 'X/200 characters'",
+        "When custom duration is selected, auto-focus the duration input field",
+        "Duration input: set keyboardType to number, add inputFormatter for digits only",
+        "If provider switches from custom duration back to a preset chip, clear the custom duration field",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-092",
+      "title": "Replace Silent Empty Catch Blocks with User-Visible Error Feedback",
+      "description": "Multiple repositories and screens have empty catch blocks (catch (_) {}) that swallow errors silently. When chat creation fails, profile updates fail, or review submission fails, the user gets no feedback — the operation just appears to do nothing.",
+      "acceptanceCriteria": [
+        "Audit all catch blocks in: ChatRepository, ProfileRepository, AuthRepository, SubmitReviewScreen, BidListSection, WelcomeScreen",
+        "For each empty catch block: if the error affects user-visible behavior, re-throw or propagate the error so the calling widget can show a SnackBar",
+        "For catch blocks in repository methods called from widgets: ensure the widget layer shows an error SnackBar with a user-friendly message (not raw exception text)",
+        "For catch blocks in background operations (e.g., analytics, logging): add debugPrint() at minimum so errors are visible in dev console",
+        "Do NOT change catch blocks that intentionally swallow expected exceptions (e.g., document-not-found checks) — add a comment explaining why",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    }
+  ]
+}
