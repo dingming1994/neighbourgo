@@ -85,7 +85,7 @@
         "All validation errors show inline red helper text below the field",
         "flutter analyze — 0 errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-107",
