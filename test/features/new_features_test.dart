@@ -302,10 +302,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('📋'), findsOneWidget);
-      expect(
-        find.text('No active tasks yet.\nPost a task to get started!'),
-        findsOneWidget,
-      );
+      expect(find.text('No assigned tasks'), findsOneWidget);
+      expect(find.text('Find Tasks'), findsOneWidget);
     });
 
     _testScreen('shows task card with title and status badge', (tester) async {
@@ -332,7 +330,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('✅'), findsOneWidget);
-      expect(find.text('No completed tasks yet.'), findsOneWidget);
+      expect(find.text('No completed tasks yet'), findsOneWidget);
     });
 
     _testScreen('cancelled tab shows empty state', (tester) async {
@@ -346,7 +344,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('🚫'), findsOneWidget);
-      expect(find.text('No cancelled tasks.'), findsOneWidget);
+      expect(find.text('No cancelled tasks'), findsOneWidget);
     });
 
     _testScreen('completed tab shows completed tasks', (tester) async {
@@ -408,10 +406,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('⏳'), findsOneWidget);
-      expect(
-        find.text('No pending bids.\nBid on tasks to see them here!'),
-        findsOneWidget,
-      );
+      expect(find.text('No bids yet'), findsOneWidget);
+      expect(find.text('Browse Open Tasks'), findsOneWidget);
     });
 
     _testScreen('shows bid card with amount and status', (tester) async {
@@ -446,7 +442,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('🎉'), findsOneWidget);
-      expect(find.text('No accepted bids yet.'), findsOneWidget);
+      expect(find.text('No accepted bids yet'), findsOneWidget);
     });
 
     _testScreen('rejected tab shows empty state', (tester) async {
@@ -460,7 +456,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('📭'), findsOneWidget);
-      expect(find.text('No rejected bids.'), findsOneWidget);
+      expect(find.text('No rejected bids'), findsOneWidget);
     });
 
     _testScreen('accepted tab shows accepted bids', (tester) async {

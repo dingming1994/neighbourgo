@@ -68,6 +68,19 @@ class ServiceListingRepository {
             (s) => s.exists ? ServiceListingModelExt.fromFirestore(s) : null,
           );
 
+  // ── Upload photos ─────────────────────────────────────────────────────────
+  Future<List<String>> uploadPhotos(String listingId, List<File> photos) async {
+    final urls = <String>[];
+    for (final f in photos) {
+      final ext = f.path.split('.').last;
+      final ref = _storage.ref(
+          '${AppConstants.serviceListingPhotosPath}/$listingId/${_uuid.v4()}.$ext');
+      final t = await ref.putFile(f);
+      urls.add(await t.ref.getDownloadURL());
+    }
+    return urls;
+  }
+
   // ── Update ────────────────────────────────────────────────────────────────
   Future<void> updateListing(String listingId, Map<String, dynamic> data) async {
     await _col.doc(listingId).update(data);

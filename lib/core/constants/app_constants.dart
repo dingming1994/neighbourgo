@@ -105,6 +105,7 @@ class AppRoutes {
 
   // Services
   static const createService   = '/services/create';
+  static const editService     = '/services/:listingId/edit';
   static const serviceDetail   = '/services/:listingId';
 
   // Favorites

@@ -138,7 +138,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter your email';
-                    if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email';
+                    // Proper email regex: user@domain.tld
+                    final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$',
+                    );
+                    if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
                     return null;
                   },
                 ),

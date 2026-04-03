@@ -1,159 +1,146 @@
 # Ralph Progress Log
-Started: Fri  3 Apr 2026 13:36:39 +08
+Started: Fri  3 Apr 2026 14:19:53 +08
 ---
 
 ## Codebase Patterns
-- FakeCollectionReference.where() delegates to a shared FakeQuery — when chaining multiple .where() calls, the first is on the collection and the rest on FakeQuery. Both must track state.
-- currentUserProvider is a StreamProvider<UserModel?> — use `ref.read(currentUserProvider.future)` to await the first emission instead of `.valueOrNull` with a raw fallback.
-- Empty catch blocks should use `debugPrint` for best-effort operations (storage deletion, Firestore lookups) rather than silently swallowing errors.
-- To conditionally render multiple slivers from an AsyncValue, use `...asyncValue.when(data: (x) => [sliver1, sliver2])` with spread.
-- TaskModel extension has `isOpen`, `isAssigned`, `isCompleted` getters — prefer these over raw enum comparison.
-
-## 2026-04-03 - US-093
-- Fixed 4 failing unit tests and 3 empty catch blocks
-- **Tests fixed:**
-  1. `TaskRepository watchMyPostedTasks filters by posterId` — FakeQuery/FakeCollectionReference only tracked the *last* .where() field, overwriting 'posterId' with 'status'. Added `allWhereFields` list and `whereValues` map to track all chained .where() calls.
-  2-4. Three `EditProfileScreen` tests (Display Name/Headline/Bio, Service Categories, Save button) — `_loadUser()` fell through to `AuthRepository().fetchCurrentUser()` which hits real Firebase. Changed to `await ref.read(currentUserProvider.future)`.
-- **Empty catch blocks fixed:**
-  1. `lib/features/profile/data/repositories/profile_repository.dart:107` — storage photo deletion
-  2. `lib/features/chat/data/repositories/chat_repository.dart:150` — existing chat check
-  3. `lib/features/chat/data/repositories/chat_repository.dart:211` — task title fetch
-- Files changed:
-  - `test/tasks/task_repository_test.dart` (FakeQuery + FakeCollectionReference + assertion)
-  - `lib/features/profile/presentation/screens/edit_profile_screen.dart` (_loadUser + removed unused import)
-  - `lib/features/profile/data/repositories/profile_repository.dart` (empty catch + debugPrint import)
-  - `lib/features/chat/data/repositories/chat_repository.dart` (2 empty catches + debugPrint import)
-- **Learnings for future iterations:**
-  - When test fakes chain query methods, ensure state tracking happens at every entry point (collection and query level)
-  - StreamProvider.future is the clean way to await a provider's first value in async init methods
-  - The EditProfileScreen tests require currentUserProvider to be overridden — the stream must emit before the widget reads it
+- Delete account flow uses a two-step confirmation dialog pattern in settings_screen.dart
+- AppColors (from core/theme/app_theme.dart) is the standard way to reference colors
+- State management uses Riverpod (ConsumerStatefulWidget / ref.read)
+- signOutProvider handles sign-out after account deletion
+- Pre-existing warnings/info in flutter analyze (~169 issues) — all are non-error (unused imports, const suggestions, deprecated members)
+- Use `kDebugMode` from `flutter/foundation.dart` to gate debug-only UI; use `if (cond) ...[widgets]` pattern in Column children
+- Reusable `ErrorState` widget exists at `core/widgets/error_state.dart` — use it for all error branches instead of inline `Text('Error: $e')`
+- Use `ref.invalidate(provider)` in Riverpod error retry callbacks to re-fetch data
+- ServiceDetailScreen now uses a `serviceDetailProvider` StreamProvider (converted from raw StreamBuilder) for consistency
+- `CreateServiceScreen` supports both create and edit mode via optional `existingListing` param — reuse this pattern for other create/edit screens
+- Pass complex model objects to GoRouter routes via `state.extra` (not URL params)
+- Use `EmptyState(emoji, title, subtitle, action)` from `core/widgets/empty_state.dart` for all empty states — pass CTA buttons via `action` param
 ---
 
-## 2026-04-03 - US-094
-- Added `_ProfileCompletionCard` widget to ProviderHomeScreen
-- Card appears when `user.completeness < 70`, disappears at >= 70
-- Shows progress bar (completed/total), checklist of 7 items: avatar, display name, headline, bio, categories, photos, availability
-- Incomplete items shown first with unchecked icon, tappable → navigates to EditProfileScreen
-- Complete items shown with green checkmark and strikethrough
-- "Complete Your Profile" CTA button at bottom
-- Files changed:
-  - `lib/features/home/presentation/screens/provider_home_screen.dart` (+194 lines: import, card insertion in slivers, _ChecklistItem class, _ProfileCompletionCard widget)
+## 2026-04-03 - US-101
+- Replaced the second confirmation dialog in `_confirmDeleteAccount()` with a new `_DeleteConfirmationDialog` stateful widget
+- Added a TextField with hint 'Type DELETE to confirm' that validates input case-sensitively
+- Delete button is disabled (null onPressed) until text equals 'DELETE'
+- Added a loading spinner (CircularProgressIndicator) shown during the delete operation
+- Cancel button pops dialog with `false`, no side effects
+- Files changed: `lib/features/settings/presentation/screens/settings_screen.dart`
 - **Learnings for future iterations:**
-  - UserModel already has a `completeness` getter (0–100 score) in user_model.dart — no need to recalculate
-  - ProviderHomeScreen uses CustomScrollView with slivers — new sections go as SliverToBoxAdapter
-  - Use `AppColors.primary.withValues(alpha: 0.3)` for border styling (not withOpacity — matches existing code style)
-  - The _NoServiceCategoriesPrompt is a good reference widget for card-style prompts on this screen
+  - The settings screen had an unused import (`auth_repository.dart`) — pre-existing, don't touch
+  - `withValues(alpha:)` is the non-deprecated way to set opacity on colors in Flutter
+  - Dialog uses `barrierDismissible: false` to prevent accidental dismissal
+  - No existing tests for settings_screen — manual browser verification needed for UI changes
 ---
 
-## 2026-04-03 - US-095
-- Replaced flat "Active Tasks" list on PosterHomeScreen with three status-grouped sections
-- **Sections added:**
-  1. "Needs Your Action" — open tasks with bidCount > 0, warning-colored border, "Review Bids" button
-  2. "In Progress" — assigned/inProgress tasks, shows provider name + "Message" button
-  3. "Open" — open tasks with bidCount == 0, uses original card style
-- Each section has a header with count badge (colored pill)
-- Empty sections are hidden; "Post a Task" CTA and PendingReviewsSection remain at top
-- Used spread operator (`...`) with `tasksAsync.when()` returning `List<Widget>` to output multiple slivers
-- Files changed:
-  - `lib/features/home/presentation/screens/poster_home_screen.dart` (+234 lines, -21 lines: _SectionHeader, _NeedsActionTaskCard, _InProgressTaskCard widgets; refactored task list section)
+## 2026-04-03 - US-102
+- Wrapped Dev Login button and its SizedBox spacer in `if (kDebugMode) ...[...]` so the button is completely absent from the widget tree in release builds
+- Added `import 'package:flutter/foundation.dart'` for `kDebugMode`
+- Files changed: `lib/features/auth/presentation/screens/welcome_screen.dart`
 - **Learnings for future iterations:**
-  - TaskModel has `isOpen` and `isAssigned` extension getters — use them for status grouping instead of comparing enums directly
-  - To return multiple slivers from `.when()`, use spread (`...tasksAsync.when(...)`) returning `List<Widget>` — can't return a single sliver
-  - PosterHomeScreen keeps Post a Task CTA and PendingReviewsSection above the grouped sections
-  - `AppColors.warning` is the convention for "action needed" UI elements (matches PendingReviewsSection pattern)
+  - `kDebugMode` from `flutter/foundation.dart` is the standard way to gate debug-only UI in Flutter
+  - The `_devLogin` method remains in the file but is unreachable in release — Dart tree-shaking handles dead code
+  - Using `if (condition) ...[widgets]` in Column children is the idiomatic way to conditionally include multiple widgets
+  - No existing tests for welcome_screen — manual browser verification needed
 ---
 
-## 2026-04-03 - US-096
-- Added date separators (Today, Yesterday, formatted date) between messages on different days
-- Improved auto-scroll: only auto-scrolls when user is near bottom; tracks message count changes
-- Added scroll-to-bottom FAB that appears when user scrolls up
-- Grouped consecutive messages from same sender within 2-minute window:
-  - Tighter vertical spacing between grouped bubbles
-  - Adjusted bubble corner radii for visual continuity
-  - HH:MM time + read receipts only shown on last message in group
-- Replaced `timeago` import with `intl` for `DateFormat` in date separators
+## 2026-04-03 - US-103
+- Reused existing `ErrorState` widget from `core/widgets/error_state.dart` (has error icon, user-friendly message, and "Try Again" button)
+- Replaced inline `Text('Error: $e')` with `ErrorState(onRetry: ...)` in 4 screens:
+  - `TaskDetailScreen` — retry calls `ref.invalidate(taskDetailProvider(taskId))`
+  - `PublicProfileScreen` — retry calls `ref.invalidate(publicProfileProvider(userId))` for main profile; also fixed reviews error state with `ref.invalidate(userReviewsProvider(userId))`
+  - `ServiceDetailScreen` — converted from raw `StreamBuilder` to `StreamProvider.family` (`serviceDetailProvider`) for consistency with other screens; retry calls `ref.invalidate(serviceDetailProvider(listingId))`
+  - `ChatThreadScreen` — retry calls `ref.invalidate(messagesStreamProvider(widget.chatId))`
 - Files changed:
-  - `lib/features/chat/presentation/screens/chat_thread_screen.dart` (+201 lines, -67 lines: _DateSeparator widget, grouping logic, FAB, scroll listener)
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart`
 - **Learnings for future iterations:**
-  - ChatThreadScreen uses ListView.builder with ScrollController — add listeners in initState, remove in dispose
-  - `intl` package is already in pubspec.yaml — use `DateFormat` for formatted dates
-  - Pre-existing `withOpacity` deprecation warnings exist in this file (4 instances) — they are info-level, not errors
-  - Message grouping window of 2 minutes works well for chat UX — same sender + within 2 min = grouped
-  - `FloatingActionButton.small` is good for in-content action buttons like scroll-to-bottom
+  - `ErrorState` widget already existed in `core/widgets/` — always check for existing reusable widgets before creating new ones
+  - Converting `StreamBuilder` to `StreamProvider.family` enables `ref.invalidate()` for retry, which is cleaner than rebuilding with setState
+  - PublicProfileScreen has two separate error states (profile + reviews) — both need updating when fixing error handling
+  - Manual browser verification needed — no tests cover these error states
 ---
 
-## 2026-04-03 - US-097
-- Redesigned TaskDetailScreen with sticky bottom bar, card containers, and visual hierarchy
-- **Changes:**
-  1. Sticky bottom bar: Moved action buttons (Submit Bid, Mark Complete, Start Work, Message) to `Scaffold.bottomNavigationBar` with shadow
-  2. Card containers: Created `_SectionCard` widget wrapping budget, description, details, timeline, and poster info sections with subtle box shadow
-  3. Budget: Large `headlineMedium` font in primary color with dedicated card
-  4. Category chip + urgency badge: Horizontal row below photos with colored `_UrgencyBadge` widget (ASAP=red, Today=amber, Flexible=green)
-  5. 'Posted X ago': Uses `timeago` package near title
-  6. Category placeholder: `_CategoryPlaceholder` widget with emoji + label when no photos
+## 2026-04-03 - US-104
+- Added `LinearProgressIndicator` below search bar in `discover_screen.dart` that shows during 300ms debounce period (tracks `_isDebouncing` state)
+- Added `_SearchEmptyView` widget to all 3 tab screens showing "No results for 'query'" with `search_off_rounded` icon and suggestion to adjust filters
+- Added `_SearchResultCount` widget showing "N tasks/providers/services found" between category filter bar and list when search has results
+- Clearing search resets to default unfiltered view (already worked, debounce cancel added for cleanliness)
 - Files changed:
-  - `lib/features/tasks/presentation/screens/task_detail_screen.dart` (+287 lines, -137 lines: new widgets _SectionCard, _UrgencyBadge, _CategoryPlaceholder; restructured body layout; sticky bottomNavigationBar)
+  - `lib/features/discover/presentation/screens/discover_screen.dart`
+  - `lib/features/tasks/presentation/screens/task_list_screen.dart`
+  - `lib/features/providers/presentation/screens/provider_directory_screen.dart`
+  - `lib/features/services/presentation/screens/service_listings_screen.dart`
 - **Learnings for future iterations:**
-  - `Scaffold.bottomNavigationBar` is the cleanest way to add a sticky bottom bar — no need for Stack/Positioned
-  - `timeago` package is already in pubspec.yaml — use `timeago.format(dateTime)` for relative time strings
-  - Action buttons logic must be computed before the Scaffold return to use in both body and bottomNavigationBar
-  - TaskModel has `budgetDisplay` extension getter that already formats the S$ budget range nicely
-  - Pre-existing warnings in test files (sealed class, const constructors) are info/warning level only — no errors
+  - Search is purely client-side (filters already-loaded items) — no server round-trip, so "loading" is really just the debounce delay
+  - Each tab screen (Tasks, Providers, Services) has its own `_EmptyView` and `_buildBody` — changes must be applied to all three separately
+  - `ServiceListingsScreen` uses `StreamProvider` + `.when()` pattern (different from Tasks/Providers which use `StateNotifier`), so result count widget is inserted differently (inside the `data:` callback as a wrapping `Column`)
+  - Manual browser verification needed — no tests cover search UX states
 ---
 
-## 2026-04-03 - US-098
-- Redesigned provider directory cards with new layout and Quick Hire button
-- **Changes:**
-  1. Card elevation: Replaced flat border with box shadow (`blurRadius: 8, offset: (0,2)`) for depth
-  2. Avatar online indicator: Moved from inline dot to overlay badge on avatar (green dot with white border)
-  3. Rating stars: Added 5-star visual display (filled/half/outline) with numeric rating and review count
-  4. Neighbourhood + rate row: Combined location and starting rate on same line for compactness
-  5. Hire button: Added `ElevatedButton` on bottom-right that initiates direct-hire flow via `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, and `preSelectedCategory` extras
-  6. Kept favorite heart, headline, category chips
+## 2026-04-03 - US-105
+- Added Edit (pencil) and Delete (trash) icon buttons to `ServiceDetailScreen` SliverAppBar, visible only when `currentUser.uid == listing.providerId`
+- Extended `CreateServiceScreen` with optional `existingListing` parameter for edit mode — pre-populates all form fields (category, title, description, pricing, availability, photos)
+- Existing photos shown as network images with remove buttons; new photos can be added alongside them (max 6 total)
+- Added `uploadPhotos()` helper to `ServiceListingRepository` to handle photo uploads separately from creation
+- Edit mode calls `updateListing()` with field map and shows "Service listing updated!" snackbar
+- Delete shows confirmation dialog; confirming calls `deleteListing()`, shows snackbar, and pops back
+- Non-owners see no edit/delete buttons (controlled by `isOwnListing` check)
+- Added `editService` route (`/services/:listingId/edit`) to `AppRoutes` and `app_router.dart`; passes `ServiceListingModel` via `extra`
 - Files changed:
-  - `lib/features/providers/presentation/screens/provider_directory_screen.dart` (+124 lines, -53 lines: redesigned `_ProviderCard` widget)
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `lib/features/services/presentation/screens/create_service_screen.dart`
+  - `lib/features/services/data/repositories/service_listing_repository.dart`
+  - `lib/core/constants/app_constants.dart`
+  - `lib/core/router/app_router.dart`
 - **Learnings for future iterations:**
-  - Direct hire flow is triggered by pushing `AppRoutes.postTask` with extras map containing `directHireProviderId`, `directHireProviderName`, and optional `preSelectedCategory`
-  - `UserModel.stats?.totalReviews` gives review count; `stats?.avgRating` gives 0.0–5.0 rating
-  - `BoxShadow` with `Colors.black.withValues(alpha: 0.06)` and `blurRadius: 8` matches the subtle shadow style used in task detail cards (US-097 `_SectionCard`)
-  - For star ratings, use `floor()` for full stars, check `% 1 >= 0.5` for half star, rest are outline
+  - `CreateServiceScreen` now supports both create and edit modes via optional `existingListing` param — reuse this pattern for other screens
+  - GoRouter `extra` is the cleanest way to pass complex objects (like models) to routes without serialization
+  - Repository already had `updateListing` and `deleteListing` methods — always check existing repo methods before adding new ones
+  - Photo management in edit mode needs two lists: `_existingPhotoUrls` (network URLs to keep) and `_photos` (new local files to upload)
+  - Manual browser verification needed — no tests cover service edit/delete flow
 ---
 
-## 2026-04-03 - US-099
-- Converted Services tab from list view to 2-column grid with redesigned cards
-- **Changes:**
-  1. ServiceListingsScreen: Replaced `ListView.separated` with `GridView.builder` (2 columns, `childAspectRatio: 0.58`)
-  2. ServiceCard: Redesigned for compact grid layout — cover photo with `AspectRatio(16/10)`, title, provider name, rating badge ("New"), price, location, and full-width Hire button
-  3. Hire button on card: Direct-hire flow via `AppRoutes.postTask` with extras (same pattern as US-098 provider cards)
-  4. Box shadow on cards matching the subtle shadow style from US-097/US-098
-  5. Shimmer loading: Updated to 2-column grid with 6 placeholder cards
+## 2026-04-03 - US-106
+- Upgraded email validation in `email_auth_screen.dart` from basic `@` and `.` check to proper regex that rejects `user@`, `user@.com`, etc.
+- Changed bid amount validator in `submit_bid_sheet.dart`: removed hard error at 2× budget, added warning `Chip` with orange styling that appears dynamically via `onChanged` — still allows submission
+- Added `helperText: 'Min S$5'` to the minimum budget field in `post_task_screen.dart`
+- Converted rate `TextField` to `TextFormField` in `edit_profile_screen.dart` with `FilteringTextInputFormatter` for decimals and validator enforcing S$1–S$500 range
+- Added `import 'package:flutter/services.dart'` to edit_profile_screen for `FilteringTextInputFormatter`
 - Files changed:
-  - `lib/features/services/presentation/widgets/service_card.dart` (complete rewrite for grid layout)
-  - `lib/features/services/presentation/screens/service_listings_screen.dart` (ListView→GridView, shimmer grid)
+  - `lib/features/auth/presentation/screens/email_auth_screen.dart`
+  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
+  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
 - **Learnings for future iterations:**
-  - DiscoverScreen already had 3 tabs (Tasks, Providers, Services) with `DiscoverSegment` enum — no tab addition needed
-  - ServiceListingsScreen supports `embedded` mode for use inside DiscoverScreen
-  - `childAspectRatio: 0.58` works well for service cards with photo + details + button in 2-column grid
-  - ServiceListingModel has no rating field — used "★ New" placeholder; real ratings would need model changes + Firestore migration
-  - Direct hire flow is consistent: push `AppRoutes.postTask` with `directHireProviderId`, `directHireProviderName`, `preSelectedCategory` extras
+  - Rate fields in edit_profile_screen were plain `TextField` (not `TextFormField`) — always check widget type when adding validators
+  - `FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))` is the standard pattern for decimal currency input across the codebase
+  - Warning chips (non-blocking) are preferred over hard validation errors for soft limits — use `onChanged` + `setState` for real-time warning display
+  - Manual browser verification needed — no tests cover form validation edge cases
 ---
 
-## 2026-04-03 - US-100
-- Redesigned NotificationListScreen with date grouping, action buttons, swipe-to-dismiss, and mark all read
-- **Changes:**
-  1. Date grouping: Notifications grouped into Today, Yesterday, Earlier sections with styled headers
-  2. Action buttons: Per-type contextual buttons — "View Bids" (bid_received), "View Task" (bid_accepted/rejected/completed), "Reply" (new_message), "Leave Review" (review_received)
-  3. Swipe-to-dismiss: `Dismissible` widget with endToStart direction marks notification as read
-  4. Mark All Read: `TextButton.icon` in AppBar, only shown when unreadCount > 0, uses batch Firestore write
-  5. Providers: Added `markNotificationAsRead()` and `markAllNotificationsAsRead()` helper functions with shared `_itemsCol()` accessor
-  6. Unread badge: Already existed on NotificationBell (no changes needed)
+## 2026-04-03 - US-107
+- Replaced all inline empty state implementations with the reusable `EmptyState` widget from `core/widgets/empty_state.dart`
+- Added actionable CTA buttons to primary empty states:
+  - ChatListScreen: "No conversations yet" + "Browse Tasks" button (navigates to Discover)
+  - MyTasksScreen (Active tab): "No assigned tasks" + "Find Tasks" button (navigates to Discover)
+  - MyBidsScreen (Pending tab): "No bids yet" + "Browse Open Tasks" button (navigates to Discover)
+  - PosterHomeScreen: "Post your first task" + "Post a Task" button (navigates to post task flow)
+- Secondary tabs (Completed, Cancelled, Accepted, Rejected) use EmptyState without CTA buttons
+- Updated `_TaskList` and `_BidTab` widget parameters from `emptyMessage` to `emptyTitle`/`emptySubtitle`/`emptyAction`
+- Updated 7 tests in `new_features_test.dart` and `profile_chat_nav_test.dart` to match new empty state text
+- Used `Builder` widget wrapper for CTA buttons in const widget constructors to get a valid `BuildContext` for `context.push()`
 - Files changed:
-  - `lib/features/notifications/domain/providers/notification_providers.dart` (+19 lines: markNotificationAsRead, markAllNotificationsAsRead, _itemsCol helper)
-  - `lib/features/notifications/presentation/screens/notification_list_screen.dart` (rewrite: +269 lines, -66 lines: _NotificationGroup model, _groupByDate, _DateGroup, redesigned _NotificationTile with Dismissible, _ActionButton, shared _navigateByType)
+  - `lib/features/chat/presentation/screens/chat_list_screen.dart`
+  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+  - `lib/features/home/presentation/screens/poster_home_screen.dart`
+  - `test/features/new_features_test.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
 - **Learnings for future iterations:**
-  - Firestore batch writes are the right pattern for "mark all read" — avoids N individual writes
-  - `Dismissible` widget needs a `ValueKey` on the notification ID for proper list reconciliation
-  - The notification bell widget already had unread count badge — check existing code before adding features
-  - Notification types map cleanly to action labels: bid_received→View Bids, new_message→Reply, review_received→Leave Review
-  - Date grouping with `DateTime(y,m,d)` comparison to `today`/`yesterday` is cleaner than string formatting
+  - `EmptyState` widget in `core/widgets/empty_state.dart` supports an optional `action` widget — use it for CTA buttons instead of creating custom empty states
+  - When replacing empty state text in screens, always search tests for the old text strings — multiple test files may assert on empty state content
+  - Use `Builder` widget to wrap action buttons that need `context.push()` when passed as constructor params (avoids needing a StatelessWidget wrapper)
+  - PosterHomeScreen already has a "Post a Task" CTA at the top — the empty state CTA duplicates this intentionally to guide new users
+  - Manual browser verification needed — no tests cover CTA button navigation
 ---

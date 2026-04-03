@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/task_model.dart';
@@ -61,9 +63,24 @@ class MyTasksScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
-            _TaskList(provider: _activeTasksProvider, emptyEmoji: '📋', emptyMessage: 'No active tasks yet.\nPost a task to get started!'),
-            _TaskList(provider: _completedTasksProvider, emptyEmoji: '✅', emptyMessage: 'No completed tasks yet.'),
-            _TaskList(provider: _cancelledTasksProvider, emptyEmoji: '🚫', emptyMessage: 'No cancelled tasks.'),
+            _TaskList(
+              provider: _activeTasksProvider,
+              emptyEmoji: '📋',
+              emptyTitle: 'No assigned tasks',
+              emptySubtitle: 'Find tasks to work on in the Discover tab',
+              emptyAction: Builder(builder: (context) => ElevatedButton.icon(
+                onPressed: () => context.push(AppRoutes.taskList),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+                ),
+                icon: const Icon(Icons.search, size: 18),
+                label: const Text('Find Tasks'),
+              )),
+            ),
+            _TaskList(provider: _completedTasksProvider, emptyEmoji: '✅', emptyTitle: 'No completed tasks yet'),
+            _TaskList(provider: _cancelledTasksProvider, emptyEmoji: '🚫', emptyTitle: 'No cancelled tasks'),
           ],
         ),
       ),
@@ -77,12 +94,16 @@ class MyTasksScreen extends ConsumerWidget {
 class _TaskList extends ConsumerWidget {
   final AutoDisposeStreamProvider<List<TaskModel>> provider;
   final String emptyEmoji;
-  final String emptyMessage;
+  final String emptyTitle;
+  final String? emptySubtitle;
+  final Widget? emptyAction;
 
   const _TaskList({
     required this.provider,
     required this.emptyEmoji,
-    required this.emptyMessage,
+    required this.emptyTitle,
+    this.emptySubtitle,
+    this.emptyAction,
   });
 
   @override
@@ -97,22 +118,11 @@ class _TaskList extends ConsumerWidget {
       ),
       data: (tasks) {
         if (tasks.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(emptyEmoji, style: const TextStyle(fontSize: 56)),
-                  const SizedBox(height: 16),
-                  Text(
-                    emptyMessage,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
+          return EmptyState(
+            emoji: emptyEmoji,
+            title: emptyTitle,
+            subtitle: emptySubtitle,
+            action: emptyAction,
           );
         }
         return RefreshIndicator(

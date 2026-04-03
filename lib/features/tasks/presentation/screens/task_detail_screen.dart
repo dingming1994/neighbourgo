@@ -9,6 +9,7 @@ import '../../data/models/task_model.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../bids/presentation/widgets/bid_list_section.dart';
 import '../../../bids/presentation/widgets/submit_bid_sheet.dart';
@@ -37,8 +38,11 @@ class TaskDetailScreen extends ConsumerWidget {
     return taskAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) =>
-          Scaffold(body: Center(child: Text('Error: $e'))),
+      error: (e, _) => Scaffold(
+        body: ErrorState(
+          onRetry: () => ref.invalidate(taskDetailProvider(taskId)),
+        ),
+      ),
       data: (task) {
         if (task == null) {
           return const Scaffold(

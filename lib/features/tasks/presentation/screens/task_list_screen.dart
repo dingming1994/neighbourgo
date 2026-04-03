@@ -120,7 +120,20 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
           filterCount: filter.activeCount,
           onFilterTap: () => showTaskFilterSheet(context, ref),
         ),
-        Expanded(child: _buildBody(filteredState)),
+        if (searchQuery.isNotEmpty &&
+            !filteredState.isLoading &&
+            filteredState.error == null &&
+            filteredState.tasks.isNotEmpty)
+          _SearchResultCount(
+            count: filteredState.tasks.length,
+            label: 'task',
+          ),
+        Expanded(
+          child: _buildBody(
+            filteredState,
+            searchQuery: searchQuery,
+          ),
+        ),
       ],
     );
 
@@ -147,7 +160,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
     );
   }
 
-  Widget _buildBody(TaskListState state) {
+  Widget _buildBody(TaskListState state, {String searchQuery = ''}) {
     if (state.isLoading) return const _LoadingList();
 
     if (state.error != null) {
@@ -157,7 +170,11 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
       );
     }
 
-    if (state.tasks.isEmpty) return const _EmptyView();
+    if (state.tasks.isEmpty) {
+      return searchQuery.isNotEmpty
+          ? _SearchEmptyView(query: searchQuery)
+          : const _EmptyView();
+    }
 
     return RefreshIndicator(
       color: AppColors.primary,
@@ -648,6 +665,70 @@ class _EmptyView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchEmptyView extends StatelessWidget {
+  final String query;
+  const _SearchEmptyView({required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.search_off_rounded,
+              size: 64,
+              color: AppColors.textHint,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'No results for "$query"',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Try adjusting your search or filters',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultCount extends StatelessWidget {
+  final int count;
+  final String label;
+  const _SearchResultCount({required this.count, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      color: AppColors.bgLight,
+      child: Text(
+        '$count ${label}${count != 1 ? 's' : ''} found',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

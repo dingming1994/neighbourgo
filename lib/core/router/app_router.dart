@@ -25,6 +25,7 @@ import '../../features/notifications/presentation/screens/notification_list_scre
 import '../../features/payment/checkout_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../../features/providers/presentation/screens/provider_directory_screen.dart';
+import '../../features/services/data/models/service_listing_model.dart';
 import '../../features/services/presentation/screens/create_service_screen.dart';
 import '../../features/services/presentation/screens/service_detail_screen.dart';
 import '../../features/tasks/presentation/screens/my_tasks_screen.dart';
@@ -149,6 +150,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.createService,
         builder: (_, __) => const CreateServiceScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editService,
+        builder: (_, state) => CreateServiceScreen(
+          existingListing: state.extra as ServiceListingModel?,
+        ),
       ),
       GoRoute(
         path: AppRoutes.serviceDetail,

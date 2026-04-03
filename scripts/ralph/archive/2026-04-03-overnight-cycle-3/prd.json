@@ -1,0 +1,120 @@
+{
+  "featureName": "Sprint 22-30 — Deep User Experience Polish (6-hour cycle)",
+  "description": "As a deep user of NeighbourGo who is both a Client and Provider, fix the most impactful UX issues: broken tests, missing task status visibility, provider onboarding gaps, chat UX, and visual polish.",
+  "branchName": "ralph/deep-ux-cycle-1",
+  "userStories": [
+    {
+      "id": "US-093",
+      "title": "Fix 4 Failing Unit Tests + 3 Empty Catch Blocks",
+      "description": "The test suite has 4 failures and 3 empty catch blocks remaining. Fix them all.",
+      "acceptanceCriteria": [
+        "Run flutter test, identify all 4 failing tests",
+        "Fix each failing test — update test to match current code or fix code if test exposed a real bug",
+        "Find and fix all 3 remaining empty catch blocks in lib/",
+        "flutter test — 0 failures",
+        "flutter analyze — 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-094",
+      "title": "Provider Onboarding — Profile Completion Checklist",
+      "description": "New Providers land on ProviderHomeScreen with empty profile. Add a completion checklist card that guides them to set up avatar, categories, rates, photos.",
+      "acceptanceCriteria": [
+        "Create _ProfileCompletionCard widget on ProviderHomeScreen when completenessScore < 70",
+        "Shows progress bar, checklist of missing items (avatar, headline, bio, categories, rates, availability, photo)",
+        "Each item tappable — navigates to EditProfileScreen",
+        "Card disappears when completenessScore >= 70",
+        "CTA button: 'Complete Your Profile'",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-095",
+      "title": "Client Home — Status-Grouped Task Dashboard",
+      "description": "Replace plain task list on PosterHomeScreen with action-oriented sections: Needs Action (new bids), In Progress, Open.",
+      "acceptanceCriteria": [
+        "Group tasks by: 'Needs Your Action' (tasks with bids to review), 'In Progress', 'Open' (waiting for bids)",
+        "Each section has header with count badge",
+        "'Needs Action' cards show bid count + 'Review Bids' button",
+        "'In Progress' cards show provider name + 'Message' quick action",
+        "Empty sections hidden, keep 'Post a Task' CTA at top",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-096",
+      "title": "Chat UX — Date Separators, Auto-Scroll, Message Grouping",
+      "description": "Improve chat: add date separators, auto-scroll to bottom, group consecutive messages from same sender.",
+      "acceptanceCriteria": [
+        "Date separators between messages on different days (Today, Yesterday, date)",
+        "Auto-scroll to bottom on open and new message",
+        "Scroll-to-bottom FAB when scrolled up with new messages",
+        "Show HH:MM time next to each bubble",
+        "Group consecutive messages from same sender (no repeated avatar)",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-097",
+      "title": "Task Detail — Sticky Actions + Visual Hierarchy",
+      "description": "Task detail is a wall of text. Move actions to sticky bottom bar, add card containers, prominent budget display.",
+      "acceptanceCriteria": [
+        "Sticky bottom bar with primary action buttons (Submit Bid / Mark Complete / Message)",
+        "Card containers around each section with subtle shadow",
+        "Budget large font in primary color with S$ prefix",
+        "Category chip + urgency badge in horizontal row below photos",
+        "'Posted X ago' near title",
+        "Category placeholder image when no photos",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-098",
+      "title": "Provider Directory — Redesigned Cards + Quick Hire",
+      "description": "Provider cards need: rating stars, price, categories, and a Hire button directly on the card.",
+      "acceptanceCriteria": [
+        "Card layout: avatar (left), name + headline + stars (center), Hire button (right)",
+        "Top 2 categories as small chips, starting rate 'From S$XX/hr'",
+        "Neighbourhood with location icon, review count",
+        "Card with elevation/shadow and rounded corners",
+        "Hire button initiates direct-hire flow directly",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-099",
+      "title": "Services Tab in Discover — Grid View of Service Listings",
+      "description": "Add 'Services' as third tab in Discover. Show service listings in 2-column grid with photos, prices, hire button.",
+      "acceptanceCriteria": [
+        "Add 'Services' tab in DiscoverScreen (Tasks | Providers | Services)",
+        "2-column grid of service listing cards",
+        "Each card: cover photo, title, provider name, price, rating",
+        "Category filter chips at top",
+        "Tap opens ServiceDetailScreen, Hire button for quick action",
+        "Shimmer loading",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-100",
+      "title": "Notification Improvements — Actions, Grouping, Mark All Read",
+      "description": "Notifications need contextual action buttons, date grouping, swipe to dismiss, and mark all read.",
+      "acceptanceCriteria": [
+        "Unread count badge on notification bell icon",
+        "Action button per notification type: View Bids, View Task, Reply, Leave Review",
+        "Swipe-to-dismiss marks as read",
+        "'Mark All as Read' button in AppBar",
+        "Group by date: Today, Yesterday, Earlier",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    }
+  ]
+}

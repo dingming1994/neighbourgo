@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
@@ -54,11 +56,26 @@ class MyBidsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            _BidTab(status: BidStatus.pending, emptyEmoji: '⏳', emptyMessage: 'No pending bids.\nBid on tasks to see them here!'),
-            _BidTab(status: BidStatus.accepted, emptyEmoji: '🎉', emptyMessage: 'No accepted bids yet.'),
-            _BidTab(status: BidStatus.rejected, emptyEmoji: '📭', emptyMessage: 'No rejected bids.'),
+            _BidTab(
+              status: BidStatus.pending,
+              emptyEmoji: '⏳',
+              emptyTitle: 'No bids yet',
+              emptySubtitle: 'Browse open tasks and place your first bid',
+              emptyAction: Builder(builder: (context) => ElevatedButton.icon(
+                onPressed: () => context.push(AppRoutes.taskList),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+                ),
+                icon: const Icon(Icons.search, size: 18),
+                label: const Text('Browse Open Tasks'),
+              )),
+            ),
+            const _BidTab(status: BidStatus.accepted, emptyEmoji: '🎉', emptyTitle: 'No accepted bids yet'),
+            const _BidTab(status: BidStatus.rejected, emptyEmoji: '📭', emptyTitle: 'No rejected bids'),
           ],
         ),
       ),
@@ -72,12 +89,16 @@ class MyBidsScreen extends ConsumerWidget {
 class _BidTab extends ConsumerWidget {
   final BidStatus status;
   final String emptyEmoji;
-  final String emptyMessage;
+  final String emptyTitle;
+  final String? emptySubtitle;
+  final Widget? emptyAction;
 
   const _BidTab({
     required this.status,
     required this.emptyEmoji,
-    required this.emptyMessage,
+    required this.emptyTitle,
+    this.emptySubtitle,
+    this.emptyAction,
   });
 
   @override
@@ -93,22 +114,11 @@ class _BidTab extends ConsumerWidget {
       data: (allBids) {
         final bids = allBids.where((b) => b.status == status).toList();
         if (bids.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(emptyEmoji, style: const TextStyle(fontSize: 56)),
-                  const SizedBox(height: 16),
-                  Text(
-                    emptyMessage,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
+          return EmptyState(
+            emoji: emptyEmoji,
+            title: emptyTitle,
+            subtitle: emptySubtitle,
+            action: emptyAction,
           );
         }
         return RefreshIndicator(

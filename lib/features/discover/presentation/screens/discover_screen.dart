@@ -36,6 +36,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
+  bool _isDebouncing = false;
 
   @override
   void dispose() {
@@ -46,15 +47,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
+    if (value.trim().toLowerCase() !=
+        ref.read(discoverSearchQueryProvider)) {
+      setState(() => _isDebouncing = true);
+    }
     _debounce = Timer(const Duration(milliseconds: 300), () {
       ref.read(discoverSearchQueryProvider.notifier).state =
           value.trim().toLowerCase();
+      if (mounted) setState(() => _isDebouncing = false);
     });
   }
 
   void _clearSearch() {
+    _debounce?.cancel();
     _searchController.clear();
     ref.read(discoverSearchQueryProvider.notifier).state = '';
+    setState(() => _isDebouncing = false);
   }
 
   @override
@@ -133,6 +141,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ),
           ),
+          if (_isDebouncing)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              color: AppColors.primary,
+              backgroundColor: Colors.transparent,
+            ),
           _SegmentedToggle(
             selected: segment,
             onChanged: (s) =>

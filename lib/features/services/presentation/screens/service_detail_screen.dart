@@ -6,9 +6,19 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/service_listing_model.dart';
 import '../../data/repositories/service_listing_repository.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider
+// ─────────────────────────────────────────────────────────────────────────────
+final serviceDetailProvider =
+    StreamProvider.family<ServiceListingModel?, String>(
+  (ref, id) =>
+      ref.watch(serviceListingRepositoryProvider).watchListing(id),
+);
 
 class ServiceDetailScreen extends ConsumerWidget {
   final String listingId;
@@ -17,21 +27,19 @@ class ServiceDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final listingStream = ref
-        .watch(serviceListingRepositoryProvider)
-        .watchListing(listingId);
+    final listingAsync = ref.watch(serviceDetailProvider(listingId));
 
-    return StreamBuilder<ServiceListingModel?>(
-      stream: listingStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final listing = snapshot.data;
+    return listingAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: ErrorState(
+          onRetry: () => ref.invalidate(serviceDetailProvider(listingId)),
+        ),
+      ),
+      data: (listing) {
         if (listing == null) {
           return Scaffold(
             appBar: AppBar(),
@@ -44,6 +52,49 @@ class ServiceDetailScreen extends ConsumerWidget {
         return _DetailContent(listing: listing);
       },
     );
+  }
+}
+
+Future<void> _confirmDelete(
+    BuildContext context, WidgetRef ref, String listingId) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete listing?'),
+      content:
+          const Text('This will permanently delete your service listing.'),
+      actions: [
+        TextButton(
+          onPressed: () => ctx.pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => ctx.pop(true),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    try {
+      await ref
+          .read(serviceListingRepositoryProvider)
+          .deleteListing(listingId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Service listing deleted')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: $e')),
+        );
+      }
+    }
   }
 }
 
@@ -68,6 +119,25 @@ class _DetailContent extends ConsumerWidget {
           SliverAppBar(
             expandedHeight: listing.photoUrls.isNotEmpty ? 250 : 120,
             pinned: true,
+            actions: isOwnListing
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit listing',
+                      onPressed: () => context.push(
+                        AppRoutes.editService
+                            .replaceFirst(':listingId', listing.id),
+                        extra: listing,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete listing',
+                      onPressed: () =>
+                          _confirmDelete(context, ref, listing.id),
+                    ),
+                  ]
+                : null,
             flexibleSpace: FlexibleSpaceBar(
               background: listing.photoUrls.isNotEmpty
                   ? PageView(

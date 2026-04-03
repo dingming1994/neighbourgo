@@ -60,25 +60,41 @@ class ServiceListingsScreen extends ConsumerWidget {
                           s.description.toLowerCase().contains(searchQuery) ||
                           s.providerName.toLowerCase().contains(searchQuery);
                     }).toList();
-              if (listings.isEmpty) return const _EmptyView();
-              return RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: () async {
-                  ref.invalidate(_serviceListingsProvider);
-                },
-                child: GridView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: AppSpacing.sm,
-                    mainAxisSpacing: AppSpacing.sm,
-                    childAspectRatio: 0.58,
+              if (listings.isEmpty) {
+                return searchQuery.isNotEmpty
+                    ? _SearchEmptyView(query: searchQuery)
+                    : const _EmptyView();
+              }
+              return Column(
+                children: [
+                  if (searchQuery.isNotEmpty)
+                    _SearchResultCount(
+                      count: listings.length,
+                      label: 'service',
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      color: AppColors.primary,
+                      onRefresh: () async {
+                        ref.invalidate(_serviceListingsProvider);
+                      },
+                      child: GridView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: AppSpacing.sm,
+                          mainAxisSpacing: AppSpacing.sm,
+                          childAspectRatio: 0.58,
+                        ),
+                        itemCount: listings.length,
+                        itemBuilder: (_, i) =>
+                            ServiceCard(listing: listings[i]),
+                      ),
+                    ),
                   ),
-                  itemCount: listings.length,
-                  itemBuilder: (_, i) => ServiceCard(listing: listings[i]),
-                ),
+                ],
               );
             },
           ),
@@ -260,6 +276,68 @@ class _EmptyView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchEmptyView extends StatelessWidget {
+  final String query;
+  const _SearchEmptyView({required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.search_off_rounded,
+              size: 64,
+              color: AppColors.textHint,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'No results for "$query"',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'Try adjusting your search or filters',
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultCount extends StatelessWidget {
+  final int count;
+  final String label;
+  const _SearchResultCount({required this.count, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      color: AppColors.bgLight,
+      child: Text(
+        '$count ${label}${count != 1 ? 's' : ''} found',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

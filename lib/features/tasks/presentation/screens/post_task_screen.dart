@@ -474,7 +474,7 @@ class _StepBudgetState extends State<_StepBudget> {
             controller: _minCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
-            decoration: const InputDecoration(prefixText: 'S\$ '),
+            decoration: const InputDecoration(prefixText: 'S\$ ', helperText: 'Min S\$5'),
             onChanged: (v) { _min = double.tryParse(v) ?? 0; widget.onBudgetChanged(_min, _max); },
             validator: (v) {
               final n = double.tryParse(v ?? '');
