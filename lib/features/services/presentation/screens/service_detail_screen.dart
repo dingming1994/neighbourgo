@@ -6,9 +6,19 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/service_listing_model.dart';
 import '../../data/repositories/service_listing_repository.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider
+// ─────────────────────────────────────────────────────────────────────────────
+final serviceDetailProvider =
+    StreamProvider.family<ServiceListingModel?, String>(
+  (ref, id) =>
+      ref.watch(serviceListingRepositoryProvider).watchListing(id),
+);
 
 class ServiceDetailScreen extends ConsumerWidget {
   final String listingId;
@@ -17,21 +27,19 @@ class ServiceDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final listingStream = ref
-        .watch(serviceListingRepositoryProvider)
-        .watchListing(listingId);
+    final listingAsync = ref.watch(serviceDetailProvider(listingId));
 
-    return StreamBuilder<ServiceListingModel?>(
-      stream: listingStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final listing = snapshot.data;
+    return listingAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: ErrorState(
+          onRetry: () => ref.invalidate(serviceDetailProvider(listingId)),
+        ),
+      ),
+      data: (listing) {
         if (listing == null) {
           return Scaffold(
             appBar: AppBar(),

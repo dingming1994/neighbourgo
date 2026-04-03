@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/image_validator.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../domain/models/message_model.dart';
@@ -194,7 +195,9 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
             child: messagesAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => ErrorState(
+                onRetry: () => ref.invalidate(messagesStreamProvider(widget.chatId)),
+              ),
               data: (messages) {
                 if (messages.isEmpty) {
                   return Center(

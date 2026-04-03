@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -43,7 +44,11 @@ class PublicProfileScreen extends ConsumerWidget {
 
     return profileAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error:   (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      error: (e, _) => Scaffold(
+        body: ErrorState(
+          onRetry: () => ref.invalidate(publicProfileProvider(userId)),
+        ),
+      ),
       data:    (user) {
         if (user == null) return const Scaffold(body: Center(child: Text('User not found')));
         return Scaffold(
@@ -277,7 +282,9 @@ class PublicProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       reviewsAsync.when(
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        error:   (e, _) => Text('Error: $e'),
+                        error: (e, _) => ErrorState(
+                          onRetry: () => ref.invalidate(userReviewsProvider(userId)),
+                        ),
                         data:    (reviews) => reviews.isEmpty
                             ? const EmptyState(emoji: '💬', title: 'No reviews yet')
                             : Column(
