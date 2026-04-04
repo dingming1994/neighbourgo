@@ -14,6 +14,8 @@ import 'package:neighbourgo/features/bids/presentation/screens/my_bids_screen.da
 import 'package:neighbourgo/features/discover/presentation/screens/discover_screen.dart';
 import 'package:neighbourgo/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:neighbourgo/features/favorites/presentation/screens/favorites_screen.dart';
+import 'package:neighbourgo/features/home/presentation/widgets/job_offers_section.dart';
+import 'package:neighbourgo/features/home/presentation/widgets/pending_reviews_section.dart';
 import 'package:neighbourgo/features/notifications/domain/providers/notification_providers.dart';
 import 'package:neighbourgo/features/notifications/presentation/screens/notification_list_screen.dart';
 import 'package:neighbourgo/features/profile/data/repositories/profile_repository.dart';
@@ -616,6 +618,104 @@ void main() {
       await tester.tap(heartFinder);
       await tester.pump();
       // No crash = success (the fake repo handles the toggle)
+    });
+
+    _testScreen('shows unavailable state when a saved task no longer exists',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const FavoritesScreen(),
+        overrides(
+          favorites: [
+            const FavoriteItem(
+              itemId: 'missing-task',
+              type: 'task',
+            ),
+          ],
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved task unavailable'), findsOneWidget);
+      expect(find.text('Remove'), findsOneWidget);
+    });
+
+    _testScreen('shows unavailable state when a saved provider no longer exists',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const FavoritesScreen(),
+        overrides(
+          favorites: [
+            const FavoriteItem(
+              itemId: 'missing-provider',
+              type: 'provider',
+            ),
+          ],
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Saved Providers'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved provider unavailable'), findsOneWidget);
+      expect(find.text('Remove'), findsOneWidget);
+    });
+  });
+
+  group('Home sliver recovery states', () {
+    _testScreen('JobOffersSection shows visible error state on failure',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            directHireOffersProvider.overrideWith(
+              (_) => Stream.error(Exception('boom')),
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  JobOffersSection(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load job offers right now.'), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
+
+    _testScreen('PendingReviewsSection shows visible error state on failure',
+        (tester) async {
+      final failingProvider =
+          StreamProvider.autoDispose<List<PendingReview>>(
+        (_) => Stream.error(Exception('boom')),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  PendingReviewsSection(provider: failingProvider),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not load pending reviews right now.'),
+        findsOneWidget,
+      );
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 

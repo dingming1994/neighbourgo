@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
@@ -31,7 +31,15 @@ class JobOffersSection extends ConsumerWidget {
 
     return offersAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (_, __) => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: ErrorState(
+            message: 'Could not load job offers right now.',
+            onRetry: () => ref.invalidate(directHireOffersProvider),
+          ),
+        ),
+      ),
       data: (offers) {
         if (offers.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -172,12 +180,12 @@ class _JobOfferCard extends StatelessWidget {
               ],
               const SizedBox(height: 12),
               // CTA
-              Row(
+              const Row(
                 children: [
-                  const Icon(Icons.touch_app_outlined,
+                  Icon(Icons.touch_app_outlined,
                       size: 14, color: AppColors.primary),
-                  const SizedBox(width: 4),
-                  const Text(
+                  SizedBox(width: 4),
+                  Text(
                     'Tap to view & respond',
                     style: TextStyle(
                       fontSize: 12,

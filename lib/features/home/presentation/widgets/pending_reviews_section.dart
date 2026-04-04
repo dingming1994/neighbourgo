@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
@@ -110,7 +111,15 @@ class PendingReviewsSection extends ConsumerWidget {
 
     return reviewsAsync.when(skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (_, __) => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: ErrorState(
+            message: 'Could not load pending reviews right now.',
+            onRetry: () => ref.invalidate(provider),
+          ),
+        ),
+      ),
       data: (reviews) {
         if (reviews.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -158,7 +167,7 @@ class _PendingReviewCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: AppRadius.card,
-          border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
         ),
         child: Row(
           children: [
