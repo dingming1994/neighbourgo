@@ -45,7 +45,7 @@ class NotificationListScreen extends ConsumerWidget {
         skipLoadingOnReload: true,
         loading: () => const _NotificationLoadingList(),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          message: 'Could not load your notifications right now.',
           onRetry: () => ref.invalidate(notificationsProvider),
         ),
         data: (notifications) {

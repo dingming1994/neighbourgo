@@ -20,6 +20,7 @@ import 'package:neighbourgo/features/profile/data/repositories/profile_repositor
 import 'package:neighbourgo/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:neighbourgo/features/profile/presentation/screens/photo_gallery_screen.dart';
 import 'package:neighbourgo/features/profile/presentation/screens/profile_screen.dart';
+import 'package:neighbourgo/features/profile/presentation/screens/verification_centre_screen.dart';
 import 'package:neighbourgo/features/tasks/data/models/task_model.dart';
 import 'package:neighbourgo/features/tasks/data/repositories/task_repository.dart';
 
@@ -440,6 +441,40 @@ void main() {
 
       expect(find.text('No photos in this category'), findsOneWidget);
       expect(find.text('Show All Photos'), findsOneWidget);
+    });
+
+    testScreen('shows friendly error when gallery fails to load', (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        const PhotoGalleryScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.error(Exception('boom'))),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your photo gallery right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // VerificationCentreScreen
+  // ─────────────────────────────────────────────────────────────────────────
+  group('VerificationCentreScreen', () {
+    testScreen('shows friendly error when verification fails to load',
+        (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        const VerificationCentreScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.error(Exception('boom'))),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your verification details right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 

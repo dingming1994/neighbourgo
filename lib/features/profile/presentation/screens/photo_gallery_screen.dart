@@ -215,11 +215,16 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
         skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          message: 'Could not load your photo gallery right now.',
           onRetry: () => ref.invalidate(currentUserProvider),
         ),
         data: (user) {
-          if (user == null) return const SizedBox.shrink();
+          if (user == null) {
+            return ErrorState(
+              message: 'Your profile is unavailable right now.',
+              onRetry: () => ref.invalidate(currentUserProvider),
+            );
+          }
 
           return Column(
             children: [
@@ -422,7 +427,7 @@ class _PhotoTile extends StatelessWidget {
             if (isDeleting || isSettingCover)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Center(
@@ -463,7 +468,7 @@ class _PhotoTile extends StatelessWidget {
                     borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(8),
                         bottomRight: Radius.circular(8)),
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                   child: Text(photo.caption!,
                       style: const TextStyle(color: Colors.white, fontSize: 10),

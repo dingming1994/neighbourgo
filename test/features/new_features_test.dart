@@ -48,17 +48,23 @@ class FakeTaskRepository extends TaskRepository {
   final List<TaskModel> completedTasks;
   final List<TaskModel> cancelledTasks;
   final Map<String, TaskModel?> taskById;
+  final bool shouldThrowOnPosted;
 
   FakeTaskRepository({
     this.postedTasks = const [],
     this.completedTasks = const [],
     this.cancelledTasks = const [],
     this.taskById = const {},
+    this.shouldThrowOnPosted = false,
   }) : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
-  Stream<List<TaskModel>> watchMyPostedTasks(String uid) =>
-      Stream.value(postedTasks);
+  Stream<List<TaskModel>> watchMyPostedTasks(String uid) {
+    if (shouldThrowOnPosted) {
+      return Stream.error(Exception('boom'));
+    }
+    return Stream.value(postedTasks);
+  }
 
   @override
   Stream<List<TaskModel>> watchMyCompletedPostTasks(String uid) =>
@@ -277,11 +283,13 @@ void main() {
       List<TaskModel> posted = const [],
       List<TaskModel> completed = const [],
       List<TaskModel> cancelled = const [],
+      bool shouldThrowOnPosted = false,
     }) {
       final fakeTaskRepo = FakeTaskRepository(
         postedTasks: posted,
         completedTasks: completed,
         cancelledTasks: cancelled,
+        shouldThrowOnPosted: shouldThrowOnPosted,
       );
       return [
         currentUserProvider.overrideWith((_) => Stream.value(_testUser)),
@@ -372,6 +380,18 @@ void main() {
 
       expect(find.text('Walk my dog'), findsOneWidget);
       expect(find.text('Completed'), findsWidgets); // tab + badge
+    });
+
+    _testScreen('shows friendly error when tasks fail to load', (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const MyTasksScreen(),
+        overrides(shouldThrowOnPosted: true),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load this task list right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 
@@ -944,6 +964,23 @@ void main() {
 
       expect(find.text('View Profile'), findsOneWidget);
       expect(find.text('Leave Review'), findsNothing);
+    });
+
+    _testScreen('shows friendly error when notifications fail to load',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const NotificationListScreen(),
+        [
+          currentUserProvider.overrideWith((_) => Stream.value(_testUser)),
+          notificationsProvider.overrideWith((_) => Stream.error(Exception('boom'))),
+          unreadNotificationCountProvider.overrideWith((_) => Stream.value(0)),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your notifications right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 
