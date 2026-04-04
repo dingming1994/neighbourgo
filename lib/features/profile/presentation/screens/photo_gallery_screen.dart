@@ -9,6 +9,7 @@ import '../../../../core/utils/image_validator.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository.dart';
@@ -22,13 +23,16 @@ class PhotoGalleryScreen extends ConsumerStatefulWidget {
 
 class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
   String? _selectedCategory; // null = general
-  bool    _uploading = false;
+  bool _uploading = false;
   String? _deletingPhotoId;
   String? _settingCoverId;
 
   Future<void> _pickAndUpload() async {
     final imgs = await ImagePicker().pickMultiImage(
-      maxWidth: 1024, maxHeight: 1024, imageQuality: 85, limit: 5,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+      limit: 5,
     );
     if (imgs.isEmpty) return;
 
@@ -38,7 +42,8 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
     if (errors.isNotEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errors.first), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text(errors.first), backgroundColor: AppColors.error),
         );
       }
       return;
@@ -51,7 +56,9 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
     if (user.photos.length + imgs.length > AppConstants.maxProfilePhotos) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Max ${AppConstants.maxProfilePhotos} photos allowed. You can upload ${AppConstants.maxProfilePhotos - user.photos.length} more.')),
+          SnackBar(
+              content: Text(
+                  'Max ${AppConstants.maxProfilePhotos} photos allowed. You can upload ${AppConstants.maxProfilePhotos - user.photos.length} more.')),
         );
       }
       return;
@@ -59,14 +66,14 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
 
     setState(() => _uploading = true);
     try {
-      final repo   = ref.read(profileRepositoryProvider);
+      final repo = ref.read(profileRepositoryProvider);
       final photos = <ProfilePhoto>[];
       for (final img in imgs) {
         final uploaded = await repo.uploadGalleryPhoto(
-          uid:        user.uid,
-          file:       File(img.path),
+          uid: user.uid,
+          file: File(img.path),
           categoryId: _selectedCategory,
-          isCover:    user.photos.isEmpty && photos.isEmpty,
+          isCover: user.photos.isEmpty && photos.isEmpty,
         );
         photos.add(uploaded);
       }
@@ -75,13 +82,17 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${photos.length} photo(s) uploaded!'), backgroundColor: AppColors.success),
+          SnackBar(
+              content: Text('${photos.length} photo(s) uploaded!'),
+              backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Upload failed: $e'),
+              backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -96,19 +107,28 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
         title: const Text('Delete Photo'),
         content: const Text('Remove this photo from your profile?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true),  child: const Text('Delete', style: TextStyle(color: AppColors.error))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete',
+                  style: TextStyle(color: AppColors.error))),
         ],
       ),
     );
     if (ok != true) return;
     setState(() => _deletingPhotoId = photo.id);
     try {
-      await ref.read(profileRepositoryProvider).removeGalleryPhoto(user.uid, photo);
+      await ref
+          .read(profileRepositoryProvider)
+          .removeGalleryPhoto(user.uid, photo);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Delete failed: $e'),
+              backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -124,15 +144,21 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
       );
     }
     try {
-      final updated = user.photos.map(
-        (p) => p.copyWith(isCover: p.id == photo.id),
-      ).toList();
-      await ref.read(profileRepositoryProvider).updatePhotosArray(user.uid, updated);
+      final updated = user.photos
+          .map(
+            (p) => p.copyWith(isCover: p.id == photo.id),
+          )
+          .toList();
+      await ref
+          .read(profileRepositoryProvider)
+          .updatePhotosArray(user.uid, updated);
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            const SnackBar(content: Text('Cover photo updated!'), backgroundColor: AppColors.success),
+            const SnackBar(
+                content: Text('Cover photo updated!'),
+                backgroundColor: AppColors.success),
           );
       }
     } catch (e) {
@@ -140,7 +166,9 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(content: Text('Failed to set cover: $e'), backgroundColor: AppColors.error),
+            SnackBar(
+                content: Text('Failed to set cover: $e'),
+                backgroundColor: AppColors.error),
           );
       }
     } finally {
@@ -148,10 +176,12 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
     }
   }
 
-  void _openFullscreen(BuildContext context, List<ProfilePhoto> photos, int index) {
+  void _openFullscreen(
+      BuildContext context, List<ProfilePhoto> photos, int index) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _FullscreenPhotoPage(photos: photos, initialIndex: index),
+        builder: (_) =>
+            _FullscreenPhotoPage(photos: photos, initialIndex: index),
       ),
     );
   }
@@ -168,7 +198,10 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
           if (_uploading)
             const Padding(
               padding: EdgeInsets.all(14),
-              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
             )
           else
             IconButton(
@@ -178,10 +211,14 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
             ),
         ],
       ),
-      body: userAsync.when(skipLoadingOnReload: true,
+      body: userAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (user) {
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(currentUserProvider),
+        ),
+        data: (user) {
           if (user == null) return const SizedBox.shrink();
 
           return Column(
@@ -190,7 +227,8 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
               SizedBox(
                 height: 48,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   scrollDirection: Axis.horizontal,
                   children: [
                     _CategoryChip(
@@ -200,14 +238,15 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
                     ),
                     const SizedBox(width: 8),
                     ...AppCategories.all.map((cat) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _CategoryChip(
-                        label: '${cat.emoji} ${cat.label}',
-                        selected: _selectedCategory == cat.id,
-                        onTap: () => setState(() => _selectedCategory = cat.id),
-                        color: cat.color,
-                      ),
-                    )),
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _CategoryChip(
+                            label: '${cat.emoji} ${cat.label}',
+                            selected: _selectedCategory == cat.id,
+                            onTap: () =>
+                                setState(() => _selectedCategory = cat.id),
+                            color: cat.color,
+                          ),
+                        )),
                   ],
                 ),
               ),
@@ -215,11 +254,14 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
 
               // ── Photo count ───────────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    Text('${user.photos.length}/${AppConstants.maxProfilePhotos} photos',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text(
+                        '${user.photos.length}/${AppConstants.maxProfilePhotos} photos',
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 13)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: _pickAndUpload,
@@ -235,20 +277,57 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
                 child: () {
                   final filtered = _selectedCategory == null
                       ? user.photos
-                      : user.photos.where((p) => p.categoryId == _selectedCategory).toList();
+                      : user.photos
+                          .where((p) => p.categoryId == _selectedCategory)
+                          .toList();
 
                   if (filtered.isEmpty) {
-                    return const EmptyState(
-                      emoji: '📸',
-                      title: 'No photos yet',
-                      subtitle: 'Tap + to add photos that show your personality and skills.',
+                    if (user.photos.isEmpty) {
+                      return EmptyState(
+                        emoji: '📸',
+                        title: 'No photos yet',
+                        subtitle:
+                            'Add photos that show your personality, work quality, and skills.',
+                        action: ElevatedButton.icon(
+                          onPressed: _pickAndUpload,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.button,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('Add Photos'),
+                        ),
+                      );
+                    }
+
+                    return EmptyState(
+                      emoji: '🗂️',
+                      title: 'No photos in this category',
+                      subtitle:
+                          'Try another category or add more photos to this section.',
+                      action: OutlinedButton.icon(
+                        onPressed: () =>
+                            setState(() => _selectedCategory = null),
+                        icon:
+                            const Icon(Icons.filter_alt_off_outlined, size: 18),
+                        label: const Text('Show All Photos'),
+                      ),
                     );
                   }
 
                   return GridView.builder(
                     padding: const EdgeInsets.all(12),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3, crossAxisSpacing: 6, mainAxisSpacing: 6,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                     ),
                     itemCount: filtered.length,
                     itemBuilder: (_, i) => _PhotoTile(
@@ -276,7 +355,11 @@ class _CategoryChip extends StatelessWidget {
   final VoidCallback onTap;
   final Color? color;
 
-  const _CategoryChip({required this.label, required this.selected, required this.onTap, this.color});
+  const _CategoryChip(
+      {required this.label,
+      required this.selected,
+      required this.onTap,
+      this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -290,8 +373,11 @@ class _CategoryChip extends StatelessWidget {
           borderRadius: AppRadius.chip,
           border: Border.all(color: selected ? c : AppColors.border),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-            color: selected ? Colors.white : AppColors.textSecondary)),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: selected ? Colors.white : AppColors.textSecondary)),
       ),
     );
   }
@@ -314,81 +400,110 @@ class _PhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    onLongPress: (isDeleting || isSettingCover) ? null : () => _showMenu(context),
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: CachedNetworkImage(
-            imageUrl: photo.url,
-            fit: BoxFit.cover,
-            placeholder: (_, __) => Container(color: AppColors.bgMint),
-            errorWidget: (_, __, ___) => Container(
-              color: AppColors.bgMint,
-              child: const Icon(Icons.broken_image_outlined, color: AppColors.textHint),
-            ),
-          ),
-        ),
-        if (isDeleting || isSettingCover)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
+        onTap: onTap,
+        onLongPress:
+            (isDeleting || isSettingCover) ? null : () => _showMenu(context),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-            ),
-          ),
-        if (photo.isCover)
-          Positioned(
-            top: 4, left: 4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4)),
-              child: const Text('Cover', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
-            ),
-          ),
-        // Caption overlay
-        if (photo.caption != null && photo.caption!.isNotEmpty)
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-                color: Colors.black.withOpacity(0.5),
+              child: CachedNetworkImage(
+                imageUrl: photo.url,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: AppColors.bgMint),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.bgMint,
+                  child: const Icon(Icons.broken_image_outlined,
+                      color: AppColors.textHint),
+                ),
               ),
-              child: Text(photo.caption!, style: const TextStyle(color: Colors.white, fontSize: 10),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-          ),
-      ],
-    ),
-  );
+            if (isDeleting || isSettingCover)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white)),
+                ),
+              ),
+            if (photo.isCover)
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(4)),
+                  child: const Text('Cover',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+            // Caption overlay
+            if (photo.caption != null && photo.caption!.isNotEmpty)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                        bottomRight: Radius.circular(8)),
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                  child: Text(photo.caption!,
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ),
+          ],
+        ),
+      );
 
   void _showMenu(BuildContext context) => showModalBottomSheet(
-    context: context,
-    builder: (_) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!photo.isCover)
-            ListTile(
-              leading: const Icon(Icons.star_outline),
-              title: const Text('Set as Cover Photo'),
-              onTap: () { Navigator.pop(context); onSetCover(); },
-            ),
-          ListTile(
-            leading: const Icon(Icons.delete_outline, color: AppColors.error),
-            title: const Text('Delete Photo', style: TextStyle(color: AppColors.error)),
-            onTap: () { Navigator.pop(context); onDelete(); },
+        context: context,
+        builder: (_) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!photo.isCover)
+                ListTile(
+                  leading: const Icon(Icons.star_outline),
+                  title: const Text('Set as Cover Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onSetCover();
+                  },
+                ),
+              ListTile(
+                leading:
+                    const Icon(Icons.delete_outline, color: AppColors.error),
+                title: const Text('Delete Photo',
+                    style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onDelete();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -398,7 +513,8 @@ class _FullscreenPhotoPage extends StatefulWidget {
   final List<ProfilePhoto> photos;
   final int initialIndex;
 
-  const _FullscreenPhotoPage({required this.photos, required this.initialIndex});
+  const _FullscreenPhotoPage(
+      {required this.photos, required this.initialIndex});
 
   @override
   State<_FullscreenPhotoPage> createState() => _FullscreenPhotoPageState();
@@ -443,8 +559,10 @@ class _FullscreenPhotoPageState extends State<_FullscreenPhotoPage> {
           backgroundDecoration: const BoxDecoration(color: Colors.black),
           loadingBuilder: (_, event) => Center(
             child: CircularProgressIndicator(
-              value: event == null ? null
-                  : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+              value: event == null
+                  ? null
+                  : event.cumulativeBytesLoaded /
+                      (event.expectedTotalBytes ?? 1),
               color: Colors.white,
             ),
           ),
@@ -453,4 +571,3 @@ class _FullscreenPhotoPageState extends State<_FullscreenPhotoPage> {
     );
   }
 }
-

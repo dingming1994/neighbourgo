@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -15,9 +15,12 @@ import '../../../auth/domain/providers/auth_provider.dart';
 extension _RoleLabel on UserRole {
   String get displayLabel {
     switch (this) {
-      case UserRole.poster:   return 'Task Poster';
-      case UserRole.provider: return 'Service Provider';
-      case UserRole.both:     return 'Both';
+      case UserRole.poster:
+        return 'Task Poster';
+      case UserRole.provider:
+        return 'Service Provider';
+      case UserRole.both:
+        return 'Both';
     }
   }
 }
@@ -31,7 +34,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
-    final user      = userAsync.valueOrNull;
+    final user = userAsync.valueOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
@@ -42,13 +45,18 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => context.push(AppRoutes.editProfile),
-            child: const Text('Edit', style: TextStyle(color: AppColors.primary)),
+            child:
+                const Text('Edit', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
-      body: userAsync.when(skipLoadingOnReload: true,
+      body: userAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(currentUserProvider),
+        ),
         data: (_) {
           if (user == null) {
             // currentUserProvider always synthesises a fallback, so this
@@ -68,11 +76,15 @@ class ProfileScreen extends ConsumerWidget {
                 Container(
                   color: AppColors.bgCard,
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   child: const Text(
                     'Your stats will appear after completing your first task',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic),
                   ),
                 ),
 
@@ -144,8 +156,10 @@ class _ProviderStatsSection extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _StatColumn(value: stats.completedTasks.toString(), label: 'Tasks Done'),
-          _StatColumn(value: stats.avgRating.toStringAsFixed(1), label: 'Avg Rating'),
+          _StatColumn(
+              value: stats.completedTasks.toString(), label: 'Tasks Done'),
+          _StatColumn(
+              value: stats.avgRating.toStringAsFixed(1), label: 'Avg Rating'),
           _StatColumn(value: stats.totalReviews.toString(), label: 'Reviews'),
         ],
       ),
@@ -160,13 +174,19 @@ class _StatColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
-      const SizedBox(height: 2),
-      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-    ],
-  );
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
+        ],
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -186,13 +206,15 @@ class _ProfileHeader extends StatelessWidget {
           CircleAvatar(
             radius: 36,
             backgroundColor: AppColors.bgMint,
-            backgroundImage: user.avatarUrl != null
-                ? NetworkImage(user.avatarUrl!)
-                : null,
+            backgroundImage:
+                user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
             child: user.avatarUrl == null
                 ? Text(
                     (user.displayName ?? 'N').substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.primary),
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary),
                   )
                 : null,
           ),
@@ -203,14 +225,19 @@ class _ProfileHeader extends StatelessWidget {
               children: [
                 Text(
                   user.displayName ?? 'Neighbour',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 if (user.headline != null && user.headline!.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(user.headline!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  Text(user.headline!,
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary)),
                 ],
                 const SizedBox(height: 4),
-                Text(user.phone, style: const TextStyle(fontSize: 13, color: AppColors.textHint)),
+                Text(user.phone,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textHint)),
               ],
             ),
           ),
@@ -234,31 +261,36 @@ class _RoleSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          const Icon(Icons.badge_outlined, color: AppColors.textSecondary, size: 22),
+          const Icon(Icons.badge_outlined,
+              color: AppColors.textSecondary, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('My Role', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                const Text('My Role',
+                    style: TextStyle(fontSize: 12, color: AppColors.textHint)),
                 const SizedBox(height: 2),
                 Text(
                   user.role.displayLabel,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
           ),
           TextButton(
             onPressed: () => _showRoleBottomSheet(context, ref, user),
-            child: const Text('Change Role', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+            child: const Text('Change Role',
+                style: TextStyle(color: AppColors.primary, fontSize: 13)),
           ),
         ],
       ),
     );
   }
 
-  void _showRoleBottomSheet(BuildContext context, WidgetRef ref, UserModel user) {
+  void _showRoleBottomSheet(
+      BuildContext context, WidgetRef ref, UserModel user) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -329,13 +361,20 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
         children: [
           // Handle bar
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2)),
           ),
           Text('Change Role', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text('You can always switch back later.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+          Text('You can always switch back later.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: 24),
 
           _RoleCard(
@@ -369,7 +408,11 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
             child: ElevatedButton(
               onPressed: _loading ? null : _save,
               child: _loading
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.white))
                   : const Text('Save'),
             ),
           ),
@@ -397,49 +440,56 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.bgMint : AppColors.bgCard,
-        borderRadius: AppRadius.card,
-        border: Border.all(
-          color: selected ? AppColors.primary : AppColors.border,
-          width: selected ? 2 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 32)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
-              ],
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.bgMint : AppColors.bgCard,
+            borderRadius: AppRadius.card,
+            border: Border.all(
+              color: selected ? AppColors.primary : AppColors.border,
+              width: selected ? 2 : 1,
             ),
           ),
-          if (selected)
-            const Icon(Icons.check_circle, color: AppColors.primary, size: 22),
-        ],
-      ),
-    ),
-  );
+          child: Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 32)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text(subtitle,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.4)),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(Icons.check_circle,
+                    color: AppColors.primary, size: 22),
+            ],
+          ),
+        ),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Menu item row
 // ─────────────────────────────────────────────────────────────────────────────
 class _MenuItem extends StatelessWidget {
-  final IconData   icon;
-  final String     label;
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
-  final Color?     textColor;
-  final Color?     iconColor;
+  final Color? textColor;
+  final Color? iconColor;
 
   const _MenuItem({
     required this.icon,
@@ -451,12 +501,16 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-    tileColor: AppColors.bgCard,
-    leading: Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
-    title: Text(label, style: TextStyle(fontSize: 15, color: textColor ?? AppColors.textPrimary)),
-    trailing: textColor == null
-        ? const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20)
-        : null,
-    onTap: onTap,
-  );
+        tileColor: AppColors.bgCard,
+        leading:
+            Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
+        title: Text(label,
+            style: TextStyle(
+                fontSize: 15, color: textColor ?? AppColors.textPrimary)),
+        trailing: textColor == null
+            ? const Icon(Icons.chevron_right,
+                color: AppColors.textHint, size: 20)
+            : null,
+        onTap: onTap,
+      );
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/service_listing_model.dart';
@@ -16,8 +17,7 @@ import '../../data/repositories/service_listing_repository.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 final serviceDetailProvider =
     StreamProvider.family<ServiceListingModel?, String>(
-  (ref, id) =>
-      ref.watch(serviceListingRepositoryProvider).watchListing(id),
+  (ref, id) => ref.watch(serviceListingRepositoryProvider).watchListing(id),
 );
 
 class ServiceDetailScreen extends ConsumerWidget {
@@ -29,7 +29,8 @@ class ServiceDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingAsync = ref.watch(serviceDetailProvider(listingId));
 
-    return listingAsync.when(skipLoadingOnReload: true,
+    return listingAsync.when(
+      skipLoadingOnReload: true,
       loading: () => Scaffold(
         appBar: AppBar(),
         body: const Center(child: CircularProgressIndicator()),
@@ -43,8 +44,23 @@ class ServiceDetailScreen extends ConsumerWidget {
         if (listing == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(
-              child: Text('Service listing not found'),
+            body: EmptyState(
+              emoji: '🛠️',
+              title: 'Service listing no longer available',
+              subtitle:
+                  'This listing may have been removed or the link is outdated.',
+              action: ElevatedButton.icon(
+                onPressed: () => context.go(AppRoutes.home),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.button,
+                  ),
+                ),
+                icon: const Icon(Icons.home_outlined, size: 18),
+                label: const Text('Go Home'),
+              ),
             ),
           );
         }
@@ -61,8 +77,7 @@ Future<void> _confirmDelete(
     context: context,
     builder: (ctx) => AlertDialog(
       title: const Text('Delete listing?'),
-      content:
-          const Text('This will permanently delete your service listing.'),
+      content: const Text('This will permanently delete your service listing.'),
       actions: [
         TextButton(
           onPressed: () => ctx.pop(false),
@@ -79,9 +94,7 @@ Future<void> _confirmDelete(
 
   if (confirmed == true && context.mounted) {
     try {
-      await ref
-          .read(serviceListingRepositoryProvider)
-          .deleteListing(listingId);
+      await ref.read(serviceListingRepositoryProvider).deleteListing(listingId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Service listing deleted')),
@@ -133,8 +146,7 @@ class _DetailContent extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
                       tooltip: 'Delete listing',
-                      onPressed: () =>
-                          _confirmDelete(context, ref, listing.id),
+                      onPressed: () => _confirmDelete(context, ref, listing.id),
                     ),
                   ]
                 : null,
@@ -172,8 +184,8 @@ class _DetailContent extends ConsumerWidget {
                 children: [
                   // Category chip
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: catColor.withValues(alpha: 0.12),
                       borderRadius: AppRadius.chip,

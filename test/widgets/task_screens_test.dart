@@ -43,7 +43,8 @@ class FakeTaskRepository extends TaskRepository {
       : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
-  Stream<List<TaskModel>> watchOpenTasks({String? categoryId, int limit = 20, DocumentSnapshot? startAfter}) {
+  Stream<List<TaskModel>> watchOpenTasks(
+      {String? categoryId, int limit = 20, DocumentSnapshot? startAfter}) {
     // Emit initial data then keep stream open
     Future.microtask(() => _controller.add(tasksToReturn));
     return _controller.stream;
@@ -56,7 +57,8 @@ class FakeTaskRepository extends TaskRepository {
   }
 
   @override
-  Future<String> createTask(TaskModel task, {List<dynamic> photos = const []}) async {
+  Future<String> createTask(TaskModel task,
+      {List<dynamic> photos = const []}) async {
     return 'fake-task-id';
   }
 
@@ -74,7 +76,8 @@ class _NeverEmitTaskRepository extends TaskRepository {
       : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
-  Stream<List<TaskModel>> watchOpenTasks({String? categoryId, int limit = 20, DocumentSnapshot? startAfter}) {
+  Stream<List<TaskModel>> watchOpenTasks(
+      {String? categoryId, int limit = 20, DocumentSnapshot? startAfter}) {
     // Return a stream that never completes — keeps isLoading true
     return StreamController<List<TaskModel>>().stream;
   }
@@ -123,7 +126,8 @@ TaskModel _testTask({
   String id = 'task-1',
   String posterId = 'user-1',
   String title = 'Clean my 3-room HDB',
-  String description = 'Need deep cleaning for the whole flat including bathrooms and kitchen.',
+  String description =
+      'Need deep cleaning for the whole flat including bathrooms and kitchen.',
   String categoryId = 'cleaning',
   TaskStatus status = TaskStatus.open,
   String? assignedProviderId,
@@ -211,7 +215,8 @@ void main() {
       expect(find.text('Discover Tasks'), findsOneWidget);
     });
 
-    testTask('renders category filter chips including All chip', (tester) async {
+    testTask('renders category filter chips including All chip',
+        (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const TaskListScreen(),
         overrides: _overrides(),
@@ -232,7 +237,8 @@ void main() {
       // Let microtask stream emit empty list then rebuild
       await tester.pumpAndSettle();
       expect(find.text('No tasks found'), findsOneWidget);
-      expect(find.text('Try a different category or check back later'), findsOneWidget);
+      expect(find.text('Try a different category or check back later'),
+          findsOneWidget);
     });
 
     testTask('shows loading state initially', (tester) async {
@@ -365,6 +371,22 @@ void main() {
       expect(find.text(task.budgetDisplay), findsOneWidget);
     });
 
+    testTask('shows recovery state when task is missing', (tester) async {
+      fakeTaskRepo = FakeTaskRepository(tasksToReturn: const []);
+
+      await tester.pumpWidget(buildTestWidget(
+        const TaskDetailScreen(taskId: 'missing-task'),
+        overrides: _baseOverrides(
+          user: _testUser(uid: 'provider-1', role: UserRole.provider),
+          taskRepo: fakeTaskRepo,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task no longer available'), findsOneWidget);
+      expect(find.text('Browse Tasks'), findsOneWidget);
+    });
+
     testTask('shows Submit Bid button for provider role user when task is open',
         (tester) async {
       final task = _testTask(status: TaskStatus.open);
@@ -382,8 +404,7 @@ void main() {
       expect(find.text('Submit Bid'), findsOneWidget);
     });
 
-    testTask(
-        'shows Mark as Complete button for poster when task is assigned',
+    testTask('shows Mark as Complete button for poster when task is assigned',
         (tester) async {
       final task = _testTask(
         status: TaskStatus.assigned,
@@ -404,8 +425,7 @@ void main() {
       expect(find.text('Mark as Complete'), findsOneWidget);
     });
 
-    testTask(
-        'shows Mark as Complete button for poster when task is inProgress',
+    testTask('shows Mark as Complete button for poster when task is inProgress',
         (tester) async {
       final task = _testTask(
         status: TaskStatus.inProgress,
@@ -460,4 +480,3 @@ void main() {
     });
   });
 }
-

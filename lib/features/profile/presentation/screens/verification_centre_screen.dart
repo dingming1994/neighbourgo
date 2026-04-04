@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -19,9 +20,13 @@ class VerificationCentreScreen extends ConsumerWidget {
         elevation: 0,
         title: const Text('Verification Centre'),
       ),
-      body: userAsync.when(skipLoadingOnReload: true,
+      body: userAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(currentUserProvider),
+        ),
         data: (user) {
           if (user == null) {
             return const Center(child: Text('Profile unavailable'));
@@ -30,11 +35,14 @@ class VerificationCentreScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: const Text(
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
                   'Build trust with your neighbours by verifying your identity.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      height: 1.4),
                 ),
               ),
               const SizedBox(height: 16),
@@ -74,7 +82,8 @@ class _BadgeRow extends StatelessWidget {
               children: [
                 Text(
                   badge.label,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -89,7 +98,10 @@ class _BadgeRow extends StatelessWidget {
               ),
               child: const Text(
                 'Verified',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary),
               ),
             )
           else ...[
@@ -130,13 +142,17 @@ class _VerifyButton extends StatelessWidget {
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Verification coming soon — we will notify you when available'),
+              content: Text(
+                  'Verification coming soon — we will notify you when available'),
             ),
           );
         },
         child: const Text(
           'Verify',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+          style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary),
         ),
       ),
     );

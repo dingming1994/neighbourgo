@@ -11,9 +11,11 @@ import 'package:neighbourgo/features/auth/domain/providers/auth_provider.dart';
 import 'package:neighbourgo/features/bids/data/repositories/bid_repository.dart';
 import 'package:neighbourgo/features/bids/domain/models/bid_model.dart';
 import 'package:neighbourgo/features/bids/presentation/screens/my_bids_screen.dart';
+import 'package:neighbourgo/features/discover/presentation/screens/discover_screen.dart';
 import 'package:neighbourgo/features/favorites/data/repositories/favorites_repository.dart';
-import 'package:neighbourgo/features/favorites/domain/providers/favorites_provider.dart';
 import 'package:neighbourgo/features/favorites/presentation/screens/favorites_screen.dart';
+import 'package:neighbourgo/features/notifications/domain/providers/notification_providers.dart';
+import 'package:neighbourgo/features/notifications/presentation/screens/notification_list_screen.dart';
 import 'package:neighbourgo/features/profile/data/repositories/profile_repository.dart';
 import 'package:neighbourgo/features/services/data/models/service_listing_model.dart';
 import 'package:neighbourgo/features/services/data/repositories/service_listing_repository.dart';
@@ -65,8 +67,7 @@ class FakeTaskRepository extends TaskRepository {
       Stream.value(cancelledTasks);
 
   @override
-  Stream<TaskModel?> watchTask(String id) =>
-      Stream.value(taskById[id]);
+  Stream<TaskModel?> watchTask(String id) => Stream.value(taskById[id]);
 
   @override
   Stream<List<TaskModel>> watchOpenTasks({
@@ -86,8 +87,7 @@ class FakeBidRepository extends BidRepository {
       : super(db: FakeFirebaseFirestore());
 
   @override
-  Stream<List<BidModel>> watchMyBids(String providerId) =>
-      Stream.value(bids);
+  Stream<List<BidModel>> watchMyBids(String providerId) => Stream.value(bids);
 
   @override
   Stream<List<BidModel>> getBidsStream(String taskId) =>
@@ -302,8 +302,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('📋'), findsOneWidget);
-      expect(find.text('No assigned tasks'), findsOneWidget);
-      expect(find.text('Find Tasks'), findsOneWidget);
+      expect(find.text('No active tasks yet'), findsOneWidget);
+      expect(find.text('Post a Task'), findsOneWidget);
     });
 
     _testScreen('shows task card with title and status badge', (tester) async {
@@ -658,7 +658,8 @@ void main() {
       expect(find.text('Professional Deep Cleaning'), findsOneWidget);
     });
 
-    _testScreen('shows category filter chips with All selected', (tester) async {
+    _testScreen('shows category filter chips with All selected',
+        (tester) async {
       await tester.pumpWidget(_buildTestWidget(
         const ServiceListingsScreen(),
         overrides(),
@@ -760,6 +761,44 @@ void main() {
 
       expect(filtered.length, 1);
       expect(filtered.first.providerName, 'Alice Provider');
+    });
+
+    _testScreen('discover search field hydrates from persisted query',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const DiscoverScreen(),
+        [
+          currentUserProvider.overrideWith((_) => Stream.value(_testProvider)),
+          taskRepositoryProvider.overrideWithValue(FakeTaskRepository(
+            postedTasks: [
+              _makeTask(id: 't1', title: 'Kitchen cleanup'),
+            ],
+          )),
+          discoverSearchQueryProvider.overrideWith((_) => 'kitchen'),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('kitchen'), findsOneWidget);
+    });
+  });
+
+  group('NotificationListScreen', () {
+    _testScreen('shows actionable empty state when there are no notifications',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const NotificationListScreen(),
+        [
+          currentUserProvider.overrideWith((_) => Stream.value(_testUser)),
+          notificationsProvider.overrideWith((_) => Stream.value([])),
+          unreadNotificationCountProvider.overrideWith((_) => Stream.value(0)),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No notifications yet'), findsOneWidget);
+      expect(find.text('Browse Tasks'), findsOneWidget);
     });
   });
 

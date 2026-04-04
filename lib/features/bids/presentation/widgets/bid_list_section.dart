@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../profile/data/repositories/profile_repository.dart';
 import '../../data/repositories/bid_repository.dart';
@@ -14,8 +15,7 @@ import '../../domain/models/bid_model.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers
 // ─────────────────────────────────────────────────────────────────────────────
-final bidsStreamProvider =
-    StreamProvider.family<List<BidModel>, String>(
+final bidsStreamProvider = StreamProvider.family<List<BidModel>, String>(
   (ref, taskId) => ref.watch(bidRepositoryProvider).getBidsStream(taskId),
 );
 
@@ -33,18 +33,23 @@ final providerRatingProvider =
 class BidListSection extends ConsumerWidget {
   final String taskId;
   final String posterId;
-  const BidListSection({super.key, required this.taskId, required this.posterId});
+  const BidListSection(
+      {super.key, required this.taskId, required this.posterId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(bidsStreamProvider(taskId));
 
-    return bidsAsync.when(skipLoadingOnReload: true,
+    return bidsAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const Padding(
         padding: EdgeInsets.all(32),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => Center(child: Text('Failed to load bids: $e')),
+      error: (e, _) => ErrorState(
+        message: e.toString(),
+        onRetry: () => ref.invalidate(bidsStreamProvider(taskId)),
+      ),
       data: (bids) {
         if (bids.isEmpty) {
           return const Padding(
@@ -73,7 +78,8 @@ class BidListSection extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            ...bids.map((bid) => _BidCard(taskId: taskId, posterId: posterId, bid: bid)),
+            ...bids.map((bid) =>
+                _BidCard(taskId: taskId, posterId: posterId, bid: bid)),
           ],
         );
       },
@@ -85,19 +91,20 @@ class BidListSection extends ConsumerWidget {
 // _BidCard
 // ─────────────────────────────────────────────────────────────────────────────
 class _BidCard extends ConsumerStatefulWidget {
-  final String   taskId;
-  final String   posterId;
+  final String taskId;
+  final String posterId;
   final BidModel bid;
-  const _BidCard({required this.taskId, required this.posterId, required this.bid});
+  const _BidCard(
+      {required this.taskId, required this.posterId, required this.bid});
 
   @override
   ConsumerState<_BidCard> createState() => _BidCardState();
 }
 
 class _BidCardState extends ConsumerState<_BidCard> {
-  bool _isAccepting  = false;
-  bool _isRejecting  = false;
-  bool _isMessaging  = false;
+  bool _isAccepting = false;
+  bool _isRejecting = false;
+  bool _isMessaging = false;
 
   void _viewProfile() {
     context.push(
@@ -108,13 +115,10 @@ class _BidCardState extends ConsumerState<_BidCard> {
   Future<void> _messageBidder() async {
     setState(() => _isMessaging = true);
     try {
-      final chatId = await ref
-          .read(chatRepositoryProvider)
-          .createOrGetChat(
-              widget.taskId, widget.posterId, widget.bid.providerId);
+      final chatId = await ref.read(chatRepositoryProvider).createOrGetChat(
+          widget.taskId, widget.posterId, widget.bid.providerId);
       if (mounted) {
-        context.push(
-            AppRoutes.chatThread.replaceFirst(':chatId', chatId));
+        context.push(AppRoutes.chatThread.replaceFirst(':chatId', chatId));
       }
     } catch (e) {
       if (mounted) {
@@ -152,33 +156,29 @@ class _BidCardState extends ConsumerState<_BidCard> {
         // Chat creation is best-effort — don't block checkout
       }
 
-      if (mounted) {
-        // Show SnackBar with action to message provider
-        if (chatId != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Bid accepted! Chat created with ${widget.bid.providerName}'),
-              action: SnackBarAction(
-                label: 'Message Provider',
-                onPressed: () {
-                  context.push(
-                    AppRoutes.chatThread.replaceFirst(':chatId', chatId!),
-                  );
-                },
-              ),
-            ),
-          );
-        }
+      if (!mounted) return;
 
-        // Navigate to checkout
-        context.push(
-          AppRoutes.checkout.replaceFirst(':taskId', widget.taskId),
-          extra: {
-            'taskId':       widget.taskId,
-            'bidId':        widget.bid.bidId,
-            'providerName': widget.bid.providerName,
-            'bidAmount':    widget.bid.amount,
-          },
+      if (chatId != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Bid accepted! Chat created with ${widget.bid.providerName}'),
+            action: SnackBarAction(
+              label: 'Message Provider',
+              onPressed: () {
+                context.push(
+                  AppRoutes.chatThread.replaceFirst(':chatId', chatId!),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Bid accepted! ${widget.bid.providerName} can now start the job.'),
+          ),
         );
       }
     } catch (e) {
@@ -217,9 +217,9 @@ class _BidCardState extends ConsumerState<_BidCard> {
 
   @override
   Widget build(BuildContext context) {
-    final bid        = widget.bid;
+    final bid = widget.bid;
     final isAccepted = bid.status == BidStatus.accepted;
-    final isPending  = bid.status == BidStatus.pending;
+    final isPending = bid.status == BidStatus.pending;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -253,7 +253,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
                               ? bid.providerName[0].toUpperCase()
                               : '?',
                           style: const TextStyle(
-                            color:      AppColors.primary,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         )
@@ -275,7 +275,8 @@ class _BidCardState extends ConsumerState<_BidCard> {
                       Consumer(builder: (context, ref, _) {
                         final ratingAsync =
                             ref.watch(providerRatingProvider(bid.providerId));
-                        return ratingAsync.when(skipLoadingOnReload: true,
+                        return ratingAsync.when(
+                          skipLoadingOnReload: true,
                           loading: () => const SizedBox.shrink(),
                           error: (_, __) => const SizedBox.shrink(),
                           data: (rating) {
@@ -332,8 +333,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
           // Message
           if (bid.message != null && bid.message!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(bid.message!,
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(bid.message!, style: Theme.of(context).textTheme.bodyMedium),
           ],
 
           // Action buttons (only for pending bids)
@@ -360,20 +360,20 @@ class _BidCardState extends ConsumerState<_BidCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: AppButton(
-                    label:     'Accept',
+                    label: 'Accept',
                     isLoading: _isAccepting,
                     onPressed: _isRejecting ? null : _accept,
-                    height:    40,
+                    height: 40,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: AppButton(
-                    label:      'Reject',
-                    isLoading:  _isRejecting,
+                    label: 'Reject',
+                    isLoading: _isRejecting,
                     isOutlined: true,
-                    onPressed:  _isAccepting ? null : _reject,
-                    height:     40,
+                    onPressed: _isAccepting ? null : _reject,
+                    height: 40,
                   ),
                 ),
               ],
@@ -386,13 +386,12 @@ class _BidCardState extends ConsumerState<_BidCard> {
               padding: EdgeInsets.only(top: 10),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle,
-                      size: 16, color: AppColors.success),
+                  Icon(Icons.check_circle, size: 16, color: AppColors.success),
                   SizedBox(width: 4),
                   Text(
                     'Accepted',
                     style: TextStyle(
-                      color:      AppColors.success,
+                      color: AppColors.success,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -414,7 +413,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late final Color  color;
+    late final Color color;
     late final String label;
 
     switch (status) {
@@ -432,14 +431,14 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color:        color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color:      color,
-          fontSize:   11,
+          color: color,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),

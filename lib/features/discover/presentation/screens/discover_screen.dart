@@ -39,6 +39,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   bool _isDebouncing = false;
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.text = ref.read(discoverSearchQueryProvider);
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
@@ -47,8 +53,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    if (value.trim().toLowerCase() !=
-        ref.read(discoverSearchQueryProvider)) {
+    if (value.trim().toLowerCase() != ref.read(discoverSearchQueryProvider)) {
       setState(() => _isDebouncing = true);
     }
     _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -70,14 +75,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final userAsync = ref.watch(currentUserProvider);
     final user = userAsync.valueOrNull;
 
-    // Provider-role users only see Tasks (no toggle)
-    final showToggle = user != null && user.role != UserRole.provider;
+    // Provider-role users only see Tasks, but still keep the shared search UX.
+    final providerOnly = user != null && user.role == UserRole.provider;
 
-    if (!showToggle) {
-      return const TaskListScreen();
-    }
-
-    final segment = ref.watch(discoverSegmentProvider);
+    final segment = providerOnly
+        ? DiscoverSegment.tasks
+        : ref.watch(discoverSegmentProvider);
     final searchQuery = ref.watch(discoverSearchQueryProvider);
 
     return Scaffold(
@@ -147,11 +150,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               color: AppColors.primary,
               backgroundColor: Colors.transparent,
             ),
-          _SegmentedToggle(
-            selected: segment,
-            onChanged: (s) =>
-                ref.read(discoverSegmentProvider.notifier).state = s,
-          ),
+          if (!providerOnly)
+            _SegmentedToggle(
+              selected: segment,
+              onChanged: (s) =>
+                  ref.read(discoverSegmentProvider.notifier).state = s,
+            ),
           Expanded(
             child: switch (segment) {
               DiscoverSegment.tasks => const TaskListScreen(embedded: true),

@@ -30,6 +30,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   final _fixedRateController = TextEditingController();
   final _availabilityController = TextEditingController();
   final List<File> _photos = [];
+
   /// URLs of existing photos kept from the original listing (edit mode only).
   final List<String> _existingPhotoUrls = [];
   bool _isSubmitting = false;
@@ -95,7 +96,18 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
     try {
       final user = ref.read(currentUserProvider).valueOrNull;
-      if (user == null) return;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Please sign in again before saving your service listing.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
 
       final repo = ref.read(serviceListingRepositoryProvider);
 
@@ -166,7 +178,14 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text(
+              _isEditing
+                  ? 'Could not update your service listing. Please try again.'
+                  : 'Could not create your service listing. Please try again.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -178,7 +197,9 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgLight,
-      appBar: AppBar(title: Text(_isEditing ? 'Edit Service Listing' : 'Create Service Listing')),
+      appBar: AppBar(
+          title: Text(
+              _isEditing ? 'Edit Service Listing' : 'Create Service Listing')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -186,8 +207,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
           children: [
             // Category
             const Text('Category',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _categoryId,
@@ -205,13 +225,12 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
             // Title
             const Text('Title',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             TextFormField(
               controller: _titleController,
-              decoration:
-                  const InputDecoration(hintText: 'e.g. Professional Deep Cleaning'),
+              decoration: const InputDecoration(
+                  hintText: 'e.g. Professional Deep Cleaning'),
               maxLength: 80,
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Required' : null,
@@ -220,13 +239,13 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
             // Description
             const Text('Description',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                hintText: 'Describe your service, experience, what you offer...',
+                hintText:
+                    'Describe your service, experience, what you offer...',
               ),
               maxLines: 4,
               maxLength: 500,
@@ -237,8 +256,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
             // Photos
             const Text('Photos',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             SizedBox(
               height: 90,
@@ -289,8 +307,8 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                               top: 2,
                               right: 2,
                               child: GestureDetector(
-                                onTap: () => setState(
-                                    () => _photos.removeAt(e.key)),
+                                onTap: () =>
+                                    setState(() => _photos.removeAt(e.key)),
                                 child: Container(
                                   decoration: const BoxDecoration(
                                     color: Colors.black54,
@@ -337,8 +355,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
             // Pricing
             const Text('Pricing',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
@@ -365,8 +382,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
             // Availability
             const Text('Availability',
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             TextFormField(
               controller: _availabilityController,

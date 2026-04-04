@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../discover/presentation/screens/discover_screen.dart';
 import '../../data/models/service_listing_model.dart';
 import '../../data/repositories/service_listing_repository.dart';
@@ -35,8 +35,7 @@ class ServiceListingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingsAsync = ref.watch(_serviceListingsProvider);
     final selectedCategory = ref.watch(_serviceCategoryProvider);
-    final searchQuery =
-        embedded ? ref.watch(discoverSearchQueryProvider) : '';
+    final searchQuery = embedded ? ref.watch(discoverSearchQueryProvider) : '';
 
     final body = Column(
       children: [
@@ -46,11 +45,11 @@ class ServiceListingsScreen extends ConsumerWidget {
               ref.read(_serviceCategoryProvider.notifier).state = id,
         ),
         Expanded(
-          child: listingsAsync.when(skipLoadingOnReload: true,
+          child: listingsAsync.when(
+            skipLoadingOnReload: true,
             loading: () => const _LoadingList(),
-            error: (e, _) => Center(
-              child: Text('Error: $e',
-                  style: const TextStyle(color: AppColors.error)),
+            error: (e, _) => ErrorState(
+              onRetry: () => ref.invalidate(_serviceListingsProvider),
             ),
             data: (allListings) {
               final listings = searchQuery.isEmpty
@@ -152,8 +151,7 @@ class _CategoryFilterBar extends StatelessWidget {
                       emoji: cat.emoji,
                       selected: selected == cat.id,
                       color: cat.color,
-                      onTap: () =>
-                          onSelect(selected == cat.id ? null : cat.id),
+                      onTap: () => onSelect(selected == cat.id ? null : cat.id),
                     ),
                   ),
                 ),
@@ -270,8 +268,7 @@ class _EmptyView extends StatelessWidget {
             SizedBox(height: AppSpacing.sm),
             Text(
               'Service listings from providers will appear here.',
-              style: TextStyle(
-                  fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -307,8 +304,7 @@ class _SearchEmptyView extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             const Text(
               'Try adjusting your search or filters',
-              style: TextStyle(
-                  fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -333,7 +329,7 @@ class _SearchResultCount extends StatelessWidget {
       ),
       color: AppColors.bgLight,
       child: Text(
-        '$count ${label}${count != 1 ? 's' : ''} found',
+        '$count $label${count != 1 ? 's' : ''} found',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
