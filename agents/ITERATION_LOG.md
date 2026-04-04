@@ -222,3 +222,26 @@ Do not replace older entries.
 - Risks / follow-up:
   - Snackbar visibility itself is still better validated by manual emulator QA than widget tests in the current harness.
   - Next useful pass is deeper manual QA around posting, bidding, and support/settings flows.
+
+## 2026-04-04 21:48 SGT | codex | ITER-007
+
+- Task IDs: UX-207
+- Branches: agents/codex/ux-207
+- Summary:
+  - Removed more silent disappearances from Favorites and Home so users see recovery UI instead of blank gaps.
+- Key changes:
+  - Saved task/provider rows now show visible unavailable/error cards instead of disappearing when underlying records are missing or fail to load.
+  - Unavailable favorites now offer direct `Remove` actions, reducing dead data in a user's saved list.
+  - Job offers and pending reviews home sections now surface retryable error UI instead of silently collapsing.
+  - Replaced more raw/internal error copy in Favorites with user-facing messaging.
+- Files touched:
+  - `lib/features/favorites/presentation/screens/favorites_screen.dart`
+  - `lib/features/home/presentation/widgets/job_offers_section.dart`
+  - `lib/features/home/presentation/widgets/pending_reviews_section.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter test test/features/new_features_test.dart`
+  - Passed: `flutter analyze lib/features/favorites/presentation/screens/favorites_screen.dart lib/features/home/presentation/widgets/job_offers_section.dart lib/features/home/presentation/widgets/pending_reviews_section.dart test/features/new_features_test.dart`
+- Risks / follow-up:
+  - There are still other `e.toString()` surfaces in the app worth converting to user-facing copy.
+  - Next likely batch should target auth/profile-setup and remaining detail/subsection edge cases.

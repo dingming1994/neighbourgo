@@ -66,7 +66,7 @@ class _SavedTasksTab extends ConsumerWidget {
     return favAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerList(),
       error: (e, _) => ErrorState(
-        message: e.toString(),
+        message: 'Could not load your saved tasks right now.',
         onRetry: () => ref.invalidate(favoritesProvider),
       ),
       data: (items) {
@@ -109,7 +109,7 @@ class _SavedProvidersTab extends ConsumerWidget {
     return favAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerList(),
       error: (e, _) => ErrorState(
-        message: e.toString(),
+        message: 'Could not load your saved providers right now.',
         onRetry: () => ref.invalidate(favoritesProvider),
       ),
       data: (items) {
@@ -157,9 +157,25 @@ class _FavoriteTaskCard extends ConsumerWidget {
 
     return taskAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerCard(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, __) => _UnavailableFavoriteCard(
+        icon: Icons.error_outline,
+        title: 'Could not load this saved task',
+        subtitle: 'It may be temporarily unavailable. You can retry or remove it.',
+        primaryLabel: 'Retry',
+        onPrimary: () => ref.invalidate(_taskByIdProvider(taskId)),
+        secondaryLabel: 'Remove',
+        onSecondary: () => toggleFavorite(ref, itemId: taskId, type: 'task'),
+      ),
       data: (task) {
-        if (task == null) return const SizedBox.shrink();
+        if (task == null) {
+          return _UnavailableFavoriteCard(
+            icon: Icons.inventory_2_outlined,
+            title: 'Saved task unavailable',
+            subtitle: 'This task may have been removed or is no longer available.',
+            primaryLabel: 'Remove',
+            onPrimary: () => toggleFavorite(ref, itemId: taskId, type: 'task'),
+          );
+        }
         final category = AppCategories.getById(task.categoryId);
         final categoryColor =
             AppColors.categoryColors[task.categoryId] ?? AppColors.primary;
@@ -268,9 +284,28 @@ class _FavoriteProviderCard extends ConsumerWidget {
 
     return provAsync.when(skipLoadingOnReload: true,
       loading: () => const _ShimmerCard(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, __) => _UnavailableFavoriteCard(
+        icon: Icons.error_outline,
+        title: 'Could not load this saved provider',
+        subtitle: 'It may be temporarily unavailable. You can retry or remove it.',
+        primaryLabel: 'Retry',
+        onPrimary: () => ref.invalidate(_providerByIdProvider(providerId)),
+        secondaryLabel: 'Remove',
+        onSecondary: () =>
+            toggleFavorite(ref, itemId: providerId, type: 'provider'),
+      ),
       data: (provider) {
-        if (provider == null) return const SizedBox.shrink();
+        if (provider == null) {
+          return _UnavailableFavoriteCard(
+            icon: Icons.person_off_outlined,
+            title: 'Saved provider unavailable',
+            subtitle:
+                'This provider profile may have been removed or is no longer public.',
+            primaryLabel: 'Remove',
+            onPrimary: () =>
+                toggleFavorite(ref, itemId: providerId, type: 'provider'),
+          );
+        }
         final stats = provider.stats;
         final avgRating = stats?.avgRating ?? 0.0;
 
@@ -409,6 +444,81 @@ class _EmptyState extends StatelessWidget {
                       ?.copyWith(color: AppColors.textSecondary)),
             ],
           ),
+        ),
+      );
+}
+
+class _UnavailableFavoriteCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String primaryLabel;
+  final VoidCallback onPrimary;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
+  const _UnavailableFavoriteCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.primaryLabel,
+    required this.onPrimary,
+    this.secondaryLabel,
+    this.onSecondary,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.divider),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      OutlinedButton(
+                        onPressed: onPrimary,
+                        child: Text(primaryLabel),
+                      ),
+                      if (secondaryLabel != null && onSecondary != null)
+                        TextButton(
+                          onPressed: onSecondary,
+                          child: Text(secondaryLabel!),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       );
 }
