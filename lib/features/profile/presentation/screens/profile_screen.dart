@@ -61,7 +61,10 @@ class ProfileScreen extends ConsumerWidget {
           if (user == null) {
             // currentUserProvider always synthesises a fallback, so this
             // path should be unreachable.  Show a safe placeholder anyway.
-            return const Center(child: Text('Profile unavailable'));
+            return ErrorState(
+              message: 'Your profile is unavailable right now.',
+              onRetry: () => ref.invalidate(currentUserProvider),
+            );
           }
           return ListView(
             children: [

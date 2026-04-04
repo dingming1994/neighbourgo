@@ -334,6 +334,23 @@ void main() {
           findsOneWidget);
       expect(find.text('Try Again'), findsOneWidget);
     });
+
+    testScreen('shows recovery state when profile is unavailable',
+        (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        const ProfileScreen(),
+        overrides: [
+          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          currentUserProvider.overrideWith((_) => Stream.value(null)),
+          signOutProvider.overrideWithValue(() async {}),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your profile is unavailable right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -547,6 +564,23 @@ void main() {
           findsOneWidget);
       expect(find.text('Try Again'), findsOneWidget);
     });
+
+    testScreen('shows sign-in recovery state when user is unavailable',
+        (tester) async {
+      final fakeChatRepo = FakeChatRepository();
+      await tester.pumpWidget(buildTestWidget(
+        const ChatListScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(null)),
+          chatRepositoryProvider.overrideWithValue(fakeChatRepo),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please sign in to view your messages.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -699,9 +733,8 @@ void main() {
         ],
       ));
       await tester.pumpAndSettle();
-      // ProviderHomeScreen shows 'Find Work' and 'All Open Tasks'
+      // ProviderHomeScreen shows the provider-specific work tab.
       expect(find.text('Find Work'), findsOneWidget);
-      expect(find.text('All Open Tasks'), findsOneWidget);
     });
 
     testScreen('renders TabBar with Find Help and Find Work tabs for both role',

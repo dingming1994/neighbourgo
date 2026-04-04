@@ -47,7 +47,7 @@ class BidListSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => ErrorState(
-        message: e.toString(),
+        message: 'Could not load bids for this task right now.',
         onRetry: () => ref.invalidate(bidsStreamProvider(taskId)),
       ),
       data: (bids) {

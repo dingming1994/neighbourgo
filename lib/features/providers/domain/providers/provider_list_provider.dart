@@ -4,6 +4,9 @@ import '../../../auth/data/models/user_model.dart';
 import '../../data/repositories/provider_repository.dart';
 import '../../../../core/constants/app_constants.dart';
 
+const _providerListLoadErrorMessage =
+    'Could not load providers right now.';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +78,7 @@ class ProviderListNotifier extends StateNotifier<ProviderListState> {
             state = state.copyWith(
               isLoading: false,
               isLoadingMore: false,
-              error: e.toString(),
+              error: _providerListLoadErrorMessage,
             );
           },
         );

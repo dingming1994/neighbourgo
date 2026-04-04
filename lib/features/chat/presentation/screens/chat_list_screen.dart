@@ -36,7 +36,10 @@ class ChatListScreen extends ConsumerWidget {
         ),
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('Please sign in'));
+            return ErrorState(
+              message: 'Please sign in to view your messages.',
+              onRetry: () => ref.invalidate(currentUserProvider),
+            );
           }
           return _ChatList(user: user);
         },

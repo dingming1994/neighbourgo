@@ -305,3 +305,31 @@ Do not replace older entries.
 - Risks / follow-up:
   - Lower-priority provider/task list provider layers still expose raw error strings internally.
   - The next useful step is shifting from copy cleanup to broader emulator path testing for end-to-end regressions.
+
+## 2026-04-05 00:14 SGT | codex | ITER-010
+
+- Task IDs: UX-210
+- Branches: agents/codex/ux-210
+- Summary:
+  - Sanitized remaining high-traffic list and fallback states so users no longer see raw backend errors in task/provider/bid entry points.
+- Key changes:
+  - Task list and provider directory notifiers now surface stable user-facing load errors instead of propagating `e.toString()` into UI.
+  - Chat list and profile screen now show retryable recovery states when current user data is unavailable, replacing brittle `Please sign in` / `Profile unavailable` placeholders.
+  - My Bids now labels missing tasks as `Task unavailable`, and task bid lists use a friendly recoverable load error instead of raw exception text.
+  - Added regression coverage for task list failure, provider directory failure, bid list failure, missing-profile fallback, missing-chat-user fallback, and missing-task bid titles.
+- Files touched:
+  - `lib/features/tasks/domain/providers/task_list_provider.dart`
+  - `lib/features/providers/domain/providers/provider_list_provider.dart`
+  - `lib/features/chat/presentation/screens/chat_list_screen.dart`
+  - `lib/features/profile/presentation/screens/profile_screen.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+  - `lib/features/bids/presentation/widgets/bid_list_section.dart`
+  - `test/widgets/task_screens_test.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter analyze lib/features/tasks/domain/providers/task_list_provider.dart lib/features/providers/domain/providers/provider_list_provider.dart lib/features/chat/presentation/screens/chat_list_screen.dart lib/features/profile/presentation/screens/profile_screen.dart lib/features/bids/presentation/screens/my_bids_screen.dart lib/features/bids/presentation/widgets/bid_list_section.dart test/widgets/task_screens_test.dart test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+  - Passed: `flutter test test/widgets/task_screens_test.dart test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+- Risks / follow-up:
+  - `auth_provider.dart` still keeps raw auth error strings in state for OTP/phone flows; those should be normalized in a future pass with UI-specific copy.
+  - The app router still exposes raw `state.error` in the not-found page, which should eventually be converted into a friendlier recovery screen.

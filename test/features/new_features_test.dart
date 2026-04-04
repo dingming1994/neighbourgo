@@ -19,6 +19,8 @@ import 'package:neighbourgo/features/home/presentation/widgets/pending_reviews_s
 import 'package:neighbourgo/features/notifications/domain/providers/notification_providers.dart';
 import 'package:neighbourgo/features/notifications/presentation/screens/notification_list_screen.dart';
 import 'package:neighbourgo/features/profile/data/repositories/profile_repository.dart';
+import 'package:neighbourgo/features/providers/data/repositories/provider_repository.dart';
+import 'package:neighbourgo/features/providers/presentation/screens/provider_directory_screen.dart';
 import 'package:neighbourgo/features/services/data/models/service_listing_model.dart';
 import 'package:neighbourgo/features/services/data/repositories/service_listing_repository.dart';
 import 'package:neighbourgo/features/services/presentation/screens/service_listings_screen.dart';
@@ -164,6 +166,27 @@ class FakeProfileRepository extends ProfileRepository {
   @override
   Stream<UserModel?> watchProfile(String uid) =>
       Stream.value(profilesByUid[uid]);
+}
+
+class FakeProviderRepository extends ProviderRepository {
+  final List<UserModel> providers;
+  final bool shouldThrowOnWatch;
+
+  FakeProviderRepository({
+    this.providers = const [],
+    this.shouldThrowOnWatch = false,
+  }) : super(db: FakeFirebaseFirestore());
+
+  @override
+  Stream<List<UserModel>> watchProviders({
+    String? categoryId,
+    int limit = 20,
+  }) {
+    if (shouldThrowOnWatch) {
+      return Stream.error(Exception('boom'));
+    }
+    return Stream.value(providers);
+  }
 }
 
 // =============================================================================
@@ -522,6 +545,47 @@ void main() {
 
       expect(find.text('S\$80'), findsOneWidget);
       expect(find.text('Cook dinner'), findsOneWidget);
+    });
+
+    _testScreen('shows task unavailable when the task record is missing',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const MyBidsScreen(),
+        overrides(
+          bids: [_makeBid(taskId: 'missing-task')],
+          taskById: const {},
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task unavailable'), findsOneWidget);
+    });
+  });
+
+  group('ProviderDirectoryScreen', () {
+    List<Override> overrides({
+      List<UserModel> providers = const [],
+      bool shouldThrowOnWatch = false,
+    }) {
+      final fakeProviderRepo = FakeProviderRepository(
+        providers: providers,
+        shouldThrowOnWatch: shouldThrowOnWatch,
+      );
+      return [
+        providerRepositoryProvider.overrideWithValue(fakeProviderRepo),
+      ];
+    }
+
+    _testScreen('shows friendly error when providers fail to load',
+        (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const ProviderDirectoryScreen(),
+        overrides(shouldThrowOnWatch: true),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load providers right now.'), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 
