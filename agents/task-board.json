@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-04T15:52:52+00:00",
+  "updatedAt": "2026-04-04T16:10:19+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -202,6 +202,27 @@
       "notes": [
         "Claimed by codex from base main at 2026-04-04T15:48:00+00:00",
         "Merged into main at 2026-04-04T15:52:51+00:00",
+        "Cleaned up worktree/branch after merge"
+      ]
+    },
+    {
+      "id": "UX-211",
+      "title": "Normalize auth and routing error recovery UX",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "merged",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-211",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-211-codex",
+      "claimedAt": "2026-04-04T16:07:19+00:00",
+      "mergedAt": "2026-04-04T16:10:18+00:00",
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T16:07:19+00:00",
+        "Merged into main at 2026-04-04T16:10:18+00:00",
         "Cleaned up worktree/branch after merge"
       ]
     }
