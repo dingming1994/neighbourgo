@@ -119,7 +119,7 @@ void main() {
     });
 
     test('copyWith clearError removes error', () {
-      final state = TaskListState(error: 'oops');
+      const state = TaskListState(error: 'oops');
 
       final updated = state.copyWith(clearError: true);
 
@@ -127,7 +127,7 @@ void main() {
     });
 
     test('copyWith error overrides existing error', () {
-      final state = TaskListState(error: 'old');
+      const state = TaskListState(error: 'old');
 
       final updated = state.copyWith(error: 'new');
 
@@ -209,7 +209,10 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(notifier.state.error, isNotNull);
-      expect(notifier.state.error, contains('Network failure'));
+      expect(
+        notifier.state.error,
+        'Could not load available tasks right now.',
+      );
       expect(notifier.state.isLoading, isFalse);
     });
 
