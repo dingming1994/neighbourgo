@@ -333,3 +333,26 @@ Do not replace older entries.
 - Risks / follow-up:
   - `auth_provider.dart` still keeps raw auth error strings in state for OTP/phone flows; those should be normalized in a future pass with UI-specific copy.
   - The app router still exposes raw `state.error` in the not-found page, which should eventually be converted into a friendlier recovery screen.
+
+## 2026-04-05 00:36 SGT | codex | ITER-011
+
+- Task IDs: UX-211
+- Branches: agents/codex/ux-211
+- Summary:
+  - Normalized authentication failure messaging and replaced the raw router error page with a friendly recovery state.
+- Key changes:
+  - `PhoneAuthNotifier` now maps Firebase and generic OTP/phone failures into stable user-facing copy instead of surfacing raw exception strings.
+  - OTP verification now distinguishes expired-code failures from generic invalid OTP failures.
+  - The app router no longer renders `Page not found: ...`; missing routes now use a recovery screen that sends users back to `home` or `welcome`.
+  - Added notifier, auth screen, and router regression coverage for normalized error copy and missing-page recovery UI.
+- Files touched:
+  - `lib/features/auth/domain/providers/auth_provider.dart`
+  - `lib/core/router/app_router.dart`
+  - `test/auth/phone_auth_notifier_test.dart`
+  - `test/widgets/auth_screens_test.dart`
+- Verification:
+  - Passed: `flutter analyze lib/features/auth/domain/providers/auth_provider.dart lib/core/router/app_router.dart test/auth/phone_auth_notifier_test.dart test/widgets/auth_screens_test.dart`
+  - Passed: `flutter test test/auth/phone_auth_notifier_test.dart test/widgets/auth_screens_test.dart`
+- Risks / follow-up:
+  - Email auth and some profile-edit flows still do their own ad-hoc error mapping; these should eventually be consolidated so auth copy is consistent across all entry points.
+  - The next higher-value pass is emulator-based end-to-end QA, since top-level error text is now much cleaner and deeper flow bugs are more likely to remain than copy issues.

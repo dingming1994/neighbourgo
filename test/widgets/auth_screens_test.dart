@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neighbourgo/core/router/app_router.dart';
 import 'package:neighbourgo/features/auth/data/models/user_model.dart';
 import 'package:neighbourgo/features/auth/data/repositories/auth_repository.dart';
 import 'package:neighbourgo/features/auth/domain/providers/auth_provider.dart';
@@ -33,6 +34,11 @@ class FakeFirebaseAuth extends Fake implements FirebaseAuth {
 class FakeFirebaseFirestore extends Fake implements FirebaseFirestore {}
 
 class FakeFirebaseStorage extends Fake implements FirebaseStorage {}
+
+class FakeSignedInUser extends Fake implements User {
+  @override
+  String get uid => 'signed-in-user';
+}
 
 class FakeAuthRepository extends AuthRepository {
   UserModel? userToReturn;
@@ -448,6 +454,22 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
+    testPhone('shows normalized auth error copy', (tester) async {
+      await tester.pumpWidget(buildPhoneScreen(
+        initialState: const PhoneAuthState(
+          error: 'Too many attempts right now. Please wait a moment and try again.',
+        ),
+      ));
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Too many attempts right now. Please wait a moment and try again.',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testPhone('renders heading and subtitle text', (tester) async {
       await tester.pumpWidget(buildPhoneScreen());
       expect(find.text('Your phone number'), findsOneWidget);
@@ -503,6 +525,52 @@ void main() {
     testPhone('renders emoji icon', (tester) async {
       await tester.pumpWidget(buildOtpScreen());
       expect(find.text('📲'), findsOneWidget);
+    });
+
+    testPhone('shows OTP error copy from state', (tester) async {
+      await tester.pumpWidget(buildOtpScreen(
+        initialState: const PhoneAuthState(
+          error: 'This OTP has expired. Please request a new code.',
+        ),
+      ));
+      await tester.pump();
+
+      expect(
+        find.text('This OTP has expired. Please request a new code.'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('AppRouter', () {
+    testPhone('shows friendly missing-page recovery state', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          authStateProvider.overrideWith((_) => Stream.value(FakeSignedInUser())),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      router.go('/missing-page');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'We could not open that page. It may have moved or no longer exist.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Try Again'), findsOneWidget);
+      expect(find.textContaining('Page not found:'), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
     });
   });
 }
