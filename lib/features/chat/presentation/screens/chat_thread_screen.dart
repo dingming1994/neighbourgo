@@ -83,7 +83,17 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     if (text.isEmpty || _isSending) return;
 
     final user = ref.read(currentUserProvider).valueOrNull;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in again before sending a message.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isSending = true);
     _textController.clear();
@@ -102,8 +112,17 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
+        if (_textController.text.trim().isEmpty) {
+          _textController.text = text;
+          _textController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _textController.text.length),
+          );
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send: $e')),
+          const SnackBar(
+            content: Text('Could not send your message. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -113,7 +132,17 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
 
   Future<void> _sendImage() async {
     final user = ref.read(currentUserProvider).valueOrNull;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in again before sending an image.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     final picker = ImagePicker();
     final picked =
@@ -148,7 +177,10 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send image: $e')),
+          const SnackBar(
+            content: Text('Could not send that image. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -206,7 +238,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
                       children: [
                         Icon(Icons.chat_bubble_outline,
                             size: 48,
-                            color: AppColors.textHint.withOpacity(0.4)),
+                            color: AppColors.textHint.withValues(alpha: 0.4)),
                         const SizedBox(height: 12),
                         const Text('No messages yet',
                             style: TextStyle(
@@ -445,7 +477,7 @@ class _MessageBubble extends StatelessWidget {
                   borderRadius: bubbleRadius,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -537,7 +569,7 @@ class _InputBar extends StatelessWidget {
         color: AppColors.bgCard,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -573,7 +605,7 @@ class _InputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Type a message…',
                   hintStyle: TextStyle(
-                      color: AppColors.textHint.withOpacity(0.7),
+                      color: AppColors.textHint.withValues(alpha: 0.7),
                       fontSize: 15),
                   filled: true,
                   fillColor: AppColors.bgLight,
