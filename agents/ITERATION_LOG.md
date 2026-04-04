@@ -356,3 +356,22 @@ Do not replace older entries.
 - Risks / follow-up:
   - Email auth and some profile-edit flows still do their own ad-hoc error mapping; these should eventually be consolidated so auth copy is consistent across all entry points.
   - The next higher-value pass is emulator-based end-to-end QA, since top-level error text is now much cleaner and deeper flow bugs are more likely to remain than copy issues.
+
+## 2026-04-05 00:47 SGT | codex | ITER-012
+
+- Task IDs: UX-212
+- Branches: agents/codex/ux-212
+- Summary:
+  - Realigned an outdated task-list provider regression test with the newer friendly error-state contract already shipped in the app.
+- Key changes:
+  - Updated `task_list_provider_test.dart` so stream errors now assert the normalized user-facing copy instead of raw exception text.
+  - Cleaned the touched test’s low-risk `const` hints while verifying the new expectation.
+- Files touched:
+  - `test/tasks/task_list_provider_test.dart`
+- Verification:
+  - Passed: `flutter test test/tasks/task_list_provider_test.dart`
+  - Passed: `flutter test test/widgets/task_screens_test.dart --plain-name "shows friendly error when tasks fail to load"`
+  - `flutter analyze test/tasks/task_list_provider_test.dart` still reports one pre-existing sealed-class fake warning (`Query` test double), but no new errors from this change.
+- Risks / follow-up:
+  - Similar older provider-layer tests should be checked opportunistically during broader suite runs to catch any other stale raw-error expectations.
+  - The sealed `Query` fake in `task_list_provider_test.dart` should eventually be refactored rather than left as an analyzer warning.
