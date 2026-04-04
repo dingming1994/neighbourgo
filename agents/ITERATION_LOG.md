@@ -245,3 +245,33 @@ Do not replace older entries.
 - Risks / follow-up:
   - There are still other `e.toString()` surfaces in the app worth converting to user-facing copy.
   - Next likely batch should target auth/profile-setup and remaining detail/subsection edge cases.
+
+## 2026-04-04 22:18 SGT | codex | ITER-008
+
+- Task IDs: UX-208
+- Branches: agents/codex/ux-208
+- Summary:
+  - Replaced more raw exception copy in high-traffic auth/profile/chat/bids surfaces with clearer user-facing messaging.
+- Key changes:
+  - `ProfileSetupScreen` save failures now show friendly messages instead of raw `Error: ...`.
+  - `EmailAuthScreen` no longer exposes unknown Firebase/internal errors directly to the user.
+  - `ProfileScreen`, `ChatListScreen`, and `MyBidsScreen` now use stable user-facing error copy in their main error states.
+  - Added targeted regression coverage for profile load failure, chat load failure, and bid load failure states.
+- Files touched:
+  - `lib/features/auth/presentation/screens/profile_setup_screen.dart`
+  - `lib/features/auth/presentation/screens/email_auth_screen.dart`
+  - `lib/features/profile/presentation/screens/profile_screen.dart`
+  - `lib/features/chat/presentation/screens/chat_list_screen.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+  - `test/widgets/auth_screens_test.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter test test/widgets/auth_screens_test.dart`
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart --plain-name "shows friendly error when profile fails to load"`
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart --plain-name "shows friendly error when chats fail to load"`
+  - Passed: `flutter test test/features/new_features_test.dart --plain-name "shows friendly error when bids fail to load"`
+  - Passed: `flutter analyze lib/features/auth/presentation/screens/profile_setup_screen.dart lib/features/auth/presentation/screens/email_auth_screen.dart lib/features/profile/presentation/screens/profile_screen.dart lib/features/chat/presentation/screens/chat_list_screen.dart lib/features/bids/presentation/screens/my_bids_screen.dart test/widgets/auth_screens_test.dart test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+- Risks / follow-up:
+  - A few other screens still use `e.toString()` in lower-priority surfaces and provider lists.
+  - `ProfileSetupScreen` save-failure copy is covered by implementation and manual behavior, but not by a stable widget assertion because the current test harness is brittle around that submission path.

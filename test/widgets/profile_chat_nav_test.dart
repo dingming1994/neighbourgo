@@ -97,16 +97,21 @@ class FakeChatRepository extends ChatRepository {
   List<MessageModel> messagesToReturn;
   ChatModel? chatToReturn;
   bool shouldThrowOnSend;
+  bool shouldThrowOnGetChats;
 
   FakeChatRepository({
     this.chatsToReturn = const [],
     this.messagesToReturn = const [],
     this.chatToReturn,
     this.shouldThrowOnSend = false,
+    this.shouldThrowOnGetChats = false,
   }) : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
   Stream<List<ChatModel>> getChatsStream(String userId) {
+    if (shouldThrowOnGetChats) {
+      return Stream.error(Exception('boom'));
+    }
     return Stream.value(chatsToReturn);
   }
 
@@ -311,6 +316,23 @@ void main() {
       expect(find.text('Service Provider'), findsOneWidget);
       expect(find.text('Change Role'), findsOneWidget);
     });
+
+    testScreen('shows friendly error when profile fails to load',
+        (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        const ProfileScreen(),
+        overrides: [
+          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          currentUserProvider.overrideWith((_) => Stream.error(Exception('boom'))),
+          signOutProvider.overrideWithValue(() async {}),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your profile right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -473,6 +495,22 @@ void main() {
       expect(find.text('Bid on an open task to start chatting with posters'),
           findsOneWidget);
       expect(find.text('Browse Tasks'), findsOneWidget);
+    });
+
+    testScreen('shows friendly error when chats fail to load', (tester) async {
+      final fakeChatRepo = FakeChatRepository(shouldThrowOnGetChats: true);
+      await tester.pumpWidget(buildTestWidget(
+        const ChatListScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(user)),
+          chatRepositoryProvider.overrideWithValue(fakeChatRepo),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your conversations right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
   });
 

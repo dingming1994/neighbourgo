@@ -25,7 +25,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   File?  _avatarFile;
   String? _neighbourhood;
   bool   _loading       = false;
-  int    _step          = 0; // 0=basic, 1=neighbourhood, 2=done
 
   static const _hoods = [
     'Ang Mo Kio', 'Bedok', 'Bishan', 'Bukit Merah', 'Bukit Timah',
@@ -76,7 +75,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(_friendlySaveError(e)),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -84,15 +86,26 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
+  String _friendlySaveError(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('permission-denied')) {
+      return 'You do not have permission to update this profile right now.';
+    }
+    if (message.contains('network') || message.contains('unavailable')) {
+      return 'Could not save your profile right now. Please check your connection and try again.';
+    }
+    return 'Could not save your profile right now. Please try again.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Up Profile'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(4),
           child: LinearProgressIndicator(
-            value: (_step + 1) / 2,
+            value: 0.5,
             backgroundColor: AppColors.divider,
             color: AppColors.primary,
           ),
@@ -179,7 +192,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 const Text('Your Neighbourhood', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _neighbourhood,
+                  initialValue: _neighbourhood,
                   decoration: const InputDecoration(
                     hintText: 'Select your area',
                     prefixIcon: Icon(Icons.location_on_outlined),

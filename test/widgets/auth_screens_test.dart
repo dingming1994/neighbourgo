@@ -79,6 +79,7 @@ class FakeAuthRepository extends AuthRepository {
 
 class FakeProfileRepository extends ProfileRepository {
   bool updateCalled = false;
+  bool shouldThrow = false;
 
   FakeProfileRepository()
       : super(
@@ -88,6 +89,7 @@ class FakeProfileRepository extends ProfileRepository {
 
   @override
   Future<void> updateProfile(UserModel user) async {
+    if (shouldThrow) throw Exception('permission-denied');
     updateCalled = true;
   }
 
@@ -334,6 +336,7 @@ void main() {
       expect(find.byIcon(Icons.camera_alt), findsOneWidget);
       expect(find.byType(CircleAvatar), findsOneWidget);
     });
+
   });
 
   // ───────────────────────────────────────────────────────────────────────────

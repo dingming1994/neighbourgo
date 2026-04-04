@@ -31,7 +31,7 @@ class ChatListScreen extends ConsumerWidget {
         skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          message: 'Could not load your messages right now.',
           onRetry: () => ref.invalidate(currentUserProvider),
         ),
         data: (user) {
@@ -58,7 +58,7 @@ class _ChatList extends ConsumerWidget {
       skipLoadingOnReload: true,
       loading: () => const _ChatLoadingList(),
       error: (e, _) => ErrorState(
-        message: e.toString(),
+        message: 'Could not load your conversations right now.',
         onRetry: () => ref.invalidate(chatsStreamProvider(user.uid)),
       ),
       data: (chats) {
