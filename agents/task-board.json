@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-04T12:59:26+00:00",
+  "updatedAt": "2026-04-04T13:26:12+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -17,7 +17,7 @@
       "source": {
         "type": "manual"
       },
-      "status": "done",
+      "status": "merged",
       "ownerModel": "codex",
       "branch": "agents/codex/ux-201",
       "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-201-codex",
@@ -25,7 +25,8 @@
       "mergedAt": null,
       "notes": [
         "Claimed by codex from base main at 2026-04-04T03:55:17+00:00",
-        "2026-04-04T03:59:37+00:00 Implemented non-payment UX fixes, unread counts, role-aware task/chat empty states, discover search hydration, and retryable error states."
+        "2026-04-04T03:59:37+00:00 Implemented non-payment UX fixes, unread counts, role-aware task/chat empty states, discover search hydration, and retryable error states.",
+        "2026-04-04T13:26:12+00:00 Merged to main via consolidated UX-203 integration commit 4308158."
       ]
     },
     {
@@ -37,7 +38,7 @@
       "source": {
         "type": "manual"
       },
-      "status": "done",
+      "status": "merged",
       "ownerModel": "codex",
       "branch": "agents/codex/ux-202",
       "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-202-codex",
@@ -45,7 +46,8 @@
       "mergedAt": null,
       "notes": [
         "Claimed by codex from base main at 2026-04-04T03:55:17+00:00",
-        "2026-04-04T03:59:37+00:00 Verified with focused Flutter tests; targeted analyzer clean except existing withOpacity deprecation infos."
+        "2026-04-04T03:59:37+00:00 Verified with focused Flutter tests; targeted analyzer clean except existing withOpacity deprecation infos.",
+        "2026-04-04T13:26:12+00:00 Merged to main via consolidated UX-203 integration commit 4308158."
       ]
     },
     {
@@ -57,14 +59,15 @@
       "source": {
         "type": "manual"
       },
-      "status": "in_progress",
+      "status": "merged",
       "ownerModel": "codex",
       "branch": "agents/codex/ux-203",
       "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-203-codex",
       "claimedAt": "2026-04-04T04:06:46+00:00",
       "mergedAt": null,
       "notes": [
-        "Claimed by codex from base main at 2026-04-04T04:06:46+00:00"
+        "Claimed by codex from base main at 2026-04-04T04:06:46+00:00",
+        "2026-04-04T13:26:12+00:00 Merged to main in commit 4308158."
       ]
     },
     {
