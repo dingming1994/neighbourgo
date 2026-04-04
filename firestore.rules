@@ -52,13 +52,16 @@ service cloud.firestore {
                     && request.resource.data.posterId == request.auth.uid
                     && request.resource.data.status   == "open";
 
-      // Poster can update their own task; provider can only update status/assignedProviderId
+      // Poster can update their own task; assigned provider can update status;
+      // any signed-in user can increment bidCount (for bid submission)
       allow update: if isSignedIn() && isNotDeactivated() && (
         resource.data.posterId == request.auth.uid
         ||
         (resource.data.assignedProviderId == request.auth.uid
          && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(["status", "updatedAt"]))
+        ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["bidCount"])
       );
 
       // Only poster can delete (cancel) their own task
