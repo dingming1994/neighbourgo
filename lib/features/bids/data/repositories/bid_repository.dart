@@ -53,9 +53,16 @@ class BidRepository {
       'createdAt': Timestamp.fromDate(now), // override ISO string with Timestamp
     });
 
-    await _db.collection(AppConstants.tasksCol).doc(taskId).update({
-      'bidCount': FieldValue.increment(1),
-    });
+    // bidCount increment may fail if provider doesn't have task-level write
+    // permission. This is non-critical — the bid itself was already created.
+    try {
+      await _db.collection(AppConstants.tasksCol).doc(taskId).update({
+        'bidCount': FieldValue.increment(1),
+      });
+    } catch (_) {
+      // Silently accept — a Cloud Function trigger on bid creation is the
+      // proper long-term solution for maintaining bidCount.
+    }
 
     return id;
   }
