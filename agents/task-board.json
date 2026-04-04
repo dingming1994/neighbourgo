@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-04T13:41:14+00:00",
+  "updatedAt": "2026-04-04T15:25:49+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -139,6 +139,27 @@
       "notes": [
         "Claimed by codex from base main at 2026-04-04T13:38:22+00:00",
         "Merged into main at 2026-04-04T13:41:13+00:00",
+        "Cleaned up worktree/branch after merge"
+      ]
+    },
+    {
+      "id": "UX-208",
+      "title": "Replace remaining raw error copy with user-facing states",
+      "description": "Convert remaining high-traffic screens that expose raw exceptions into clearer user-facing error messages and recovery UI, starting with auth/profile setup and top-level list screens.",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "merged",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-208",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-208-codex",
+      "claimedAt": "2026-04-04T15:21:07+00:00",
+      "mergedAt": "2026-04-04T15:25:49+00:00",
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T15:21:07+00:00",
+        "Merged into main at 2026-04-04T15:25:49+00:00",
         "Cleaned up worktree/branch after merge"
       ]
     }
