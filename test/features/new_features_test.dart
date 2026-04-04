@@ -156,7 +156,7 @@ class FakeProfileRepository extends ProfileRepository {
 // Test data
 // =============================================================================
 
-final _testUser = UserModel(
+const _testUser = UserModel(
   uid: 'user-001',
   phone: '+6591234567',
   displayName: 'Test User',
@@ -164,7 +164,7 @@ final _testUser = UserModel(
   neighbourhood: 'Ang Mo Kio',
 );
 
-final _testProvider = UserModel(
+const _testProvider = UserModel(
   uid: 'provider-001',
   phone: '+6598765432',
   displayName: 'Alice Provider',
@@ -799,6 +799,32 @@ void main() {
 
       expect(find.text('No notifications yet'), findsOneWidget);
       expect(find.text('Browse Tasks'), findsOneWidget);
+    });
+
+    _testScreen('uses view profile action label for review notifications',
+        (tester) async {
+      final notification = AppNotification(
+        id: 'notif-001',
+        type: 'review_received',
+        title: 'New review received',
+        body: 'Someone left you a review.',
+        isRead: false,
+        createdAt: DateTime(2026, 4, 2),
+        data: const {'userId': 'provider-001'},
+      );
+
+      await tester.pumpWidget(_buildTestWidget(
+        const NotificationListScreen(),
+        [
+          currentUserProvider.overrideWith((_) => Stream.value(_testUser)),
+          notificationsProvider.overrideWith((_) => Stream.value([notification])),
+          unreadNotificationCountProvider.overrideWith((_) => Stream.value(1)),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('View Profile'), findsOneWidget);
+      expect(find.text('Leave Review'), findsNothing);
     });
   });
 

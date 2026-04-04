@@ -199,3 +199,26 @@ Do not replace older entries.
 - Risks / follow-up:
   - This iteration only changes task budget display.
   - Other price displays like payment totals or bid amounts were intentionally left unchanged.
+
+## 2026-04-04 21:37 SGT | codex | ITER-006
+
+- Task IDs: UX-206
+- Branches: agents/codex/ux-206
+- Summary:
+  - Tightened chat-thread failure handling and corrected a misleading notification CTA label.
+- Key changes:
+  - `ChatThreadScreen` now shows clearer auth/failure messages for send attempts.
+  - Failed text sends restore the typed draft instead of discarding the user's message.
+  - Review notifications now say `View Profile`, matching the actual navigation target.
+  - Cleaned up targeted lint/deprecation noise in the touched chat/test files.
+- Files touched:
+  - `lib/features/chat/presentation/screens/chat_thread_screen.dart`
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+  - Passed: `flutter analyze lib/features/chat/presentation/screens/chat_thread_screen.dart lib/features/notifications/presentation/screens/notification_list_screen.dart test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+- Risks / follow-up:
+  - Snackbar visibility itself is still better validated by manual emulator QA than widget tests in the current harness.
+  - Next useful pass is deeper manual QA around posting, bidding, and support/settings flows.

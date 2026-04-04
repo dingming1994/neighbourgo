@@ -353,7 +353,7 @@ class _ActionButton extends StatelessWidget {
       case 'new_message':
         return 'Reply';
       case 'review_received':
-        return 'Leave Review';
+        return 'View Profile';
       default:
         return null;
     }

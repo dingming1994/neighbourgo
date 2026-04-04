@@ -96,11 +96,13 @@ class FakeChatRepository extends ChatRepository {
   List<ChatModel> chatsToReturn;
   List<MessageModel> messagesToReturn;
   ChatModel? chatToReturn;
+  bool shouldThrowOnSend;
 
   FakeChatRepository({
     this.chatsToReturn = const [],
     this.messagesToReturn = const [],
     this.chatToReturn,
+    this.shouldThrowOnSend = false,
   }) : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
@@ -119,7 +121,11 @@ class FakeChatRepository extends ChatRepository {
   }
 
   @override
-  Future<void> sendMessage(String chatId, MessageModel message) async {}
+  Future<void> sendMessage(String chatId, MessageModel message) async {
+    if (shouldThrowOnSend) {
+      throw Exception('send failed');
+    }
+  }
 
   @override
   Future<String> createOrGetChat(
@@ -256,7 +262,7 @@ void main() {
       fakeAuthRepo = FakeAuthRepository()..userToReturn = user;
     });
 
-    List<Override> _overrides() => [
+    List<Override> overrides() => [
           authRepositoryProvider.overrideWithValue(fakeAuthRepo),
           currentUserProvider.overrideWith((_) => Stream.value(user)),
           signOutProvider.overrideWithValue(() async {}),
@@ -265,7 +271,7 @@ void main() {
     testScreen('renders Profile title', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Profile'), findsOneWidget);
@@ -274,7 +280,7 @@ void main() {
     testScreen('renders avatar section with display name', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Jane Doe'), findsOneWidget);
@@ -284,7 +290,7 @@ void main() {
     testScreen('renders menu items', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(
@@ -298,7 +304,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('My Role'), findsOneWidget);
@@ -323,7 +329,7 @@ void main() {
       fakeProfileRepo = FakeProfileRepository();
     });
 
-    List<Override> _overrides() => [
+    List<Override> overrides() => [
           profileRepositoryProvider.overrideWithValue(fakeProfileRepo),
           currentUserProvider.overrideWith((_) => Stream.value(user)),
         ];
@@ -332,7 +338,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const EditProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Display Name'), findsOneWidget);
@@ -347,7 +353,7 @@ void main() {
     testScreen('renders Service Categories as FilterChips', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const EditProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Service Categories'), findsOneWidget);
@@ -357,7 +363,7 @@ void main() {
     testScreen('Save button exists in AppBar', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const EditProfileScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Save'), findsOneWidget);
@@ -511,6 +517,30 @@ void main() {
       expect(find.text('No messages yet'), findsOneWidget);
       expect(find.text('Say hello!'), findsOneWidget);
     });
+
+    testScreen('restores typed message when send fails',
+        (tester) async {
+      final fakeChatRepo = FakeChatRepository(
+        chatToReturn: chat,
+        messagesToReturn: [],
+        shouldThrowOnSend: true,
+      );
+      await tester.pumpWidget(buildTestWidget(
+        const ChatThreadScreen(chatId: 'chat-1'),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(user)),
+          chatRepositoryProvider.overrideWithValue(fakeChatRepo),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Hello there');
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hello there'), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -519,7 +549,7 @@ void main() {
   group('MainShellScreen', () {
     testScreen('renders bottom navigation bar with 5 items', (tester) async {
       await tester.pumpWidget(buildTestWidget(
-        MainShellScreen(child: const Scaffold(body: Text('Home Content'))),
+        const MainShellScreen(child: Scaffold(body: Text('Home Content'))),
       ));
       await tester.pump();
       // 5 tab labels: Home, Discover, (Post has no label), Messages, Profile
@@ -531,7 +561,7 @@ void main() {
 
     testScreen('bottom nav includes correct icons', (tester) async {
       await tester.pumpWidget(buildTestWidget(
-        MainShellScreen(child: const Scaffold(body: Text('Home Content'))),
+        const MainShellScreen(child: Scaffold(body: Text('Home Content'))),
       ));
       await tester.pump();
       expect(find.byIcon(Icons.home), findsOneWidget); // active home icon
@@ -542,7 +572,7 @@ void main() {
 
     testScreen('FAB (Post Task) button renders with gradient', (tester) async {
       await tester.pumpWidget(buildTestWidget(
-        MainShellScreen(child: const Scaffold(body: Text('Home Content'))),
+        const MainShellScreen(child: Scaffold(body: Text('Home Content'))),
       ));
       await tester.pump();
       // The Post FAB uses Icons.add inside a gradient Container
