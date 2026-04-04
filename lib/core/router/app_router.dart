@@ -19,7 +19,6 @@ import '../../features/profile/presentation/screens/photo_gallery_screen.dart';
 import '../../features/profile/presentation/screens/verification_centre_screen.dart';
 import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_thread_screen.dart';
-import '../../features/tasks/presentation/screens/task_list_screen.dart';
 import '../../features/discover/presentation/screens/discover_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/payment/checkout_screen.dart';
@@ -33,6 +32,7 @@ import '../../features/bids/presentation/screens/my_bids_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../constants/app_constants.dart';
+import '../widgets/error_state.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Router Provider
@@ -239,9 +239,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
     ],
-    errorBuilder: (_, state) => Scaffold(
-      body: Center(child: Text('Page not found: ${state.error}')),
-    ),
+    errorBuilder: (context, state) {
+      final isLoggedIn = ref.read(authStateProvider).valueOrNull != null;
+      return Scaffold(
+        body: ErrorState(
+          message: 'We could not open that page. It may have moved or no longer exist.',
+          onRetry: () => context.go(isLoggedIn ? AppRoutes.home : AppRoutes.welcome),
+        ),
+      );
+    },
   );
 });
 

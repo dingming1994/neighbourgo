@@ -138,8 +138,31 @@ void main() {
 
         expect(notifier.state.isLoading, isFalse);
         expect(notifier.state.error, isNotNull);
-        expect(notifier.state.error, contains('OTP send failed'));
+        expect(
+          notifier.state.error,
+          'Could not send the verification code right now. Please try again.',
+        );
         expect(notifier.state.otpSent, isFalse);
+      });
+
+      test('maps Firebase phone auth errors to user-facing copy', () async {
+        fakeRepo = FakeAuthRepository();
+        notifier = PhoneAuthNotifier(fakeRepo);
+        fakeRepo.sendOtpShouldThrow = false;
+        fakeRepo.sendOtpReturnValue = 'fake-verification-id';
+
+        fakeRepo.sendOtpShouldThrow = false;
+        fakeRepo = FakeAuthRepositoryThatThrowsFirebase(
+          exception: FirebaseAuthException(code: 'too-many-requests'),
+        );
+        notifier = PhoneAuthNotifier(fakeRepo);
+
+        await notifier.sendOtp('+6591234567');
+
+        expect(
+          notifier.state.error,
+          'Too many attempts right now. Please wait a moment and try again.',
+        );
       });
 
       test('clears previous error on new attempt', () async {
@@ -176,6 +199,22 @@ void main() {
         expect(notifier.state.error, 'Invalid OTP. Please try again.');
       });
 
+      test('maps expired OTP errors to user-facing copy', () async {
+        fakeRepo = FakeAuthRepositoryThatThrowsFirebase(
+          verifyException: FirebaseAuthException(code: 'session-expired'),
+        );
+        notifier = PhoneAuthNotifier(fakeRepo);
+
+        await notifier.sendOtp('+6591234567');
+        final result = await notifier.verifyOtp('000000');
+
+        expect(result, isFalse);
+        expect(
+          notifier.state.error,
+          'This OTP has expired. Please request a new code.',
+        );
+      });
+
       test('returns false when no verificationId', () async {
         // Don't call sendOtp — verificationId remains null
         final result = await notifier.verifyOtp('123456');
@@ -194,7 +233,7 @@ void main() {
 
       test('does not create user document for existing users', () async {
         fakeRepo.fetchCurrentUserReturnValue =
-            UserModel(uid: 'existing', phone: '+65000');
+            const UserModel(uid: 'existing', phone: '+65000');
 
         await notifier.sendOtp('+6591234567');
         await notifier.verifyOtp('123456');
@@ -216,4 +255,29 @@ void main() {
       expect(notifier.state.otpSent, isFalse);
     });
   });
+}
+
+class FakeAuthRepositoryThatThrowsFirebase extends FakeAuthRepository {
+  final FirebaseAuthException? exception;
+  final FirebaseAuthException? verifyException;
+
+  FakeAuthRepositoryThatThrowsFirebase({
+    this.exception,
+    this.verifyException,
+  });
+
+  @override
+  Future<String> sendOtp(String phoneNumber) async {
+    if (exception != null) throw exception!;
+    return super.sendOtp(phoneNumber);
+  }
+
+  @override
+  Future<UserCredential> verifyOtp(
+    String verificationId,
+    String smsCode,
+  ) async {
+    if (verifyException != null) throw verifyException!;
+    return super.verifyOtp(verificationId, smsCode);
+  }
 }

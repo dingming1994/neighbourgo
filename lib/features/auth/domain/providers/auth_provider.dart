@@ -3,6 +3,55 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
+String _normalizePhoneAuthError(Object error) {
+  if (error is FirebaseAuthException) {
+    switch (error.code) {
+      case 'invalid-phone-number':
+        return 'That phone number looks invalid. Please check it and try again.';
+      case 'too-many-requests':
+        return 'Too many attempts right now. Please wait a moment and try again.';
+      case 'network-request-failed':
+        return 'Could not reach the network. Check your connection and try again.';
+      case 'operation-not-allowed':
+        return 'Phone sign-in is unavailable right now. Please try again later.';
+    }
+  }
+
+  final message = error.toString().toLowerCase();
+  if (message.contains('invalid-phone-number')) {
+    return 'That phone number looks invalid. Please check it and try again.';
+  }
+  if (message.contains('too-many-requests')) {
+    return 'Too many attempts right now. Please wait a moment and try again.';
+  }
+  if (message.contains('network')) {
+    return 'Could not reach the network. Check your connection and try again.';
+  }
+
+  return 'Could not send the verification code right now. Please try again.';
+}
+
+String _normalizeOtpError(Object error) {
+  if (error is FirebaseAuthException) {
+    switch (error.code) {
+      case 'invalid-verification-code':
+      case 'invalid-verification-id':
+        return 'Invalid OTP. Please try again.';
+      case 'session-expired':
+        return 'This OTP has expired. Please request a new code.';
+      case 'network-request-failed':
+        return 'Could not verify the code right now. Check your connection and try again.';
+    }
+  }
+
+  final message = error.toString().toLowerCase();
+  if (message.contains('session-expired')) {
+    return 'This OTP has expired. Please request a new code.';
+  }
+
+  return 'Invalid OTP. Please try again.';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth state stream (Firebase User or null)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +125,10 @@ class PhoneAuthNotifier extends StateNotifier<PhoneAuthState> {
         state = state.copyWith(isLoading: false, verificationId: vid, otpSent: true);
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: _normalizePhoneAuthError(e),
+      );
     }
   }
 
@@ -98,7 +150,10 @@ class PhoneAuthNotifier extends StateNotifier<PhoneAuthState> {
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Invalid OTP. Please try again.');
+      state = state.copyWith(
+        isLoading: false,
+        error: _normalizeOtpError(e),
+      );
       return false;
     }
   }
