@@ -91,13 +91,16 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
           'weak-password'       => 'Password must be at least 6 characters.',
           'email-already-in-use' => 'Account exists. Check your password.',
           'too-many-requests'   => 'Too many attempts. Try again later.',
-          _                     => '[${e.code}] ${e.message}',
+          'network-request-failed' => 'Could not reach the server. Please check your connection and try again.',
+          _                     => 'Could not sign you in right now. Please try again.',
         };
       });
     } catch (e, st) {
       debugPrint('Email auth error: $e\n$st');
       if (!mounted) return;
-      setState(() { _error = e.toString(); });
+      setState(() {
+        _error = 'Could not sign you in right now. Please try again.';
+      });
     } finally {
       if (mounted) setState(() { _isLoading = false; });
     }
@@ -178,7 +181,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: AppRadius.button,
                     ),
                     child: Row(

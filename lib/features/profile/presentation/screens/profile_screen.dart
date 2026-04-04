@@ -54,7 +54,7 @@ class ProfileScreen extends ConsumerWidget {
         skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          message: 'Could not load your profile right now.',
           onRetry: () => ref.invalidate(currentUserProvider),
         ),
         data: (_) {

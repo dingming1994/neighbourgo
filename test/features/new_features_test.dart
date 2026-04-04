@@ -84,12 +84,18 @@ class FakeTaskRepository extends TaskRepository {
 
 class FakeBidRepository extends BidRepository {
   final List<BidModel> bids;
+  final bool shouldThrowOnWatch;
 
-  FakeBidRepository({this.bids = const []})
+  FakeBidRepository({this.bids = const [], this.shouldThrowOnWatch = false})
       : super(db: FakeFirebaseFirestore());
 
   @override
-  Stream<List<BidModel>> watchMyBids(String providerId) => Stream.value(bids);
+  Stream<List<BidModel>> watchMyBids(String providerId) {
+    if (shouldThrowOnWatch) {
+      return Stream.error(Exception('boom'));
+    }
+    return Stream.value(bids);
+  }
 
   @override
   Stream<List<BidModel>> getBidsStream(String taskId) =>
@@ -377,9 +383,11 @@ void main() {
     List<Override> overrides({
       List<BidModel> bids = const [],
       Map<String, TaskModel?> taskById = const {},
+      bool shouldThrowOnWatch = false,
     }) {
       final fakeTaskRepo = FakeTaskRepository(taskById: taskById);
-      final fakeBidRepo = FakeBidRepository(bids: bids);
+      final fakeBidRepo =
+          FakeBidRepository(bids: bids, shouldThrowOnWatch: shouldThrowOnWatch);
       return [
         currentUserProvider.overrideWith((_) => Stream.value(_testProvider)),
         taskRepositoryProvider.overrideWithValue(fakeTaskRepo),
@@ -459,6 +467,17 @@ void main() {
 
       expect(find.text('📭'), findsOneWidget);
       expect(find.text('No rejected bids'), findsOneWidget);
+    });
+
+    _testScreen('shows friendly error when bids fail to load', (tester) async {
+      await tester.pumpWidget(_buildTestWidget(
+        const MyBidsScreen(),
+        overrides(shouldThrowOnWatch: true),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load your bids right now.'), findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
     });
 
     _testScreen('accepted tab shows accepted bids', (tester) async {
