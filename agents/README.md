@@ -1,57 +1,86 @@
-# NeighbourGo Agent Team
+# NeighbourGo Agent Workflows
 
-Multi-agent development system using Claude Agent SDK.
+This repo supports two execution styles:
 
-## Architecture
+1. Legacy Claude-first orchestration under `team.py`, `team.sh`, and `team-parallel.sh`
+2. A hybrid Claude/Codex workflow with model-neutral planning and task-level ownership
 
+## Hybrid Workflow
+
+The hybrid workflow is the recommended path going forward.
+
+Key rules:
+- Architect planning is independent from Claude/Codex execution.
+- Each task is claimed by exactly one model: `claude` or `codex`.
+- Claiming creates an isolated branch and worktree for that task.
+- The other model must not pick a claimed task.
+- Developer, reviewer, and tester for a task operate inside the same task worktree.
+- Finished tasks merge back to `main` individually.
+- Every work batch must append a handoff summary to `agents/ITERATION_LOG.md`.
+
+See the full guide in `agents/HYBRID_WORKFLOW.md`.
+
+### Task board commands
+
+Initialize the board:
+
+```bash
+python3 agents/task_board.py init
 ```
+
+Import planned tasks from PRD:
+
+```bash
+python3 agents/task_board.py init --from-prd scripts/ralph/prd.json
+```
+
+Show status:
+
+```bash
+python3 agents/task_board.py status
+```
+
+Claim a task for Codex:
+
+```bash
+python3 agents/task_board.py claim US-201 --model codex
+```
+
+Claim a task for Claude:
+
+```bash
+python3 agents/task_board.py claim US-202 --model claude
+```
+
+Mark status:
+
+```bash
+python3 agents/task_board.py set-status US-201 --status in_progress --model codex
+python3 agents/task_board.py set-status US-201 --status done --model codex
+```
+
+Merge back to `main`:
+
+```bash
+python3 agents/task_board.py merge US-201 --target main --cleanup
+```
+
+## Legacy Claude-only Workflow
+
+The existing Claude Agent SDK pipeline is still present:
+
+```text
 PM (Orchestrator)
-├── Architect Agent — designs solutions (read-only)
-├── Developer Agent — writes code, runs flutter analyze
-├── Tester Agent — writes + runs integration tests on simulator
-└── Reviewer Agent — code review, finds bugs (read-only)
+├── Architect Agent
+├── Developer Agent
+├── Reviewer Agent
+└── Tester Agent
 ```
 
-## Setup
+Main entry points:
+- `python team.py "task"`
+- `./agents/team.sh "task"`
+- `./agents/team-parallel.sh ...`
+- `./agents/orchestrator.sh "high-level requirement"`
 
-```bash
-cd agents
-python3 -m venv .venv
-source .venv/bin/activate
-pip install claude-agent-sdk
-export ANTHROPIC_API_KEY=your-key
-```
-
-## Usage
-
-### Single task
-```bash
-python team.py "Fix the chat message ordering bug"
-```
-
-### From PRD (processes all user stories)
-```bash
-python team.py --prd ../scripts/ralph/prd.json
-```
-
-### Test only (run all integration tests)
-```bash
-python team.py --test-only
-```
-
-## Workflow
-
-For each task, the PM orchestrates:
-1. **Architect** analyzes and plans (read-only)
-2. **Developer** implements the plan
-3. **Reviewer** reviews for bugs and pattern violations (read-only)
-4. **Developer** fixes any review issues
-5. **Tester** writes and runs integration tests
-6. **Developer** fixes any test failures
-7. Commit when all pass
-
-## Cost Control
-
-- Default budget: $15 per task, $30 per PRD
-- Override: `python team.py --prd prd.json 50.0`
-- Agents use sonnet by default, opus for architect/reviewer
+Those scripts remain available, but they are still Claude-centric and do not enforce cross-model task locking.

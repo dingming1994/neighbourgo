@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-04T12:59:26+00:00",
+  "notes": [
+    "Architect is model-neutral and plans work without claiming tasks.",
+    "Each task can be claimed by only one model: claude or codex.",
+    "Claiming a task creates an isolated branch and worktree.",
+    "The other model must not pick a claimed task."
+  ],
+  "tasks": [
+    {
+      "id": "UX-201",
+      "title": "Stabilize non-payment task and messaging UX",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "done",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-201",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-201-codex",
+      "claimedAt": "2026-04-04T03:55:17+00:00",
+      "mergedAt": null,
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T03:55:17+00:00",
+        "2026-04-04T03:59:37+00:00 Implemented non-payment UX fixes, unread counts, role-aware task/chat empty states, discover search hydration, and retryable error states."
+      ]
+    },
+    {
+      "id": "UX-202",
+      "title": "Improve empty, error, and navigation states",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "done",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-202",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-202-codex",
+      "claimedAt": "2026-04-04T03:55:17+00:00",
+      "mergedAt": null,
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T03:55:17+00:00",
+        "2026-04-04T03:59:37+00:00 Verified with focused Flutter tests; targeted analyzer clean except existing withOpacity deprecation infos."
+      ]
+    },
+    {
+      "id": "UX-203",
+      "title": "Deepen task lifecycle and profile usability fixes",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "in_progress",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-203",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-203-codex",
+      "claimedAt": "2026-04-04T04:06:46+00:00",
+      "mergedAt": null,
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T04:06:46+00:00"
+      ]
+    },
+    {
+      "id": "UX-204",
+      "title": "Fix bid submission permission-denied error",
+      "description": "Submitting a bid fails with cloud_firestore/permission-denied. The submitBid method also updates task bidCount which requires task-level write permission the provider does not have. Fix: move bidCount increment to a Firestore trigger or adjust security rules.",
+      "status": "merged",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-204",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-204-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-04T12:57:43+00:00",
+        "Merged into main at 2026-04-04T12:59:26+00:00",
+        "Cleaned up worktree/branch after merge"
+      ],
+      "claimedAt": "2026-04-04T12:57:43+00:00",
+      "mergedAt": "2026-04-04T12:59:26+00:00"
+    },
+    {
+      "id": "UX-205",
+      "title": "Fix budget display format \u2014 remove trailing .0",
+      "description": "Budget displays as S$60.0-S$100.0 instead of S$60-S$100. Fix budgetDisplay extension to format cleanly.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    }
+  ]
+}
