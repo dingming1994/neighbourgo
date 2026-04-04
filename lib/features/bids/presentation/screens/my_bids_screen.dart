@@ -26,7 +26,7 @@ final _myBidsProvider = StreamProvider.autoDispose<List<BidModel>>((ref) {
 final _taskTitleProvider = FutureProvider.family.autoDispose<String, String>((ref, taskId) async {
   final stream = ref.watch(taskRepositoryProvider).watchTask(taskId);
   final task = await stream.first;
-  return task?.title ?? 'Unknown Task';
+  return task?.title ?? 'Task unavailable';
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ class _BidCard extends ConsumerWidget {
                         style: TextStyle(fontSize: 15, color: AppColors.textHint),
                       ),
                       error: (_, __) => const Text(
-                        'Unknown Task',
+                        'Task unavailable',
                         style: TextStyle(fontSize: 15, color: AppColors.textHint),
                       ),
                     ),

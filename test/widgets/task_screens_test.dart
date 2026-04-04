@@ -85,12 +85,19 @@ class _NeverEmitTaskRepository extends TaskRepository {
 
 class FakeBidRepository extends BidRepository {
   List<BidModel> bidsToReturn;
+  bool shouldThrowOnGetBids;
 
-  FakeBidRepository({this.bidsToReturn = const []})
+  FakeBidRepository({
+    this.bidsToReturn = const [],
+    this.shouldThrowOnGetBids = false,
+  })
       : super(db: FakeFirebaseFirestore());
 
   @override
   Stream<List<BidModel>> getBidsStream(String taskId) {
+    if (shouldThrowOnGetBids) {
+      return Stream.error(Exception('boom'));
+    }
     return Stream.value(bidsToReturn);
   }
 }
@@ -202,14 +209,14 @@ void main() {
       fakeTaskRepo = FakeTaskRepository();
     });
 
-    List<Override> _overrides() => [
+    List<Override> overrides() => [
           taskRepositoryProvider.overrideWithValue(fakeTaskRepo),
         ];
 
     testTask('renders Discover Tasks title in AppBar', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const TaskListScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
       expect(find.text('Discover Tasks'), findsOneWidget);
@@ -219,7 +226,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const TaskListScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
       // 'All' chip
@@ -232,7 +239,7 @@ void main() {
       fakeTaskRepo.tasksToReturn = [];
       await tester.pumpWidget(buildTestWidget(
         const TaskListScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       // Let microtask stream emit empty list then rebuild
       await tester.pumpAndSettle();
@@ -253,6 +260,19 @@ void main() {
       expect(find.text('No tasks found'), findsNothing);
       expect(find.text('Discover Tasks'), findsOneWidget);
     });
+
+    testTask('shows friendly error when tasks fail to load', (tester) async {
+      final errorRepo = _ErrorTaskRepository();
+      await tester.pumpWidget(buildTestWidget(
+        const TaskListScreen(),
+        overrides: [taskRepositoryProvider.overrideWithValue(errorRepo)],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load available tasks right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -261,7 +281,7 @@ void main() {
   group('PostTaskScreen', () {
     final user = _testUser();
 
-    List<Override> _overrides() => [
+    List<Override> overrides() => [
           currentUserProvider.overrideWith((_) => Stream.value(user)),
           taskRepositoryProvider.overrideWithValue(
             FakeTaskRepository(),
@@ -272,7 +292,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const PostTaskScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
 
@@ -285,7 +305,7 @@ void main() {
     testTask('category cards show emoji and label', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const PostTaskScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
 
@@ -298,7 +318,7 @@ void main() {
     testTask('Next button exists at bottom', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const PostTaskScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
 
@@ -308,7 +328,7 @@ void main() {
     testTask('renders step 1 heading', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const PostTaskScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
 
@@ -318,7 +338,7 @@ void main() {
     testTask('shows Post a Task title with step progress', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const PostTaskScreen(),
-        overrides: _overrides(),
+        overrides: overrides(),
       ));
       await tester.pump();
 
@@ -339,7 +359,7 @@ void main() {
       fakeChatRepo = FakeChatRepository();
     });
 
-    List<Override> _baseOverrides({
+    List<Override> baseOverrides({
       required UserModel user,
       required FakeTaskRepository taskRepo,
     }) =>
@@ -356,7 +376,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'other-user', role: UserRole.provider),
           taskRepo: fakeTaskRepo,
         ),
@@ -376,7 +396,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         const TaskDetailScreen(taskId: 'missing-task'),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'provider-1', role: UserRole.provider),
           taskRepo: fakeTaskRepo,
         ),
@@ -394,7 +414,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'provider-1', role: UserRole.provider),
           taskRepo: fakeTaskRepo,
         ),
@@ -415,7 +435,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'user-1', role: UserRole.poster),
           taskRepo: fakeTaskRepo,
         ),
@@ -436,7 +456,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'user-1', role: UserRole.poster),
           taskRepo: fakeTaskRepo,
         ),
@@ -452,7 +472,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'user-1', role: UserRole.poster),
           taskRepo: fakeTaskRepo,
         ),
@@ -469,7 +489,7 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget(
         TaskDetailScreen(taskId: task.id),
-        overrides: _baseOverrides(
+        overrides: baseOverrides(
           user: _testUser(uid: 'user-1', role: UserRole.poster),
           taskRepo: fakeTaskRepo,
         ),
@@ -479,4 +499,42 @@ void main() {
       expect(find.text('Submit Bid'), findsNothing);
     });
   });
+
+  group('BidListSection', () {
+    testTask('shows friendly error when bids fail to load', (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        const Scaffold(
+          body: BidListSection(
+            taskId: 'task-1',
+            posterId: 'user-1',
+          ),
+        ),
+        overrides: [
+          bidRepositoryProvider.overrideWithValue(
+            FakeBidRepository(shouldThrowOnGetBids: true),
+          ),
+          chatRepositoryProvider.overrideWithValue(FakeChatRepository()),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not load bids for this task right now.'),
+          findsOneWidget);
+      expect(find.text('Try Again'), findsOneWidget);
+    });
+  });
+}
+
+class _ErrorTaskRepository extends TaskRepository {
+  _ErrorTaskRepository()
+      : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
+
+  @override
+  Stream<List<TaskModel>> watchOpenTasks({
+    String? categoryId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) {
+    return Stream.error(Exception('boom'));
+  }
 }

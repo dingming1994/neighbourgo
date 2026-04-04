@@ -4,6 +4,8 @@ import '../../data/models/task_model.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../../../core/constants/app_constants.dart';
 
+const _taskListLoadErrorMessage = 'Could not load available tasks right now.';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +77,7 @@ class TaskListNotifier extends StateNotifier<TaskListState> {
             state = state.copyWith(
               isLoading: false,
               isLoadingMore: false,
-              error: e.toString(),
+              error: _taskListLoadErrorMessage,
             );
           },
         );
