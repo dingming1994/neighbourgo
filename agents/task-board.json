@@ -262,6 +262,56 @@
       ],
       "claimedAt": "2026-04-04T16:22:58+00:00",
       "mergedAt": "2026-04-04T16:28:33+00:00"
+    },
+    {
+      "id": "UX-214",
+      "title": "Fix Firestore rules blocking direct hire task creation",
+      "description": "Security rules require status==open on task create, but direct hire creates with status=assigned. Fix rules to allow both. Also fix rules to allow assigned provider status updates beyond just status+updatedAt.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-215",
+      "title": "Fix GoRouter force-unwraps on route parameters",
+      "description": "app_router.dart uses ! on pathParameters for taskId, chatId, userId, listingId. If deep link or back navigation delivers null, app crashes. Add null checks with fallback navigation.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-216",
+      "title": "Manual screen-by-screen walkthrough test on simulator",
+      "description": "Login with test accounts (alice.client, ben.cleaner, priya.client) and manually navigate every screen. Capture screenshots, document any visual bugs, layout issues, or broken interactions. Test both Client and Provider flows.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-217",
+      "title": "Fix rendering exceptions found during integration tests",
+      "description": "Integration tests pass but stderr shows EXCEPTION CAUGHT BY RENDERING/SCHEDULER LIBRARY. Capture the full stack traces, identify which widgets cause them, and fix the layout issues.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-218",
+      "title": "Comprehensive bid flow test \u2014 submit, accept, start work, complete, review",
+      "description": "Write and run an integration test covering the full bid lifecycle with the new Codex UX changes: provider bids, poster reviews bids with confirmation dialog, accepts, provider starts work, poster marks complete, both review. Verify all Codex error state improvements work.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
     }
   ]
 }
