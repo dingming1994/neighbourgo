@@ -115,7 +115,7 @@ class PosterHomeScreen extends ConsumerWidget {
             error: (e, _) => [
               SliverToBoxAdapter(
                 child: ErrorState(
-                  message: e.toString(),
+                  message: 'Could not load your active tasks right now.',
                   onRetry: () => ref.invalidate(_posterActiveTasksProvider),
                 ),
               )
@@ -251,11 +251,11 @@ class _PosterTaskCard extends StatelessWidget {
                 children: [
                   _Chip(
                       label: category?.label ?? task.categoryId,
-                      color: AppColors.primaryLight.withOpacity(0.15)),
+                      color: AppColors.primaryLight.withValues(alpha: 0.15)),
                   const SizedBox(width: 8),
                   _Chip(
                       label: task.budgetDisplay,
-                      color: AppColors.primary.withOpacity(0.1)),
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -328,7 +328,7 @@ class _SectionHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10)),
                 child: Text('$count',
                     style: TextStyle(
@@ -364,7 +364,7 @@ class _NeedsActionTaskCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.bgCard,
             borderRadius: AppRadius.card,
-            border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,21 +389,21 @@ class _NeedsActionTaskCard extends StatelessWidget {
                 children: [
                   _Chip(
                       label: category?.label ?? task.categoryId,
-                      color: AppColors.primaryLight.withOpacity(0.15)),
+                      color: AppColors.primaryLight.withValues(alpha: 0.15)),
                   const SizedBox(width: 8),
                   _Chip(
                       label: task.budgetDisplay,
-                      color: AppColors.primary.withOpacity(0.1)),
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.gavel, size: 16, color: AppColors.warning),
+                  const Icon(Icons.gavel, size: 16, color: AppColors.warning),
                   const SizedBox(width: 4),
                   Text(
                     '${task.bidCount} bid${task.bidCount == 1 ? '' : 's'} to review',
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.warning),
@@ -457,7 +457,7 @@ class _InProgressTaskCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.bgCard,
             borderRadius: AppRadius.card,
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,11 +482,11 @@ class _InProgressTaskCard extends StatelessWidget {
                 children: [
                   _Chip(
                       label: category?.label ?? task.categoryId,
-                      color: AppColors.primaryLight.withOpacity(0.15)),
+                      color: AppColors.primaryLight.withValues(alpha: 0.15)),
                   const SizedBox(width: 8),
                   _Chip(
                       label: task.budgetDisplay,
-                      color: AppColors.primary.withOpacity(0.1)),
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ],
               ),
               const SizedBox(height: 12),

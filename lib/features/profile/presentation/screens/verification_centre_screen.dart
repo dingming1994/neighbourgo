@@ -24,12 +24,15 @@ class VerificationCentreScreen extends ConsumerWidget {
         skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          message: 'Could not load your verification details right now.',
           onRetry: () => ref.invalidate(currentUserProvider),
         ),
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('Profile unavailable'));
+            return ErrorState(
+              message: 'Your profile is unavailable right now.',
+              onRetry: () {},
+            );
           }
           final userBadges = user.badges;
           return ListView(

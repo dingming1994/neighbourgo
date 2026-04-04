@@ -174,7 +174,7 @@ class _TaskList extends ConsumerWidget {
     return tasksAsync.when(skipLoadingOnReload: true,
       loading: () => const _MyTasksLoadingList(),
       error: (e, _) => ErrorState(
-        message: e.toString(),
+        message: 'Could not load this task list right now.',
         onRetry: () => ref.invalidate(provider),
       ),
       data: (tasks) {
@@ -252,12 +252,12 @@ class _MyTaskCard extends StatelessWidget {
                 children: [
                   _Chip(
                     label: category?.label ?? task.categoryId,
-                    color: AppColors.primaryLight.withOpacity(0.15),
+                    color: AppColors.primaryLight.withValues(alpha: 0.15),
                   ),
                   const SizedBox(width: 8),
                   _Chip(
                     label: task.budgetDisplay,
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                   ),
                 ],
               ),
@@ -318,7 +318,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(

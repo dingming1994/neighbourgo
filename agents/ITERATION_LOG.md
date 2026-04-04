@@ -275,3 +275,33 @@ Do not replace older entries.
 - Risks / follow-up:
   - A few other screens still use `e.toString()` in lower-priority surfaces and provider lists.
   - `ProfileSetupScreen` save-failure copy is covered by implementation and manual behavior, but not by a stable widget assertion because the current test harness is brittle around that submission path.
+
+## 2026-04-04 22:31 SGT | codex | ITER-009
+
+- Task IDs: UX-209
+- Branches: agents/codex/ux-209
+- Summary:
+  - Polished remaining top-level recovery states across notifications, tasks, profile support screens, and home dashboards.
+- Key changes:
+  - Notification list, My Tasks, verification centre, and photo gallery now show stable user-facing error copy instead of raw/internal exceptions.
+  - Photo gallery and verification centre no longer fall back to brittle blank/profile-unavailable placeholders when current user data is missing.
+  - Poster/provider home dashboards now use clearer recovery copy for task-loading failures.
+  - Cleaned analyzer noise in touched task/home/profile files while updating these states.
+- Files touched:
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart`
+  - `lib/features/tasks/presentation/screens/my_tasks_screen.dart`
+  - `lib/features/profile/presentation/screens/verification_centre_screen.dart`
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+  - `lib/features/home/presentation/screens/poster_home_screen.dart`
+  - `lib/features/home/presentation/screens/provider_home_screen.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart --plain-name "shows friendly error when gallery fails to load"`
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart --plain-name "shows friendly error when verification fails to load"`
+  - Passed: `flutter test test/features/new_features_test.dart --plain-name "shows friendly error when tasks fail to load"`
+  - Passed: `flutter test test/features/new_features_test.dart --plain-name "shows friendly error when notifications fail to load"`
+  - Passed: `flutter analyze lib/features/notifications/presentation/screens/notification_list_screen.dart lib/features/tasks/presentation/screens/my_tasks_screen.dart lib/features/profile/presentation/screens/verification_centre_screen.dart lib/features/profile/presentation/screens/photo_gallery_screen.dart lib/features/home/presentation/screens/poster_home_screen.dart lib/features/home/presentation/screens/provider_home_screen.dart test/widgets/profile_chat_nav_test.dart test/features/new_features_test.dart`
+- Risks / follow-up:
+  - Lower-priority provider/task list provider layers still expose raw error strings internally.
+  - The next useful step is shifting from copy cleanup to broader emulator path testing for end-to-end regressions.

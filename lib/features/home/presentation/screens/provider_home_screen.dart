@@ -240,7 +240,7 @@ class ProviderHomeScreen extends ConsumerWidget {
             ),
             error: (e, _) => SliverToBoxAdapter(
               child: ErrorState(
-                message: e.toString(),
+                message: 'Could not load open tasks right now.',
                 onRetry: () => ref.invalidate(_openTasksProvider),
               ),
             ),
@@ -391,7 +391,7 @@ class _ProfileCompletionCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.radio_button_unchecked,
                           size: 18,
                           color: AppColors.textHint,
@@ -815,7 +815,7 @@ class _CategoryFilterRow extends ConsumerWidget {
               selected: selected == null,
               onSelected: (_) =>
                   ref.read(_selectedCategoryProvider.notifier).state = null,
-              selectedColor: AppColors.primary.withOpacity(0.15),
+              selectedColor: AppColors.primary.withValues(alpha: 0.15),
               checkmarkColor: AppColors.primary,
             ),
           ),
@@ -827,7 +827,7 @@ class _CategoryFilterRow extends ConsumerWidget {
                   onSelected: (_) => ref
                       .read(_selectedCategoryProvider.notifier)
                       .state = selected == cat.id ? null : cat.id,
-                  selectedColor: AppColors.primary.withOpacity(0.15),
+                  selectedColor: AppColors.primary.withValues(alpha: 0.15),
                   checkmarkColor: AppColors.primary,
                 ),
               )),
@@ -908,11 +908,11 @@ class _ProviderTaskCard extends StatelessWidget {
                 children: [
                   _Chip(
                       label: category?.label ?? task.categoryId,
-                      color: AppColors.primaryLight.withOpacity(0.15)),
+                      color: AppColors.primaryLight.withValues(alpha: 0.15)),
                   const SizedBox(width: 8),
                   _Chip(
                       label: task.budgetDisplay,
-                      color: AppColors.primary.withOpacity(0.1)),
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ],
               ),
               const SizedBox(height: 10),
