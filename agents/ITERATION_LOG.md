@@ -181,3 +181,21 @@ Do not replace older entries.
 - Risks / follow-up:
   - bidCount-only rule allows any user to increment — low risk since it's just a counter, but long-term should use a Cloud Function trigger on bid creation.
   - UX-205 (budget display format) still planned, not yet claimed.
+
+## 2026-04-04 21:05 SGT | codex | ITER-005
+
+- Task IDs: UX-205
+- Branches: agents/codex/ux-205
+- Summary:
+  - Fixed task budget formatting so integer values no longer render with a trailing `.0`.
+- Key changes:
+  - Updated `TaskModel.budgetDisplay` to format integer amounts as whole numbers while preserving meaningful decimals.
+  - Added regression coverage for both integer budgets and decimal budgets.
+- Files touched:
+  - `lib/features/tasks/data/models/task_model.dart`
+  - `test/models/task_model_test.dart`
+- Verification:
+  - Passed: `flutter test test/models/task_model_test.dart test/widgets/task_screens_test.dart`
+- Risks / follow-up:
+  - This iteration only changes task budget display.
+  - Other price displays like payment totals or bid amounts were intentionally left unchanged.

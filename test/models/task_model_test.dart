@@ -10,14 +10,16 @@ void main() {
     });
 
     test('contains all expected values', () {
-      expect(TaskStatus.values, containsAll([
-        TaskStatus.open,
-        TaskStatus.assigned,
-        TaskStatus.inProgress,
-        TaskStatus.completed,
-        TaskStatus.cancelled,
-        TaskStatus.disputed,
-      ]));
+      expect(
+          TaskStatus.values,
+          containsAll([
+            TaskStatus.open,
+            TaskStatus.assigned,
+            TaskStatus.inProgress,
+            TaskStatus.completed,
+            TaskStatus.cancelled,
+            TaskStatus.disputed,
+          ]));
     });
   });
 
@@ -27,11 +29,13 @@ void main() {
     });
 
     test('contains flexible, today, asap', () {
-      expect(TaskUrgency.values, containsAll([
-        TaskUrgency.flexible,
-        TaskUrgency.today,
-        TaskUrgency.asap,
-      ]));
+      expect(
+          TaskUrgency.values,
+          containsAll([
+            TaskUrgency.flexible,
+            TaskUrgency.today,
+            TaskUrgency.asap,
+          ]));
     });
   });
 
@@ -86,7 +90,8 @@ void main() {
 
     test('fromJson/toJson roundtrip with all fields', () {
       final task = TaskModel.fromJson(fullJson);
-      final json = jsonDecode(jsonEncode(task.toJson())) as Map<String, dynamic>;
+      final json =
+          jsonDecode(jsonEncode(task.toJson())) as Map<String, dynamic>;
       final restored = TaskModel.fromJson(json);
       expect(restored, task);
     });
@@ -132,7 +137,11 @@ void main() {
   });
 
   group('TaskModelExt', () {
-    TaskModel makeTask({TaskStatus status = TaskStatus.open, double budgetMin = 50, double? budgetMax, TaskUrgency urgency = TaskUrgency.flexible}) {
+    TaskModel makeTask(
+        {TaskStatus status = TaskStatus.open,
+        double budgetMin = 50,
+        double? budgetMax,
+        TaskUrgency urgency = TaskUrgency.flexible}) {
       return TaskModel(
         id: 't1',
         posterId: 'p1',
@@ -166,18 +175,24 @@ void main() {
 
     test('budgetDisplay formats single budget as S\$X', () {
       final task = makeTask(budgetMin: 50);
-      expect(task.budgetDisplay, 'S\$50.0');
+      expect(task.budgetDisplay, 'S\$50');
     });
 
     test('budgetDisplay formats range as S\$X–S\$Y', () {
       final task = makeTask(budgetMin: 50, budgetMax: 100);
-      expect(task.budgetDisplay, 'S\$50.0–S\$100.0');
+      expect(task.budgetDisplay, 'S\$50–S\$100');
+    });
+
+    test('budgetDisplay preserves meaningful decimals', () {
+      final task = makeTask(budgetMin: 50.5, budgetMax: 100.25);
+      expect(task.budgetDisplay, 'S\$50.5–S\$100.25');
     });
 
     test('urgencyDisplay returns correct emoji and text', () {
       expect(makeTask(urgency: TaskUrgency.asap).urgencyDisplay, '🔴 ASAP');
       expect(makeTask(urgency: TaskUrgency.today).urgencyDisplay, '🟡 Today');
-      expect(makeTask(urgency: TaskUrgency.flexible).urgencyDisplay, '🟢 Flexible');
+      expect(makeTask(urgency: TaskUrgency.flexible).urgencyDisplay,
+          '🟢 Flexible');
     });
   });
 }
