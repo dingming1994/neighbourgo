@@ -85,14 +85,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ── Change password ─────────────────────────────────────────────────────
   Future<void> _changePassword() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Please sign in again before changing your password.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     final email = user.email;
     if (email == null || email.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Password reset is only available for email accounts.'),
+            content:
+                Text('Password reset is only available for email accounts.'),
           ),
         );
       }
@@ -109,7 +121,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
+          SnackBar(
+            content: Text(
+              e.message ?? 'Could not send the password reset email.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -120,6 +137,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open that link right now.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -299,14 +323,17 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       tileColor: AppColors.bgCard,
-      leading: Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
+      leading:
+          Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
       title: Text(
         label,
-        style: TextStyle(fontSize: 15, color: textColor ?? AppColors.textPrimary),
+        style:
+            TextStyle(fontSize: 15, color: textColor ?? AppColors.textPrimary),
       ),
       trailing: trailing ??
           (onTap != null
-              ? const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20)
+              ? const Icon(Icons.chevron_right,
+                  color: AppColors.textHint, size: 20)
               : null),
       onTap: onTap,
     );

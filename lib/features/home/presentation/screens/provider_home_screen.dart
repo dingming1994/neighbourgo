@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
@@ -31,7 +32,8 @@ final _myServiceListingsProvider =
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: selected category filter
 // ─────────────────────────────────────────────────────────────────────────────
-final _selectedCategoryProvider = StateProvider.autoDispose<String?>((ref) => null);
+final _selectedCategoryProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: open tasks (filtered by category)
@@ -39,9 +41,9 @@ final _selectedCategoryProvider = StateProvider.autoDispose<String?>((ref) => nu
 final _openTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref) {
   final categoryId = ref.watch(_selectedCategoryProvider);
   return ref.watch(taskRepositoryProvider).watchOpenTasks(
-    categoryId: categoryId,
-    limit: AppConstants.pageSize,
-  );
+        categoryId: categoryId,
+        limit: AppConstants.pageSize,
+      );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,12 +55,16 @@ class RecommendedTask {
   RecommendedTask({required this.task, required this.matchReason});
 }
 
-final _recommendedTasksProvider = StreamProvider.autoDispose<List<RecommendedTask>>((ref) {
+final _recommendedTasksProvider =
+    StreamProvider.autoDispose<List<RecommendedTask>>((ref) {
   final user = ref.watch(currentUserProvider).valueOrNull;
   if (user == null || user.serviceCategories.isEmpty) return Stream.value([]);
 
   // Watch all open tasks (unfiltered) and score them client-side
-  return ref.watch(taskRepositoryProvider).watchOpenTasks(limit: 50).map((tasks) {
+  return ref
+      .watch(taskRepositoryProvider)
+      .watchOpenTasks(limit: 50)
+      .map((tasks) {
     final recommended = <RecommendedTask>[];
 
     for (final task in tasks) {
@@ -68,9 +74,11 @@ final _recommendedTasksProvider = StreamProvider.autoDispose<List<RecommendedTas
           task.neighbourhood == user.neighbourhood;
 
       if (matchesCategory && matchesNeighbourhood) {
-        recommended.add(RecommendedTask(task: task, matchReason: 'In your neighbourhood'));
+        recommended.add(
+            RecommendedTask(task: task, matchReason: 'In your neighbourhood'));
       } else if (matchesCategory) {
-        recommended.add(RecommendedTask(task: task, matchReason: 'Matches your skills'));
+        recommended.add(
+            RecommendedTask(task: task, matchReason: 'Matches your skills'));
       } else if (matchesNeighbourhood) {
         recommended.add(RecommendedTask(task: task, matchReason: 'Near you'));
       }
@@ -78,7 +86,11 @@ final _recommendedTasksProvider = StreamProvider.autoDispose<List<RecommendedTas
 
     // Sort: neighbourhood+category first, then category, then neighbourhood
     recommended.sort((a, b) {
-      int score(RecommendedTask r) => r.matchReason == 'In your neighbourhood' ? 0 : r.matchReason == 'Matches your skills' ? 1 : 2;
+      int score(RecommendedTask r) => r.matchReason == 'In your neighbourhood'
+          ? 0
+          : r.matchReason == 'Matches your skills'
+              ? 1
+              : 2;
       return score(a).compareTo(score(b));
     });
 
@@ -94,10 +106,10 @@ class ProviderHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync  = ref.watch(currentUserProvider);
+    final userAsync = ref.watch(currentUserProvider);
     final tasksAsync = ref.watch(_openTasksProvider);
-    final user       = userAsync.valueOrNull;
-    final firstName  = user?.displayName?.split(' ').first ?? 'Neighbour';
+    final user = userAsync.valueOrNull;
+    final firstName = user?.displayName?.split(' ').first ?? 'Neighbour';
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
@@ -114,12 +126,16 @@ class ProviderHomeScreen extends ConsumerWidget {
               children: [
                 const Text(
                   'Find Work',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.normal),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.normal),
                 ),
                 Row(children: [
                   Text(
                     'Hi, $firstName! 👋',
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                   if (user?.stats != null && user!.stats!.avgRating > 0) ...[
                     const SizedBox(width: 8),
@@ -127,7 +143,10 @@ class ProviderHomeScreen extends ConsumerWidget {
                     const SizedBox(width: 2),
                     Text(
                       user.stats!.avgRating.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary),
                     ),
                   ],
                 ]),
@@ -163,11 +182,10 @@ class ProviderHomeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('My Services',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   TextButton.icon(
-                    onPressed: () =>
-                        context.push(AppRoutes.createService),
+                    onPressed: () => context.push(AppRoutes.createService),
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add'),
                   ),
@@ -186,7 +204,9 @@ class ProviderHomeScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text('Recommended for You', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                child: Text('Recommended for You',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               ),
             ),
             _RecommendedSection(),
@@ -195,30 +215,34 @@ class ProviderHomeScreen extends ConsumerWidget {
           // ── Category filter chips ──────────────────────────────────────────
           if (user != null && user.serviceCategories.isNotEmpty)
             SliverToBoxAdapter(
-              child: _CategoryFilterRow(serviceCategories: user.serviceCategories),
+              child:
+                  _CategoryFilterRow(serviceCategories: user.serviceCategories),
             ),
 
           // ── Section header ─────────────────────────────────────────────────
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('All Open Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              child: Text('All Open Tasks',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             ),
           ),
 
           // ── Task list ──────────────────────────────────────────────────────
-          tasksAsync.when(skipLoadingOnReload: true,
+          tasksAsync.when(
+            skipLoadingOnReload: true,
             loading: () => const SliverToBoxAdapter(
-              child: Center(child: Padding(
+              child: Center(
+                  child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: CircularProgressIndicator(),
               )),
             ),
             error: (e, _) => SliverToBoxAdapter(
-              child: Center(child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text('Error loading tasks: $e', style: const TextStyle(color: AppColors.error)),
-              )),
+              child: ErrorState(
+                message: e.toString(),
+                onRetry: () => ref.invalidate(_openTasksProvider),
+              ),
             ),
             data: (tasks) {
               if (tasks.isEmpty) {
@@ -248,7 +272,8 @@ class _ChecklistItem {
   final IconData icon;
   final String label;
   final bool complete;
-  const _ChecklistItem({required this.icon, required this.label, required this.complete});
+  const _ChecklistItem(
+      {required this.icon, required this.label, required this.complete});
 }
 
 class _ProfileCompletionCard extends StatelessWidget {
@@ -323,7 +348,8 @@ class _ProfileCompletionCard extends StatelessWidget {
             // Header
             Row(
               children: [
-                const Icon(Icons.rocket_launch_outlined, color: AppColors.primary, size: 20),
+                const Icon(Icons.rocket_launch_outlined,
+                    color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -333,7 +359,10 @@ class _ProfileCompletionCard extends StatelessWidget {
                 ),
                 Text(
                   '$completed/${items.length}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
                 ),
               ],
             ),
@@ -350,61 +379,65 @@ class _ProfileCompletionCard extends StatelessWidget {
                 value: progress,
                 minHeight: 6,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
             const SizedBox(height: 12),
             // Checklist
             ...items.where((i) => !i.complete).map((item) => GestureDetector(
-              onTap: () => context.push(AppRoutes.editProfile),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.radio_button_unchecked,
-                      size: 18,
-                      color: AppColors.textHint,
+                  onTap: () => context.push(AppRoutes.editProfile),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.radio_button_unchecked,
+                          size: 18,
+                          color: AppColors.textHint,
+                        ),
+                        const SizedBox(width: 10),
+                        Icon(item.icon,
+                            size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.label,
+                            style: const TextStyle(
+                                fontSize: 13, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right,
+                            size: 16, color: AppColors.textHint),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Icon(item.icon, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.label,
-                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
-                  ],
-                ),
-              ),
-            )),
+                  ),
+                )),
             ...items.where((i) => i.complete).map((item) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  Icon(item.icon, size: 16, color: AppColors.textHint),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textHint,
-                        decoration: TextDecoration.lineThrough,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        size: 18,
+                        color: AppColors.primary,
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Icon(item.icon, size: 16, color: AppColors.textHint),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textHint,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )),
+                )),
             const SizedBox(height: 12),
             // CTA
             SizedBox(
@@ -417,7 +450,8 @@ class _ProfileCompletionCard extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text('Complete Your Profile', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: const Text('Complete Your Profile',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -435,14 +469,20 @@ class _MyServicesSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingsAsync = ref.watch(_myServiceListingsProvider);
 
-    return listingsAsync.when(skipLoadingOnReload: true,
+    return listingsAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (e, _) => SliverToBoxAdapter(
+        child: _SectionErrorCard(
+          message: 'Could not load your service listings.',
+          onRetry: () => ref.invalidate(_myServiceListingsProvider),
+        ),
+      ),
       data: (listings) {
         if (listings.isEmpty) {
           return SliverToBoxAdapter(
@@ -468,14 +508,12 @@ class _MyServicesSection extends ConsumerWidget {
                           children: [
                             Text('Create your first service listing',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14)),
+                                    fontWeight: FontWeight.w600, fontSize: 14)),
                             SizedBox(height: 4),
                             Text(
                               'Let clients find and hire you directly.',
                               style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary),
+                                  fontSize: 12, color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -511,14 +549,20 @@ class _RecommendedSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recAsync = ref.watch(_recommendedTasksProvider);
 
-    return recAsync.when(skipLoadingOnReload: true,
+    return recAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (e, _) => SliverToBoxAdapter(
+        child: _SectionErrorCard(
+          message: 'Could not load recommended tasks right now.',
+          onRetry: () => ref.invalidate(_recommendedTasksProvider),
+        ),
+      ),
       data: (recommended) {
         if (recommended.isEmpty) {
           return const SliverToBoxAdapter(
@@ -545,6 +589,50 @@ class _RecommendedSection extends ConsumerWidget {
   }
 }
 
+class _SectionErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _SectionErrorCard({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _NoServiceCategoriesPrompt extends StatelessWidget {
   const _NoServiceCategoriesPrompt();
 
@@ -561,7 +649,8 @@ class _NoServiceCategoriesPrompt extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.tips_and_updates_outlined, color: AppColors.primary),
+            const Icon(Icons.tips_and_updates_outlined,
+                color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -574,7 +663,8 @@ class _NoServiceCategoriesPrompt extends StatelessWidget {
                   const SizedBox(height: 4),
                   const Text(
                     'Add your service categories in profile to get task recommendations.',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style:
+                        TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   GestureDetector(
@@ -606,7 +696,7 @@ class _RecommendedTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final category = AppCategories.getById(task.categoryId);
-    final emoji    = category?.emoji ?? '📌';
+    final emoji = category?.emoji ?? '📌';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -632,7 +722,10 @@ class _RecommendedTaskCard extends StatelessWidget {
                 ),
                 child: Text(
                   matchReason,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
                 ),
               ),
               // Title + emoji
@@ -643,7 +736,8 @@ class _RecommendedTaskCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       task.title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -654,20 +748,27 @@ class _RecommendedTaskCard extends StatelessWidget {
               // Category + budget
               Row(
                 children: [
-                  _Chip(label: category?.label ?? task.categoryId, color: AppColors.primaryLight.withValues(alpha: 0.15)),
+                  _Chip(
+                      label: category?.label ?? task.categoryId,
+                      color: AppColors.primaryLight.withValues(alpha: 0.15)),
                   const SizedBox(width: 8),
-                  _Chip(label: task.budgetDisplay, color: AppColors.primary.withValues(alpha: 0.1)),
+                  _Chip(
+                      label: task.budgetDisplay,
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ],
               ),
-              if (task.neighbourhood != null && task.neighbourhood!.isNotEmpty) ...[
+              if (task.neighbourhood != null &&
+                  task.neighbourhood!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Row(children: [
-                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                  const Icon(Icons.location_on_outlined,
+                      size: 14, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       task.neighbourhood!,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -712,22 +813,24 @@ class _CategoryFilterRow extends ConsumerWidget {
             child: FilterChip(
               label: const Text('All'),
               selected: selected == null,
-              onSelected: (_) => ref.read(_selectedCategoryProvider.notifier).state = null,
+              onSelected: (_) =>
+                  ref.read(_selectedCategoryProvider.notifier).state = null,
               selectedColor: AppColors.primary.withOpacity(0.15),
               checkmarkColor: AppColors.primary,
             ),
           ),
           ...categories.map((cat) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text('${cat.emoji} ${cat.label}'),
-              selected: selected == cat.id,
-              onSelected: (_) => ref.read(_selectedCategoryProvider.notifier).state =
-                  selected == cat.id ? null : cat.id,
-              selectedColor: AppColors.primary.withOpacity(0.15),
-              checkmarkColor: AppColors.primary,
-            ),
-          )),
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text('${cat.emoji} ${cat.label}'),
+                  selected: selected == cat.id,
+                  onSelected: (_) => ref
+                      .read(_selectedCategoryProvider.notifier)
+                      .state = selected == cat.id ? null : cat.id,
+                  selectedColor: AppColors.primary.withOpacity(0.15),
+                  checkmarkColor: AppColors.primary,
+                ),
+              )),
         ],
       ),
     );
@@ -742,19 +845,19 @@ class _EmptyTasksState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 60, horizontal: 32),
-    child: Column(
-      children: [
-        Text('🔍', style: TextStyle(fontSize: 48)),
-        SizedBox(height: 16),
-        Text(
-          'No open tasks right now. Check back soon!',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+        padding: EdgeInsets.symmetric(vertical: 60, horizontal: 32),
+        child: Column(
+          children: [
+            Text('🔍', style: TextStyle(fontSize: 48)),
+            SizedBox(height: 16),
+            Text(
+              'No open tasks right now. Check back soon!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -767,7 +870,7 @@ class _ProviderTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final category = AppCategories.getById(task.categoryId);
-    final emoji    = category?.emoji ?? '📌';
+    final emoji = category?.emoji ?? '📌';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -791,7 +894,8 @@ class _ProviderTaskCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       task.title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -802,9 +906,13 @@ class _ProviderTaskCard extends StatelessWidget {
               // Category + budget
               Row(
                 children: [
-                  _Chip(label: category?.label ?? task.categoryId, color: AppColors.primaryLight.withOpacity(0.15)),
+                  _Chip(
+                      label: category?.label ?? task.categoryId,
+                      color: AppColors.primaryLight.withOpacity(0.15)),
                   const SizedBox(width: 8),
-                  _Chip(label: task.budgetDisplay, color: AppColors.primary.withOpacity(0.1)),
+                  _Chip(
+                      label: task.budgetDisplay,
+                      color: AppColors.primary.withOpacity(0.1)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -812,15 +920,18 @@ class _ProviderTaskCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (task.neighbourhood != null && task.neighbourhood!.isNotEmpty)
+                  if (task.neighbourhood != null &&
+                      task.neighbourhood!.isNotEmpty)
                     Expanded(
                       child: Row(children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                        const Icon(Icons.location_on_outlined,
+                            size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             task.neighbourhood!,
-                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                            style: const TextStyle(
+                                fontSize: 13, color: AppColors.textSecondary),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -830,8 +941,11 @@ class _ProviderTaskCard extends StatelessWidget {
                   else
                     const SizedBox.shrink(),
                   Text(
-                    task.createdAt != null ? timeago.format(task.createdAt!) : '',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                    task.createdAt != null
+                        ? timeago.format(task.createdAt!)
+                        : '',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textHint),
                   ),
                 ],
               ),
@@ -845,13 +959,15 @@ class _ProviderTaskCard extends StatelessWidget {
 
 class _Chip extends StatelessWidget {
   final String label;
-  final Color  color;
+  final Color color;
   const _Chip({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
-    child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration:
+            BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+        child: Text(label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+      );
 }

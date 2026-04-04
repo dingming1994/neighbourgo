@@ -9,6 +9,7 @@ import '../../data/models/task_model.dart';
 import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../bids/presentation/widgets/bid_list_section.dart';
@@ -32,10 +33,11 @@ class TaskDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final taskAsync   = ref.watch(taskDetailProvider(taskId));
+    final taskAsync = ref.watch(taskDetailProvider(taskId));
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
 
-    return taskAsync.when(skipLoadingOnReload: true,
+    return taskAsync.when(
+      skipLoadingOnReload: true,
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
@@ -45,14 +47,32 @@ class TaskDetailScreen extends ConsumerWidget {
       ),
       data: (task) {
         if (task == null) {
-          return const Scaffold(
-              body: Center(child: Text('Task not found')));
+          return Scaffold(
+            body: EmptyState(
+              emoji: '🧾',
+              title: 'Task no longer available',
+              subtitle:
+                  'This task may have been removed or the link is outdated.',
+              action: ElevatedButton.icon(
+                onPressed: () => context.go(AppRoutes.taskList),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.button,
+                  ),
+                ),
+                icon: const Icon(Icons.search, size: 18),
+                label: const Text('Browse Tasks'),
+              ),
+            ),
+          );
         }
 
-        final cat        = AppCategories.getById(task.categoryId);
-        final isPoster   = currentUser?.uid == task.posterId;
+        final cat = AppCategories.getById(task.categoryId);
+        final isPoster = currentUser?.uid == task.posterId;
         final isProvider = !isPoster && currentUser != null;
-        final isOpen     = task.status == TaskStatus.open;
+        final isOpen = task.status == TaskStatus.open;
         final isInProgress = task.status == TaskStatus.inProgress ||
             task.status == TaskStatus.assigned;
 
@@ -65,8 +85,10 @@ class TaskDetailScreen extends ConsumerWidget {
           if ((isInProgress || task.status == TaskStatus.completed) &&
               task.assignedProviderId != null) {
             bottomActions.add(_MessageButton(
-              taskId: taskId, posterId: task.posterId,
-              providerId: task.assignedProviderId!, label: 'Message Provider',
+              taskId: taskId,
+              posterId: task.posterId,
+              providerId: task.assignedProviderId!,
+              label: 'Message Provider',
             ));
           }
         } else if (isProvider) {
@@ -77,17 +99,22 @@ class TaskDetailScreen extends ConsumerWidget {
           } else if (isOpen) {
             final bidsAsync = ref.watch(bidsStreamProvider(taskId));
             final hasBid = bidsAsync.whenOrNull(
-              data: (bids) => bids.any((b) => b.providerId == currentUser!.uid),
-            ) ?? false;
+                  data: (bids) =>
+                      bids.any((b) => b.providerId == currentUser!.uid),
+                ) ??
+                false;
             if (!hasBid) {
               bottomActions.add(AppButton(
                 label: 'Submit Bid',
                 onPressed: () => showModalBottomSheet(
-                  context: context, isScrollControlled: true,
+                  context: context,
+                  isScrollControlled: true,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
                   ),
-                  builder: (_) => SubmitBidSheet(taskId: taskId, taskBudget: task.budgetMin),
+                  builder: (_) => SubmitBidSheet(
+                      taskId: taskId, taskBudget: task.budgetMin),
                 ),
               ));
             }
@@ -99,15 +126,16 @@ class TaskDetailScreen extends ConsumerWidget {
           }
           if (task.assignedProviderId == currentUser?.uid) {
             bottomActions.add(_MessageButton(
-              taskId: taskId, posterId: task.posterId,
-              providerId: currentUser!.uid, label: 'Message Poster',
+              taskId: taskId,
+              posterId: task.posterId,
+              providerId: currentUser!.uid,
+              label: 'Message Poster',
             ));
           }
         }
 
-        final postedAgo = task.createdAt != null
-            ? timeago.format(task.createdAt!)
-            : null;
+        final postedAgo =
+            task.createdAt != null ? timeago.format(task.createdAt!) : null;
 
         return Scaffold(
           appBar: AppBar(
@@ -120,22 +148,29 @@ class TaskDetailScreen extends ConsumerWidget {
                   ),
           ),
           // ── Sticky bottom bar ─────────────────────────────────────
-          bottomNavigationBar: bottomActions.isEmpty ? null : Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.bgCard,
-              boxShadow: [BoxShadow(color: Color(0x1A000000), blurRadius: 8, offset: Offset(0, -2))],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (int i = 0; i < bottomActions.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 8),
-                  bottomActions[i],
-                ],
-              ],
-            ),
-          ),
+          bottomNavigationBar: bottomActions.isEmpty
+              ? null
+              : Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  decoration: const BoxDecoration(
+                    color: AppColors.bgCard,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Color(0x1A000000),
+                          blurRadius: 8,
+                          offset: Offset(0, -2))
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < bottomActions.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        bottomActions[i],
+                      ],
+                    ],
+                  ),
+                ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -153,17 +188,22 @@ class TaskDetailScreen extends ConsumerWidget {
                 // ── Category chip + Urgency badge ────────────────────
                 Row(children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: (cat?.color ?? AppColors.primary).withValues(alpha: 0.1),
+                      color: (cat?.color ?? AppColors.primary)
+                          .withValues(alpha: 0.1),
                       borderRadius: AppRadius.chip,
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(cat?.emoji ?? '📋', style: const TextStyle(fontSize: 14)),
+                      Text(cat?.emoji ?? '📋',
+                          style: const TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
-                      Text(cat?.label ?? task.categoryId,
+                      Text(
+                        cat?.label ?? task.categoryId,
                         style: TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           color: cat?.color ?? AppColors.primary,
                         ),
                       ),
@@ -180,25 +220,33 @@ class TaskDetailScreen extends ConsumerWidget {
                 if (postedAgo != null) ...[
                   const SizedBox(height: 4),
                   Text('Posted $postedAgo',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textHint)),
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.textHint)),
                 ],
                 const SizedBox(height: 16),
 
                 // ── Budget card ──────────────────────────────────────
                 _SectionCard(
                   child: Row(children: [
-                    const Icon(Icons.attach_money, color: AppColors.primary, size: 28),
+                    const Icon(Icons.attach_money,
+                        color: AppColors.primary, size: 28),
                     const SizedBox(width: 8),
-                    Expanded(child: Column(
+                    Expanded(
+                        child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Budget', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                        const Text('Budget',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textHint)),
                         Text(
                           task.budgetDisplay,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ],
                     )),
@@ -212,9 +260,13 @@ class TaskDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Description',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      Text(task.description, style: const TextStyle(height: 1.6)),
+                      Text(task.description,
+                          style: const TextStyle(height: 1.6)),
                     ],
                   ),
                 ),
@@ -226,14 +278,18 @@ class TaskDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Details',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       _InfoRow(Icons.location_on_outlined, task.locationLabel),
                       _InfoRow(Icons.info_outline, _statusLabel(task.status)),
                       if (task.neighbourhood != null)
                         _InfoRow(Icons.near_me_outlined, task.neighbourhood!),
                       if (task.estimatedDurationMins != null)
-                        _InfoRow(Icons.schedule_outlined, 'Est. ${task.estimatedDurationMins} mins'),
+                        _InfoRow(Icons.schedule_outlined,
+                            'Est. ${task.estimatedDurationMins} mins'),
                     ],
                   ),
                 ),
@@ -255,7 +311,8 @@ class TaskDetailScreen extends ConsumerWidget {
                 ],
 
                 // ── Leave a Review prompt (completed tasks) ──────────
-                if (task.status == TaskStatus.completed && currentUser != null) ...[
+                if (task.status == TaskStatus.completed &&
+                    currentUser != null) ...[
                   if (isPoster && task.assignedProviderId != null) ...[
                     _LeaveReviewCard(
                       taskId: taskId,
@@ -292,11 +349,12 @@ class TaskDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ] else ...[
                     _ProviderBidView(
-                      taskId: taskId, providerId: currentUser.uid,
-                      posterId: task.posterId, taskStatus: task.status,
+                      taskId: taskId,
+                      providerId: currentUser.uid,
+                      posterId: task.posterId,
+                      taskStatus: task.status,
                     ),
                   ],
-
                   if (!isOpen &&
                       task.assignedProviderId != currentUser.uid) ...[
                     Container(
@@ -306,7 +364,8 @@ class TaskDetailScreen extends ConsumerWidget {
                         borderRadius: AppRadius.card,
                       ),
                       child: Row(children: [
-                        const Icon(Icons.lock_outline, color: AppColors.primary),
+                        const Icon(Icons.lock_outline,
+                            color: AppColors.primary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -320,8 +379,7 @@ class TaskDetailScreen extends ConsumerWidget {
                 ],
 
                 // Bottom padding so content isn't hidden behind sticky bar
-                if (bottomActions.isNotEmpty)
-                  const SizedBox(height: 16),
+                if (bottomActions.isNotEmpty) const SizedBox(height: 16),
               ],
             ),
           ),
@@ -332,12 +390,18 @@ class TaskDetailScreen extends ConsumerWidget {
 
   String _statusLabel(TaskStatus status) {
     switch (status) {
-      case TaskStatus.open:       return 'Open';
-      case TaskStatus.assigned:   return 'Assigned';
-      case TaskStatus.inProgress: return 'In Progress';
-      case TaskStatus.completed:  return 'Completed';
-      case TaskStatus.cancelled:  return 'Cancelled';
-      case TaskStatus.disputed:   return 'Disputed';
+      case TaskStatus.open:
+        return 'Open';
+      case TaskStatus.assigned:
+        return 'Assigned';
+      case TaskStatus.inProgress:
+        return 'In Progress';
+      case TaskStatus.completed:
+        return 'Completed';
+      case TaskStatus.cancelled:
+        return 'Cancelled';
+      case TaskStatus.disputed:
+        return 'Disputed';
     }
   }
 }
@@ -346,7 +410,7 @@ class TaskDetailScreen extends ConsumerWidget {
 // _PosterInfo
 // ─────────────────────────────────────────────────────────────────────────────
 class _PosterInfo extends StatelessWidget {
-  final String  posterName;
+  final String posterName;
   final String? posterAvatarUrl;
   const _PosterInfo({required this.posterName, this.posterAvatarUrl});
 
@@ -362,11 +426,9 @@ class _PosterInfo extends StatelessWidget {
               : null,
           child: posterAvatarUrl == null
               ? Text(
-                  posterName.isNotEmpty
-                      ? posterName[0].toUpperCase()
-                      : '?',
+                  posterName.isNotEmpty ? posterName[0].toUpperCase() : '?',
                   style: const TextStyle(
-                    color:      AppColors.primary,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 )
@@ -378,8 +440,7 @@ class _PosterInfo extends StatelessWidget {
           children: [
             const Text(
               'Posted by',
-              style: TextStyle(
-                  fontSize: 12, color: AppColors.textHint),
+              style: TextStyle(fontSize: 12, color: AppColors.textHint),
             ),
             Text(
               posterName,
@@ -396,7 +457,7 @@ class _PosterInfo extends StatelessWidget {
 // _MarkCompleteButton
 // ─────────────────────────────────────────────────────────────────────────────
 class _MarkCompleteButton extends ConsumerStatefulWidget {
-  final String    taskId;
+  final String taskId;
   final TaskModel task;
   const _MarkCompleteButton({required this.taskId, required this.task});
 
@@ -432,9 +493,7 @@ class _MarkCompleteButtonState extends ConsumerState<_MarkCompleteButton> {
 
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(taskRepositoryProvider)
-          .completeTask(widget.taskId);
+      await ref.read(taskRepositoryProvider).completeTask(widget.taskId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -460,7 +519,7 @@ class _MarkCompleteButtonState extends ConsumerState<_MarkCompleteButton> {
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label:     'Mark as Complete',
+      label: 'Mark as Complete',
       isLoading: _isLoading,
       onPressed: _markComplete,
     );
@@ -533,7 +592,7 @@ class _StartWorkButtonState extends ConsumerState<_StartWorkButton> {
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label:     'Start Work',
+      label: 'Start Work',
       isLoading: _isLoading,
       onPressed: _startWork,
     );
@@ -561,8 +620,7 @@ class _DirectHireResponseButtonsState
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Accept Job?'),
-        content: const Text(
-            'You will start working on this task immediately.'),
+        content: const Text('You will start working on this task immediately.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -610,8 +668,7 @@ class _DirectHireResponseButtonsState
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Decline Job?'),
-        content: const Text(
-            'This will cancel the task and notify the client.'),
+        content: const Text('This will cancel the task and notify the client.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -630,9 +687,7 @@ class _DirectHireResponseButtonsState
 
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(taskRepositoryProvider)
-          .declineDirectHire(widget.taskId);
+      await ref.read(taskRepositoryProvider).declineDirectHire(widget.taskId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -665,8 +720,7 @@ class _DirectHireResponseButtonsState
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: AppRadius.card,
-            border:
-                Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
           ),
           child: const Row(
             children: [
@@ -718,16 +772,15 @@ class _WorkInProgressBanner extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          Icon(Icons.construction_rounded,
-              color: AppColors.primary, size: 22),
+          Icon(Icons.construction_rounded, color: AppColors.primary, size: 22),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Work in Progress',
               style: TextStyle(
-                color:      AppColors.primary,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w600,
-                fontSize:   15,
+                fontSize: 15,
               ),
             ),
           ),
@@ -764,11 +817,9 @@ class _MessageButtonState extends ConsumerState<_MessageButton> {
     try {
       final chatId = await ref
           .read(chatRepositoryProvider)
-          .createOrGetChat(
-              widget.taskId, widget.posterId, widget.providerId);
+          .createOrGetChat(widget.taskId, widget.posterId, widget.providerId);
       if (mounted) {
-        context.push(
-            AppRoutes.chatThread.replaceFirst(':chatId', chatId));
+        context.push(AppRoutes.chatThread.replaceFirst(':chatId', chatId));
       }
     } catch (e) {
       if (mounted) {
@@ -784,10 +835,10 @@ class _MessageButtonState extends ConsumerState<_MessageButton> {
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label:      widget.label,
+      label: widget.label,
       isOutlined: true,
-      isLoading:  _isLoading,
-      onPressed:  _openChat,
+      isLoading: _isLoading,
+      onPressed: _openChat,
     );
   }
 }
@@ -796,9 +847,9 @@ class _MessageButtonState extends ConsumerState<_MessageButton> {
 // _ProviderBidView  — shows provider's own bid on this task
 // ─────────────────────────────────────────────────────────────────────────────
 class _ProviderBidView extends ConsumerWidget {
-  final String     taskId;
-  final String     providerId;
-  final String     posterId;
+  final String taskId;
+  final String providerId;
+  final String posterId;
   final TaskStatus taskStatus;
   const _ProviderBidView({
     required this.taskId,
@@ -811,9 +862,10 @@ class _ProviderBidView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(bidsStreamProvider(taskId));
 
-    return bidsAsync.when(skipLoadingOnReload: true,
+    return bidsAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const SizedBox.shrink(),
-      error:   (_, __) => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
       data: (bids) {
         final myBid = bids.where((b) => b.providerId == providerId).firstOrNull;
         if (myBid == null) return const SizedBox.shrink();
@@ -881,7 +933,7 @@ class _ProviderBidView extends ConsumerWidget {
                     Text(
                       'Bid accepted — get ready to start!',
                       style: TextStyle(
-                        color:      AppColors.success,
+                        color: AppColors.success,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -905,7 +957,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late final Color  color;
+    late final Color color;
     late final String label;
 
     switch (status) {
@@ -923,14 +975,14 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color:        color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color:      color,
-          fontSize:   11,
+          color: color,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -957,21 +1009,20 @@ class _PhotoCarousel extends StatelessWidget {
           borderRadius: AppRadius.card,
           child: CachedNetworkImage(
             imageUrl: photoUrls[i],
-            width:    280,
-            height:   220,
-            fit:      BoxFit.cover,
+            width: 280,
+            height: 220,
+            fit: BoxFit.cover,
             placeholder: (_, __) => Container(
-              width:  280,
+              width: 280,
               height: 220,
-              color:  AppColors.bgMint,
-              child:  const Center(
-                  child: CircularProgressIndicator()),
+              color: AppColors.bgMint,
+              child: const Center(child: CircularProgressIndicator()),
             ),
             errorWidget: (_, __, ___) => Container(
-              width:  280,
+              width: 280,
               height: 220,
-              color:  AppColors.bgMint,
-              child:  const Icon(Icons.broken_image_outlined,
+              color: AppColors.bgMint,
+              child: const Icon(Icons.broken_image_outlined,
                   color: AppColors.textHint),
             ),
           ),
@@ -1248,8 +1299,7 @@ class _StepItem extends StatelessWidget {
           step.label,
           style: TextStyle(
             fontSize: 10,
-            fontWeight:
-                step.isCurrent ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: step.isCurrent ? FontWeight.w700 : FontWeight.w500,
             color: step.isCompleted || step.isCurrent
                 ? AppColors.textPrimary
                 : AppColors.textHint,
@@ -1294,7 +1344,8 @@ class _SectionCard extends StatelessWidget {
         color: AppColors.bgCard,
         borderRadius: AppRadius.card,
         boxShadow: const [
-          BoxShadow(color: Color(0x0D000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Color(0x0D000000), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: child,
@@ -1332,8 +1383,10 @@ class _UrgencyBadge extends StatelessWidget {
         borderRadius: AppRadius.chip,
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+      child: Text(
+        label,
+        style:
+            TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }
@@ -1368,7 +1421,8 @@ class _CategoryPlaceholder extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (category?.color ?? AppColors.primary).withValues(alpha: 0.7),
+              color:
+                  (category?.color ?? AppColors.primary).withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -1382,7 +1436,7 @@ class _CategoryPlaceholder extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _InfoRow extends StatelessWidget {
   final IconData icon;
-  final String   text;
+  final String text;
   const _InfoRow(this.icon, this.text);
 
   @override

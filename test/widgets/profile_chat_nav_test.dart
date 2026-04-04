@@ -18,6 +18,7 @@ import 'package:neighbourgo/features/chat/presentation/screens/chat_thread_scree
 import 'package:neighbourgo/features/home/presentation/screens/main_shell_screen.dart';
 import 'package:neighbourgo/features/profile/data/repositories/profile_repository.dart';
 import 'package:neighbourgo/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:neighbourgo/features/profile/presentation/screens/photo_gallery_screen.dart';
 import 'package:neighbourgo/features/profile/presentation/screens/profile_screen.dart';
 import 'package:neighbourgo/features/tasks/data/models/task_model.dart';
 import 'package:neighbourgo/features/tasks/data/repositories/task_repository.dart';
@@ -199,7 +200,6 @@ ChatModel _testChat({
       unreadCount: unreadCount,
     );
 
-
 // =============================================================================
 // Helpers
 // =============================================================================
@@ -287,7 +287,8 @@ void main() {
         overrides: _overrides(),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Edit Profile'), findsWidgets); // AppBar action + menu item
+      expect(
+          find.text('Edit Profile'), findsWidgets); // AppBar action + menu item
       expect(find.text('Verification Centre'), findsOneWidget);
       expect(find.text('Photo Gallery'), findsOneWidget);
       expect(find.text('Sign Out'), findsOneWidget);
@@ -365,6 +366,56 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // PhotoGalleryScreen
+  // ─────────────────────────────────────────────────────────────────────────
+  group('PhotoGalleryScreen', () {
+    testScreen('shows add photos CTA when gallery is empty', (tester) async {
+      final user = _testUser(role: UserRole.provider);
+      await tester.pumpWidget(buildTestWidget(
+        const PhotoGalleryScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(user)),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No photos yet'), findsOneWidget);
+      expect(find.text('Add Photos'), findsAtLeastNWidgets(1));
+    });
+
+    testScreen(
+        'shows filter-specific empty state when selected category has no photos',
+        (tester) async {
+      final user = _testUser(
+        role: UserRole.provider,
+      ).copyWith(
+        photos: [
+          ProfilePhoto(
+            id: 'photo-1',
+            url: 'https://example.com/photo.jpg',
+            categoryId: 'cleaning',
+            uploadedAt: DateTime(2026, 4, 1),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        const PhotoGalleryScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(user)),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('📚 Tutoring'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No photos in this category'), findsOneWidget);
+      expect(find.text('Show All Photos'), findsOneWidget);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // ChatListScreen
   // ─────────────────────────────────────────────────────────────────────────
   group('ChatListScreen', () {
@@ -394,9 +445,27 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('No conversations yet'), findsOneWidget);
-      expect(find.text('Start a conversation by bidding on a task'),
+      expect(
+          find.text(
+              'Accept a bid or open one of your tasks to message a provider'),
           findsOneWidget);
       expect(find.text('💬'), findsOneWidget);
+      expect(find.text('View My Tasks'), findsOneWidget);
+    });
+
+    testScreen('shows provider-specific empty state CTA', (tester) async {
+      final fakeChatRepo = FakeChatRepository(chatsToReturn: []);
+      final providerUser = _testUser(role: UserRole.provider);
+      await tester.pumpWidget(buildTestWidget(
+        const ChatListScreen(),
+        overrides: [
+          currentUserProvider.overrideWith((_) => Stream.value(providerUser)),
+          chatRepositoryProvider.overrideWithValue(fakeChatRepo),
+        ],
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('Bid on an open task to start chatting with posters'),
+          findsOneWidget);
       expect(find.text('Browse Tasks'), findsOneWidget);
     });
   });
@@ -501,8 +570,7 @@ void main() {
       fakeTaskRepo = FakeTaskRepository();
     });
 
-    testScreen('renders PosterHomeScreen for poster role user',
-        (tester) async {
+    testScreen('renders PosterHomeScreen for poster role user', (tester) async {
       final user = _testUser(role: UserRole.poster);
       await tester.pumpWidget(buildTestWidget(
         const HomeScreen(),
@@ -533,8 +601,7 @@ void main() {
       expect(find.text('All Open Tasks'), findsOneWidget);
     });
 
-    testScreen(
-        'renders TabBar with Find Help and Find Work tabs for both role',
+    testScreen('renders TabBar with Find Help and Find Work tabs for both role',
         (tester) async {
       final user = _testUser(role: UserRole.both);
       await tester.pumpWidget(buildTestWidget(

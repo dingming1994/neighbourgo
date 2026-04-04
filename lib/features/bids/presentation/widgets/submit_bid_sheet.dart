@@ -20,29 +20,33 @@ enum _BidDuration {
 
   const _BidDuration(this.label, this.minutes);
   final String label;
-  final int    minutes;
+  final int minutes;
 }
 
 class SubmitBidSheet extends ConsumerStatefulWidget {
-  final String       taskId;
-  final double       taskBudget;
+  final String taskId;
+  final double taskBudget;
   final VoidCallback? onSuccess;
 
-  const SubmitBidSheet({super.key, required this.taskId, required this.taskBudget, this.onSuccess});
+  const SubmitBidSheet(
+      {super.key,
+      required this.taskId,
+      required this.taskBudget,
+      this.onSuccess});
 
   @override
   ConsumerState<SubmitBidSheet> createState() => _SubmitBidSheetState();
 }
 
 class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
-  final _formKey       = GlobalKey<FormState>();
-  final _amountCtrl    = TextEditingController();
-  final _messageCtrl   = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _amountCtrl = TextEditingController();
+  final _messageCtrl = TextEditingController();
   final _customMinsCtrl = TextEditingController();
 
   _BidDuration _selectedDuration = _BidDuration.oneHour;
-  bool         _isSubmitting     = false;
-  bool         _showHighBidWarning = false;
+  bool _isSubmitting = false;
+  bool _showHighBidWarning = false;
 
   @override
   void dispose() {
@@ -58,7 +62,10 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
     if (user == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: not logged in'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Please sign in again before submitting a bid.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
       return;
@@ -68,14 +75,14 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
     try {
       final amount = double.parse(_amountCtrl.text.trim());
       final bid = BidModel(
-        bidId:          '',
-        taskId:         widget.taskId,
-        providerId:     user.uid,
-        providerName:   user.displayName ?? 'Anonymous',
+        bidId: '',
+        taskId: widget.taskId,
+        providerId: user.uid,
+        providerName: user.displayName ?? 'Anonymous',
         providerAvatar: user.avatarUrl,
-        amount:         amount,
-        message:        _messageCtrl.text.trim(),
-        status:         BidStatus.pending,
+        amount: amount,
+        message: _messageCtrl.text.trim(),
+        status: BidStatus.pending,
       );
       await ref.read(bidRepositoryProvider).submitBid(widget.taskId, bid);
       if (mounted) {
@@ -92,7 +99,7 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Submit failed: $e'),
+            content: const Text('Could not submit your bid. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -119,183 +126,186 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left:   24,
-        right:  24,
-        top:    24,
+        left: 24,
+        right: 24,
+        top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            Text('Submit Bid',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 20),
-
-            // ── Amount ────────────────────────────────────────────────────
-            Text('Bid Amount (SGD)',
-                style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              decoration: const InputDecoration(
-                prefixText: 'S\$ ',
-                hintText:   '0.00',
-              ),
-              onChanged: (v) {
-                final n = double.tryParse(v);
-                final exceedsTwice = n != null && n > widget.taskBudget * 2;
-                if (exceedsTwice != _showHighBidWarning) {
-                  setState(() => _showHighBidWarning = exceedsTwice);
-                }
-              },
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Enter a bid amount';
-                final n = double.tryParse(v);
-                if (n == null || n <= 0) return 'Enter a valid amount';
-                if (n < 1) return 'Minimum bid is S\$1';
-                return null;
-              },
-            ),
-            if (_showHighBidWarning) ...[
-              const SizedBox(height: 8),
-              Chip(
-                avatar: const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.orange),
-                label: Text(
-                  'Bid exceeds 2× the task budget (S\$${(widget.taskBudget * 2).toStringAsFixed(0)})',
-                  style: const TextStyle(fontSize: 12, color: Colors.orange),
-                ),
-                backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                side: const BorderSide(color: Colors.orange, width: 0.5),
-              ),
-            ],
-            const SizedBox(height: 20),
-
-            // ── Estimated Duration ────────────────────────────────────────
-            Text('Estimated Duration',
-                style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _BidDuration.values.map((d) {
-                final isSelected = _selectedDuration == d;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedDuration = d),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.bgCard,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.divider,
-                      ),
-                    ),
-                    child: Text(
-                      d.label,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        fontSize: 13,
-                      ),
-                    ),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                );
-              }).toList(),
-            ),
-
-            // Custom duration input
-            if (_selectedDuration == _BidDuration.custom) ...[
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _customMinsCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  hintText:   'e.g. 90',
-                  suffixText: 'minutes',
                 ),
+              ),
+
+              Text('Submit Bid',
+                  style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 20),
+
+              // ── Amount ────────────────────────────────────────────────────
+              Text('Bid Amount (SGD)',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _amountCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                decoration: const InputDecoration(
+                  prefixText: 'S\$ ',
+                  hintText: '0.00',
+                ),
+                onChanged: (v) {
+                  final n = double.tryParse(v);
+                  final exceedsTwice = n != null && n > widget.taskBudget * 2;
+                  if (exceedsTwice != _showHighBidWarning) {
+                    setState(() => _showHighBidWarning = exceedsTwice);
+                  }
+                },
                 validator: (v) {
-                  if (_selectedDuration != _BidDuration.custom) return null;
-                  if (v == null || v.isEmpty) return 'Enter duration in minutes';
-                  final n = int.tryParse(v);
-                  if (n == null || n <= 0) return 'Enter a valid duration';
+                  if (v == null || v.isEmpty) return 'Enter a bid amount';
+                  final n = double.tryParse(v);
+                  if (n == null || n <= 0) return 'Enter a valid amount';
+                  if (n < 1) return 'Minimum bid is S\$1';
                   return null;
                 },
               ),
-            ],
-            const SizedBox(height: 20),
+              if (_showHighBidWarning) ...[
+                const SizedBox(height: 8),
+                Chip(
+                  avatar: const Icon(Icons.warning_amber_rounded,
+                      size: 18, color: Colors.orange),
+                  label: Text(
+                    'Bid exceeds 2× the task budget (S\$${(widget.taskBudget * 2).toStringAsFixed(0)})',
+                    style: const TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                  backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                  side: const BorderSide(color: Colors.orange, width: 0.5),
+                ),
+              ],
+              const SizedBox(height: 20),
 
-            // ── Message / Proposal ────────────────────────────────────────
-            Text('Your Proposal',
-                style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 4),
-            const Text(
-              'Describe your experience and approach (min. 20 characters)',
-              style: TextStyle(fontSize: 12, color: AppColors.textHint),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _messageCtrl,
-              maxLines:   4,
-              maxLength:  200,
-              decoration: const InputDecoration(
-                hintText: 'Introduce yourself and explain why you\'re a great fit…',
+              // ── Estimated Duration ────────────────────────────────────────
+              Text('Estimated Duration',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _BidDuration.values.map((d) {
+                  final isSelected = _selectedDuration == d;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedDuration = d),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected ? AppColors.primary : AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.divider,
+                        ),
+                      ),
+                      child: Text(
+                        d.label,
+                        style: TextStyle(
+                          color:
+                              isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'A proposal is required';
-                }
-                if (v.trim().length < 20) {
-                  return 'Proposal must be at least 20 characters';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
 
-            SafeArea(
-              child: AppButton(
-                label:     'Submit Bid',
-                isLoading: _isSubmitting,
-                onPressed: _isSubmitting ? null : () {
-                  debugPrint('=== SUBMIT BID TAPPED ===');
-                  _submit();
+              // Custom duration input
+              if (_selectedDuration == _BidDuration.custom) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _customMinsCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. 90',
+                    suffixText: 'minutes',
+                  ),
+                  validator: (v) {
+                    if (_selectedDuration != _BidDuration.custom) return null;
+                    if (v == null || v.isEmpty)
+                      return 'Enter duration in minutes';
+                    final n = int.tryParse(v);
+                    if (n == null || n <= 0) return 'Enter a valid duration';
+                    return null;
+                  },
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              // ── Message / Proposal ────────────────────────────────────────
+              Text('Your Proposal',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              const Text(
+                'Describe your experience and approach (min. 20 characters)',
+                style: TextStyle(fontSize: 12, color: AppColors.textHint),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _messageCtrl,
+                maxLines: 4,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  hintText:
+                      'Introduce yourself and explain why you\'re a great fit…',
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'A proposal is required';
+                  }
+                  if (v.trim().length < 20) {
+                    return 'Proposal must be at least 20 characters';
+                  }
+                  return null;
                 },
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 8),
+
+              SafeArea(
+                child: AppButton(
+                  label: 'Submit Bid',
+                  isLoading: _isSubmitting,
+                  onPressed: _isSubmitting
+                      ? null
+                      : () {
+                          debugPrint('=== SUBMIT BID TAPPED ===');
+                          _submit();
+                        },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -319,7 +329,8 @@ class _ExistingBidView extends StatelessWidget {
           // Drag handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: AppColors.border,
@@ -339,7 +350,8 @@ class _ExistingBidView extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.bgMint,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

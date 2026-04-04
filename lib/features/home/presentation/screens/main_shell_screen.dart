@@ -12,10 +12,6 @@ import 'poster_home_screen.dart';
 import 'provider_home_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Current tab index provider
-// ─────────────────────────────────────────────────────────────────────────────
-final _tabIndexProvider = StateProvider<int>((ref) => 0);
-
 class MainShellScreen extends ConsumerWidget {
   final Widget child;
   const MainShellScreen({super.key, required this.child});
@@ -30,7 +26,19 @@ class MainShellScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final idx = ref.watch(_tabIndexProvider);
+    String location = AppRoutes.home;
+    try {
+      location = GoRouterState.of(context).matchedLocation;
+    } catch (_) {
+      // Widget tests and non-router mounts can render the shell without GoRouter.
+    }
+    final idx = switch (location) {
+      AppRoutes.home => 0,
+      AppRoutes.taskList || AppRoutes.myTasks => 1,
+      AppRoutes.chatList => 3,
+      AppRoutes.myProfile => 4,
+      _ => 0,
+    };
     final unreadChats = ref.watch(unreadChatsCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
@@ -59,7 +67,6 @@ class MainShellScreen extends ConsumerWidget {
                         context.push(AppRoutes.postTask);
                         return;
                       }
-                      ref.read(_tabIndexProvider.notifier).state = i;
                       context.go(tab.route);
                     },
                     child: Column(
@@ -198,4 +205,3 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 }
-

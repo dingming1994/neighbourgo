@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/providers/notification_providers.dart';
@@ -15,7 +16,8 @@ class NotificationListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifAsync = ref.watch(notificationsProvider);
-    final unreadCount = ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0;
+    final unreadCount =
+        ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
@@ -34,11 +36,13 @@ class NotificationListScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.done_all, size: 18),
-              label: const Text('Mark All Read', style: TextStyle(fontSize: 13)),
+              label:
+                  const Text('Mark All Read', style: TextStyle(fontSize: 13)),
             ),
         ],
       ),
-      body: notifAsync.when(skipLoadingOnReload: true,
+      body: notifAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const _NotificationLoadingList(),
         error: (e, _) => ErrorState(
           message: e.toString(),
@@ -46,24 +50,19 @@ class NotificationListScreen extends ConsumerWidget {
         ),
         data: (notifications) {
           if (notifications.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('🔔', style: TextStyle(fontSize: 56)),
-                    SizedBox(height: 16),
-                    Text('No notifications yet',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary)),
-                    SizedBox(height: 8),
-                    Text("You'll see updates on your tasks and bids here",
-                        style: TextStyle(color: AppColors.textHint)),
-                  ],
+            return EmptyState(
+              emoji: '🔔',
+              title: 'No notifications yet',
+              subtitle: "You'll see updates on your tasks and bids here.",
+              action: ElevatedButton.icon(
+                onPressed: () => context.push(AppRoutes.taskList),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
+                icon: const Icon(Icons.search, size: 18),
+                label: const Text('Browse Tasks'),
               ),
             );
           }
@@ -182,7 +181,9 @@ class _NotificationTile extends ConsumerWidget {
           children: [
             Icon(Icons.done, color: AppColors.primary, size: 20),
             SizedBox(width: 4),
-            Text('Read', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            Text('Read',
+                style: TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -195,7 +196,9 @@ class _NotificationTile extends ConsumerWidget {
       child: InkWell(
         onTap: () => _onTap(context, ref),
         child: Container(
-          color: notification.isRead ? null : AppColors.bgMint.withValues(alpha: 0.3),
+          color: notification.isRead
+              ? null
+              : AppColors.bgMint.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,8 +206,10 @@ class _NotificationTile extends ConsumerWidget {
               // Icon
               CircleAvatar(
                 radius: 20,
-                backgroundColor: _iconColor(notification.type).withValues(alpha: 0.12),
-                child: Icon(_icon(notification.type), color: _iconColor(notification.type), size: 20),
+                backgroundColor:
+                    _iconColor(notification.type).withValues(alpha: 0.12),
+                child: Icon(_icon(notification.type),
+                    color: _iconColor(notification.type), size: 20),
               ),
               const SizedBox(width: 12),
               // Content
@@ -218,14 +223,17 @@ class _NotificationTile extends ConsumerWidget {
                           child: Text(
                             notification.title,
                             style: TextStyle(
-                              fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+                              fontWeight: notification.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.w600,
                               fontSize: 14,
                             ),
                           ),
                         ),
                         if (!notification.isRead)
                           Container(
-                            width: 8, height: 8,
+                            width: 8,
+                            height: 8,
                             decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
@@ -234,13 +242,17 @@ class _NotificationTile extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(notification.body, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(notification.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Text(timeago.format(notification.createdAt),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textHint)),
                         const Spacer(),
                         _ActionButton(notification: notification),
                       ],
@@ -265,25 +277,39 @@ class _NotificationTile extends ConsumerWidget {
 
   IconData _icon(String type) {
     switch (type) {
-      case 'bid_received':    return Icons.gavel;
-      case 'bid_accepted':    return Icons.check_circle_outline;
-      case 'bid_rejected':    return Icons.cancel_outlined;
-      case 'task_completed':  return Icons.task_alt;
-      case 'new_message':     return Icons.chat_bubble_outline;
-      case 'review_received': return Icons.star_outline;
-      default:                return Icons.notifications_outlined;
+      case 'bid_received':
+        return Icons.gavel;
+      case 'bid_accepted':
+        return Icons.check_circle_outline;
+      case 'bid_rejected':
+        return Icons.cancel_outlined;
+      case 'task_completed':
+        return Icons.task_alt;
+      case 'new_message':
+        return Icons.chat_bubble_outline;
+      case 'review_received':
+        return Icons.star_outline;
+      default:
+        return Icons.notifications_outlined;
     }
   }
 
   Color _iconColor(String type) {
     switch (type) {
-      case 'bid_received':    return AppColors.primary;
-      case 'bid_accepted':    return AppColors.success;
-      case 'bid_rejected':    return AppColors.error;
-      case 'task_completed':  return AppColors.success;
-      case 'new_message':     return AppColors.accent;
-      case 'review_received': return AppColors.warning;
-      default:                return AppColors.textSecondary;
+      case 'bid_received':
+        return AppColors.primary;
+      case 'bid_accepted':
+        return AppColors.success;
+      case 'bid_rejected':
+        return AppColors.error;
+      case 'task_completed':
+        return AppColors.success;
+      case 'new_message':
+        return AppColors.accent;
+      case 'review_received':
+        return AppColors.warning;
+      default:
+        return AppColors.textSecondary;
     }
   }
 }
@@ -318,13 +344,18 @@ class _ActionButton extends StatelessWidget {
 
   String? _actionLabel(String type) {
     switch (type) {
-      case 'bid_received':    return 'View Bids';
+      case 'bid_received':
+        return 'View Bids';
       case 'bid_accepted':
       case 'bid_rejected':
-      case 'task_completed':  return 'View Task';
-      case 'new_message':     return 'Reply';
-      case 'review_received': return 'Leave Review';
-      default:                return null;
+      case 'task_completed':
+        return 'View Task';
+      case 'new_message':
+        return 'Reply';
+      case 'review_received':
+        return 'Leave Review';
+      default:
+        return null;
     }
   }
 }

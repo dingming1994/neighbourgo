@@ -129,6 +129,38 @@ Do not replace older entries.
   - Remaining analyzer noise is mostly existing `withOpacity` deprecation infos and style lints in larger legacy UI files.
   - Next worthwhile pass: chat thread/support flows and any remaining silent failures in sub-sections.
 
+## 2026-04-04 16:35 SGT | codex | ITER-004
+
+- Task IDs: UX-203
+- Branches: agents/codex/ux-203
+- Summary:
+  - Continued polishing high-friction user flows and prepared the branch for merge back to `main`.
+- Key changes:
+  - Provider home sections no longer fail silently when recommendations or service listings fail to load.
+  - Task / service / public-profile missing-detail states now include recovery CTAs.
+  - Form submission flows for bids, tasks, services, settings, and notifications use clearer user-facing messaging and stronger auth guards.
+  - Added/extended widget tests for photo gallery category-empty state, missing task detail recovery, and notifications empty state.
+- Files touched:
+  - `lib/features/home/presentation/screens/provider_home_screen.dart`
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `lib/features/profile/presentation/screens/public_profile_screen.dart`
+  - `lib/features/bids/presentation/widgets/submit_bid_sheet.dart`
+  - `lib/features/services/presentation/screens/create_service_screen.dart`
+  - `lib/features/tasks/presentation/screens/post_task_screen.dart`
+  - `lib/features/settings/presentation/screens/settings_screen.dart`
+  - `lib/features/notifications/presentation/screens/notification_list_screen.dart`
+  - `test/widgets/task_screens_test.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/features/new_features_test.dart`
+- Verification:
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart`
+  - Passed: `flutter test test/widgets/task_screens_test.dart test/widgets/profile_chat_nav_test.dart`
+  - Passed: `flutter test test/widgets/task_screens_test.dart test/features/new_features_test.dart`
+  - Passed: `flutter test test/features/new_features_test.dart`
+- Risks / follow-up:
+  - Branch still needs final commit/merge bookkeeping after this iteration.
+  - Remaining app-wide cleanup is mostly legacy lint/deprecation noise and deeper emulator QA, not blockers for merge.
 ## 2026-04-04 20:30 SGT | claude | ITER-004
 
 - Task IDs: UX-204

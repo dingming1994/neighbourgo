@@ -13,11 +13,16 @@ import '../../domain/models/message_model.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Firestore conversion helpers
 // ─────────────────────────────────────────────────────────────────────────────
-ChatModel _chatFromFirestore(DocumentSnapshot doc) {
+ChatModel _chatFromFirestore(DocumentSnapshot doc, {String? currentUserId}) {
   final data = Map<String, dynamic>.from(doc.data() as Map);
   if (data['lastMessageTime'] is Timestamp) {
     data['lastMessageTime'] =
         (data['lastMessageTime'] as Timestamp).toDate().toIso8601String();
+  }
+  if (currentUserId != null && data['unreadCounts'] is Map) {
+    final unreadCounts = Map<String, dynamic>.from(data['unreadCounts'] as Map);
+    final unreadForUser = unreadCounts[currentUserId];
+    data['unreadCount'] = unreadForUser is num ? unreadForUser.toInt() : 0;
   }
   return ChatModel.fromJson({...data, 'chatId': doc.id});
 }
@@ -57,7 +62,9 @@ class ChatRepository {
         .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(_chatFromFirestore).toList());
+        .map((snap) => snap.docs
+            .map((doc) => _chatFromFirestore(doc, currentUserId: userId))
+            .toList());
   }
 
   // ── Stream a single chat document ─────────────────────────────────────────
@@ -92,10 +99,21 @@ class ChatRepository {
         .doc(msgId)
         .set(msgData);
 
-    await _chats.doc(chatId).update({
+    final chatSnap = await _chats.doc(chatId).get();
+    final chatData = chatSnap.data() as Map<String, dynamic>? ?? const {};
+    final participantIds =
+        List<String>.from(chatData['participantIds'] as List? ?? const []);
+
+    final updateData = <String, dynamic>{
       'lastMessage': message.text ?? '📷 Image',
       'lastMessageTime': Timestamp.fromDate(now),
-    });
+    };
+    for (final participantId in participantIds) {
+      if (participantId == message.senderId) continue;
+      updateData['unreadCounts.$participantId'] = FieldValue.increment(1);
+    }
+
+    await _chats.doc(chatId).update(updateData);
   }
 
   // ── Upload chat image ─────────────────────────────────────────────────────
@@ -130,12 +148,10 @@ class ChatRepository {
       batch.update(doc.reference, {'isRead': true});
     }
 
-    // Reset unread count on the chat document
-    batch.update(_chats.doc(chatId), {'unreadCount': 0});
+    // Reset this user's unread count on the chat document.
+    batch.update(_chats.doc(chatId), {'unreadCounts.$currentUserId': 0});
 
-    if (unread.docs.isNotEmpty) {
-      await batch.commit();
-    }
+    await batch.commit();
   }
 
   // ── Create or get a direct (non-task) chat ─────────────────────────────────
@@ -161,6 +177,10 @@ class ChatRepository {
       'lastMessage': null,
       'lastMessageTime': null,
       'unreadCount': 0,
+      'unreadCounts': {
+        uid1: 0,
+        uid2: 0,
+      },
       'createdAt': Timestamp.now(),
     });
 
@@ -224,6 +244,10 @@ class ChatRepository {
       'lastMessage': null,
       'lastMessageTime': null,
       'unreadCount': 0,
+      'unreadCounts': {
+        posterId: 0,
+        providerId: 0,
+      },
       'createdAt': Timestamp.now(),
     });
 

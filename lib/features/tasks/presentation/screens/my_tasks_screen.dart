@@ -9,6 +9,7 @@ import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/task_model.dart';
 import '../../data/repositories/task_repository.dart';
@@ -34,6 +35,24 @@ final _cancelledTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref
   return ref.watch(taskRepositoryProvider).watchMyCancelledPostTasks(user.uid);
 });
 
+final _providerActiveTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return Stream.value([]);
+  return ref.watch(taskRepositoryProvider).watchMyAssignedTasks(user.uid);
+});
+
+final _providerCompletedTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return Stream.value([]);
+  return ref.watch(taskRepositoryProvider).watchMyCompletedProviderTasks(user.uid);
+});
+
+final _providerOffersTasksProvider = StreamProvider.autoDispose<List<TaskModel>>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return Stream.value([]);
+  return ref.watch(taskRepositoryProvider).watchDirectHireOffers(user.uid);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +61,9 @@ class MyTasksScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    final providerMode = user?.role == UserRole.provider;
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -50,37 +72,76 @@ class MyTasksScreen extends ConsumerWidget {
           backgroundColor: AppColors.bgCard,
           elevation: 0,
           title: const Text('My Tasks'),
-          bottom: const TabBar(
+          bottom: TabBar(
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Cancelled'),
+              const Tab(text: 'Active'),
+              const Tab(text: 'Completed'),
+              Tab(text: providerMode ? 'Offers' : 'Cancelled'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
+            providerMode
+                ? _TaskList(
+                    provider: _providerActiveTasksProvider,
+                    emptyEmoji: '📋',
+                    emptyTitle: 'No active jobs yet',
+                    emptySubtitle: 'Browse open tasks and start bidding',
+                    emptyAction: Builder(
+                      builder: (context) => ElevatedButton.icon(
+                        onPressed: () => context.push(AppRoutes.taskList),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.button),
+                        ),
+                        icon: const Icon(Icons.search, size: 18),
+                        label: const Text('Find Tasks'),
+                      ),
+                    ),
+                  )
+                : _TaskList(
+                    provider: _activeTasksProvider,
+                    emptyEmoji: '📋',
+                    emptyTitle: 'No active tasks yet',
+                    emptySubtitle: 'Post your first task or browse the marketplace',
+                    emptyAction: Builder(
+                      builder: (context) => ElevatedButton.icon(
+                        onPressed: () => context.push(AppRoutes.postTask),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.button),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Post a Task'),
+                      ),
+                    ),
+                  ),
             _TaskList(
-              provider: _activeTasksProvider,
-              emptyEmoji: '📋',
-              emptyTitle: 'No assigned tasks',
-              emptySubtitle: 'Find tasks to work on in the Discover tab',
-              emptyAction: Builder(builder: (context) => ElevatedButton.icon(
-                onPressed: () => context.push(AppRoutes.taskList),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
-                ),
-                icon: const Icon(Icons.search, size: 18),
-                label: const Text('Find Tasks'),
-              )),
+              provider: providerMode
+                  ? _providerCompletedTasksProvider
+                  : _completedTasksProvider,
+              emptyEmoji: '✅',
+              emptyTitle: providerMode
+                  ? 'No completed jobs yet'
+                  : 'No completed tasks yet',
             ),
-            _TaskList(provider: _completedTasksProvider, emptyEmoji: '✅', emptyTitle: 'No completed tasks yet'),
-            _TaskList(provider: _cancelledTasksProvider, emptyEmoji: '🚫', emptyTitle: 'No cancelled tasks'),
+            _TaskList(
+              provider: providerMode
+                  ? _providerOffersTasksProvider
+                  : _cancelledTasksProvider,
+              emptyEmoji: providerMode ? '📨' : '🚫',
+              emptyTitle: providerMode
+                  ? 'No direct hire offers'
+                  : 'No cancelled tasks',
+            ),
           ],
         ),
       ),
