@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-04T13:26:12+00:00",
+  "updatedAt": "2026-04-04T13:32:04+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -90,11 +90,15 @@
       "id": "UX-205",
       "title": "Fix budget display format \u2014 remove trailing .0",
       "description": "Budget displays as S$60.0-S$100.0 instead of S$60-S$100. Fix budgetDisplay extension to format cleanly.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "merged",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-205",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-205-codex",
+      "notes": [
+        "Claimed by codex from base main at 2026-04-04T13:31:01+00:00",
+        "2026-04-04T13:32:04+00:00 Merged to main in commit for UX-205 budget display fix."
+      ],
+      "claimedAt": "2026-04-04T13:31:01+00:00"
     }
   ]
 }
