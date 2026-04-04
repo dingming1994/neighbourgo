@@ -375,3 +375,26 @@ Do not replace older entries.
 - Risks / follow-up:
   - Similar older provider-layer tests should be checked opportunistically during broader suite runs to catch any other stale raw-error expectations.
   - The sealed `Query` fake in `task_list_provider_test.dart` should eventually be refactored rather than left as an analyzer warning.
+
+## 2026-04-05 10:00 SGT | claude | ITER-005
+
+- Task IDs: UX-213
+- Branches: agents/claude/ux-213
+- Summary:
+  - End-to-end regression QA after 12 UX stabilization tasks (UX-201 to UX-212).
+  - All 5 integration tests pass. All 329 unit tests pass. 0 analyze errors.
+- Key changes:
+  - No code changes — this was a pure QA verification pass.
+- Verification:
+  - `flutter test` — 329 passed, 0 failed
+  - `flutter analyze` — 0 errors
+  - Integration tests on iOS Simulator + Firebase Emulators:
+    - Poster Journey: PASS
+    - Provider Journey: PASS
+    - Edit Profile: PASS
+    - Flow 1 (Task Bidding): PASS
+    - Flow 2 (Direct Hire): PASS
+  - Cloud Functions `onUserCreate` now works correctly (FieldValue fix confirmed)
+- Risks / follow-up:
+  - Some non-fatal rendering/scheduler exceptions still appear during integration tests (exit code 0 but stderr has EXCEPTION lines). These are likely layout edge cases in less-tested screens.
+  - Next valuable work: visual polish pass, or new feature development based on user feedback.
