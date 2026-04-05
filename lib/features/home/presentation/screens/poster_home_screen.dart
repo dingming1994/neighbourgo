@@ -13,6 +13,7 @@ import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../../../tasks/data/repositories/task_repository.dart';
 import '../widgets/pending_reviews_section.dart';
+import '../widgets/poster_summary_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider: poster's active tasks (excludes completed/cancelled)
@@ -76,6 +77,9 @@ class PosterHomeScreen extends ConsumerWidget {
               NotificationBell(),
             ],
           ),
+
+          // ── Summary Card ──────────────────────────────────────────────────
+          const SliverToBoxAdapter(child: PosterSummaryCard()),
 
           // ── Post a Task CTA ──────────────────────────────────────────────
           SliverToBoxAdapter(
