@@ -1,0 +1,46 @@
+{
+  "featureName": "Sprint — Fix Rendering + Integration Tests + Discovery",
+  "branchName": "ralph/fix-and-test",
+  "description": "Fix rendering exceptions, run comprehensive integration tests, discover and fix remaining issues.",
+  "userStories": [
+    {
+      "id": "UX-217",
+      "title": "Fix rendering exceptions found during integration tests",
+      "description": "Integration tests pass but stderr shows EXCEPTION CAUGHT BY RENDERING/SCHEDULER LIBRARY. Capture full stack traces, identify which widgets cause them, and fix.",
+      "acceptanceCriteria": [
+        "Run poster_journey integration test, capture all EXCEPTION lines with full stack traces",
+        "Identify each unique rendering exception source (file + line)",
+        "Fix each one — common causes: unconstrained widgets, missing Expanded, overflow",
+        "Re-run test — verify 0 rendering exceptions in stderr",
+        "flutter analyze 0 errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UX-218",
+      "title": "Comprehensive bid flow integration test",
+      "description": "Write and run integration test covering full bid lifecycle with latest code: provider bids, poster reviews with confirmation dialog, accepts, provider starts work, poster marks complete, both review.",
+      "acceptanceCriteria": [
+        "Run existing flow1_task_bidding_test.dart and flow2_direct_hire_test.dart",
+        "If they fail, fix the failures",
+        "If they pass, verify no rendering exceptions",
+        "Run all 5 integration tests as regression check",
+        "flutter analyze 0 errors, flutter test all pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UX-221",
+      "title": "Discover and fix remaining user-facing bugs",
+      "description": "Audit all screens for remaining issues: missing loading states, broken navigation, visual glitches, data not displaying correctly.",
+      "acceptanceCriteria": [
+        "Grep for remaining e.toString(), empty catch blocks, Size(double.infinity)",
+        "Check all .when() have skipLoadingOnReload: true",
+        "Check all fromFirestore() convert Timestamps",
+        "Fix any issues found",
+        "flutter analyze 0 errors, flutter test all pass"
+      ],
+      "passes": false
+    }
+  ]
+}
