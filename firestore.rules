@@ -46,11 +46,11 @@ service cloud.firestore {
       // Anyone signed-in can read tasks
       allow read: if isSignedIn();
 
-      // Only authenticated users can create tasks
+      // Authenticated users can create tasks (open for bidding, or assigned for direct hire)
       allow create: if isSignedIn()
                     && isNotDeactivated()
                     && request.resource.data.posterId == request.auth.uid
-                    && request.resource.data.status   == "open";
+                    && request.resource.data.status in ["open", "assigned"];
 
       // Poster can update their own task; assigned provider can update status;
       // any signed-in user can increment bidCount (for bid submission)
@@ -59,7 +59,7 @@ service cloud.firestore {
         ||
         (resource.data.assignedProviderId == request.auth.uid
          && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(["status", "updatedAt"]))
+             .hasOnly(["status", "updatedAt", "assignedProviderId", "assignedProviderName"]))
         ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["bidCount"])
       );
