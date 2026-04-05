@@ -6,7 +6,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-HOURS=3
+HOURS=4
 START=$(date +%s)
 ITER=0
 
@@ -21,7 +21,7 @@ time_left() {
 # Process a single task: develop → verify → commit → merge → log
 process_task() {
   local task_id="$1"
-  local wt="$PROJECT_ROOT/.worktrees/${task_id,,}-claude"
+  local wt="$PROJECT_ROOT/.worktrees/$(echo $task_id | tr "A-Z" "a-z")-claude"
 
   log "Processing $task_id in $wt"
   python3 agents/task_board.py set-status "$task_id" --status in_progress --model claude 2>/dev/null || true
@@ -69,9 +69,9 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>" 2>/dev/nul
   # Merge to main
   python3 agents/task_board.py set-status "$task_id" --status done --model claude 2>/dev/null || true
   git checkout main 2>/dev/null
-  git merge "agents/claude/${task_id,,}" --no-ff -m "Merge $task_id from claude" 2>/dev/null || true
+  git merge "agents/claude/$(echo $task_id | tr "A-Z" "a-z")" --no-ff -m "Merge $task_id from claude" 2>/dev/null || true
   git worktree remove "$wt" --force 2>/dev/null || rm -rf "$wt"
-  git branch -D "agents/claude/${task_id,,}" 2>/dev/null || true
+  git branch -D "agents/claude/$(echo $task_id | tr "A-Z" "a-z")" 2>/dev/null || true
 
   # Update board
   python3 -c "
