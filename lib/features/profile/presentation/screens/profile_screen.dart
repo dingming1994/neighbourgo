@@ -331,7 +331,7 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
     }
     setState(() => _loading = true);
     try {
-      final authRepo = AuthRepository();
+      final authRepo = ref.read(authRepositoryProvider);
       await authRepo.updateUserRole(widget.currentUser.uid, _selected.name);
       if (mounted) {
         ref.invalidate(currentUserProvider);
@@ -343,7 +343,10 @@ class _RolePickerSheetState extends ConsumerState<_RolePickerSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update role: $e')),
+          const SnackBar(
+            content: Text('Could not update your role right now. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {

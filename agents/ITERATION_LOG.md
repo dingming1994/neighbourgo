@@ -419,3 +419,29 @@ Do not replace older entries.
 - Risks / follow-up:
   - UX-216 (manual screen walkthrough), UX-217 (rendering exceptions), UX-218 (bid flow test) still planned.
   - The `bidCount` on direct-hire tasks won't increment (no bids involved). This is correct behavior.
+
+## 2026-04-05 10:18 SGT | codex | ITER-013
+
+- Task IDs: UX-219
+- Branches: agents/codex/ux-219
+- Summary:
+  - Replaced more raw action-failure snackbars in high-frequency task/bid/profile/service flows with stable user-facing recovery copy.
+- Key changes:
+  - Bid actions now show friendly failure copy for open-chat, accept, and reject errors instead of surfacing raw exceptions.
+  - Task detail action buttons now use stable error messages for open-chat, start-work, accept-job, and decline-job failures.
+  - Profile role changes now read `authRepositoryProvider` instead of constructing `AuthRepository()` directly, making the flow testable and consistent with repo injection.
+  - Service listing deletion now shows a user-facing failure message rather than `Failed to delete: ...`.
+  - Added widget coverage for role-update failures, task-detail chat failures, and bid-list chat failures.
+- Files touched:
+  - `lib/features/bids/presentation/widgets/bid_list_section.dart`
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - `lib/features/profile/presentation/screens/profile_screen.dart`
+  - `lib/features/services/presentation/screens/service_detail_screen.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+  - `test/widgets/task_screens_test.dart`
+- Verification:
+  - Passed: `flutter test test/widgets/profile_chat_nav_test.dart test/widgets/task_screens_test.dart`
+  - `flutter analyze lib/features/bids/presentation/widgets/bid_list_section.dart lib/features/tasks/presentation/screens/task_detail_screen.dart lib/features/profile/presentation/screens/profile_screen.dart lib/features/services/presentation/screens/service_detail_screen.dart test/widgets/profile_chat_nav_test.dart test/widgets/task_screens_test.dart` did not reveal new hard errors, but still reports pre-existing warnings/info in `task_detail_screen.dart` around null-safety cleanup and `const` hints.
+- Risks / follow-up:
+  - `task_detail_screen.dart` still has older null-safety/analyzer warnings unrelated to this pass; that screen would benefit from a dedicated cleanup task.
+  - Claude’s recent QA pass reported non-fatal rendering/scheduler exceptions during integration tests; those are now a higher-priority target than more copy cleanup.
