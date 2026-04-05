@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-05T03:25:52+00:00",
+  "updatedAt": "2026-04-05T03:27:00+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -293,31 +293,40 @@
       "id": "UX-216",
       "title": "Manual screen-by-screen walkthrough test on simulator",
       "description": "Login with test accounts (alice.client, ben.cleaner, priya.client) and manually navigate every screen. Capture screenshots, document any visual bugs, layout issues, or broken interactions. Test both Client and Provider flows.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "claimed",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-216",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-216-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-05T03:27:00+00:00"
+      ],
+      "claimedAt": "2026-04-05T03:27:00+00:00"
     },
     {
       "id": "UX-217",
       "title": "Fix rendering exceptions found during integration tests",
       "description": "Integration tests pass but stderr shows EXCEPTION CAUGHT BY RENDERING/SCHEDULER LIBRARY. Capture the full stack traces, identify which widgets cause them, and fix the layout issues.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "claimed",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-217",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-217-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-05T03:27:00+00:00"
+      ],
+      "claimedAt": "2026-04-05T03:27:00+00:00"
     },
     {
       "id": "UX-218",
       "title": "Comprehensive bid flow test \u2014 submit, accept, start work, complete, review",
       "description": "Write and run an integration test covering the full bid lifecycle with the new Codex UX changes: provider bids, poster reviews bids with confirmation dialog, accepts, provider starts work, poster marks complete, both review. Verify all Codex error state improvements work.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "claimed",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-218",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-218-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-05T03:27:00+00:00"
+      ],
+      "claimedAt": "2026-04-05T03:27:00+00:00"
     },
     {
       "id": "UX-219",
