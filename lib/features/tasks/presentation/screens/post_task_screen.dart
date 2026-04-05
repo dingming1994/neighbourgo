@@ -208,7 +208,7 @@ class _PostTaskScreenState extends ConsumerState<PostTaskScreen> {
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 child: Row(
                   children: [
                     const Icon(Icons.person_pin,
@@ -332,7 +332,7 @@ class _StepCategoryState extends State<_StepCategory> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: selected
-                          ? cat.color.withOpacity(0.12)
+                          ? cat.color.withValues(alpha: 0.12)
                           : AppColors.bgCard,
                       borderRadius: AppRadius.card,
                       border: Border.all(

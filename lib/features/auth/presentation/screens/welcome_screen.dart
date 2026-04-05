@@ -91,7 +91,7 @@ class WelcomeScreen extends StatelessWidget {
                     Text(
                       'Singapore\'s community service platform. Get help or earn money in your neighbourhood.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85), fontSize: 16, height: 1.5,
+                        color: Colors.white.withValues(alpha: 0.85), fontSize: 16, height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -103,7 +103,7 @@ class WelcomeScreen extends StatelessWidget {
                           .map((t) => Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: AppRadius.chip,
                             ),
                             child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 13)),

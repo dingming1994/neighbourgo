@@ -436,18 +436,22 @@ class _PosterInfo extends StatelessWidget {
               : null,
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Posted by',
-              style: TextStyle(fontSize: 12, color: AppColors.textHint),
-            ),
-            Text(
-              posterName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Posted by',
+                style: TextStyle(fontSize: 12, color: AppColors.textHint),
+              ),
+              Text(
+                posterName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -934,11 +938,13 @@ class _ProviderBidView extends ConsumerWidget {
                     Icon(Icons.check_circle,
                         size: 16, color: AppColors.success),
                     SizedBox(width: 4),
-                    Text(
-                      'Bid accepted — get ready to start!',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        'Bid accepted — get ready to start!',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -1122,15 +1128,12 @@ class _TaskTimeline extends StatelessWidget {
           for (int i = 0; i < steps.length; i++) ...[
             Expanded(child: _StepItem(step: steps[i])),
             if (i < steps.length - 1)
-              Expanded(
-                flex: 0,
-                child: Container(
-                  width: 20,
-                  height: 2,
-                  color: steps[i].isCompleted
-                      ? AppColors.success
-                      : AppColors.divider,
-                ),
+              Container(
+                width: 20,
+                height: 2,
+                color: steps[i].isCompleted
+                    ? AppColors.success
+                    : AppColors.divider,
               ),
           ],
         ],

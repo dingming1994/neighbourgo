@@ -66,7 +66,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               Container(
                 width: 96, height: 96,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: AppRadius.card,
                 ),
                 child: const Center(
@@ -84,7 +84,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               const SizedBox(height: 8),
               Text(
                 'Your neighbourhood, connected',
-                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 15),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 15),
               ),
             ],
           ),
