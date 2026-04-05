@@ -11,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../bids/presentation/widgets/bid_list_section.dart';
 import '../../../bids/presentation/widgets/submit_bid_sheet.dart';
@@ -71,7 +72,9 @@ class TaskDetailScreen extends ConsumerWidget {
 
         final cat = AppCategories.getById(task.categoryId);
         final isPoster = currentUser?.uid == task.posterId;
-        final isProvider = !isPoster && currentUser != null;
+        // Only show provider actions if user is NOT the poster AND has provider/both role
+        final isProvider = !isPoster && currentUser != null &&
+            (currentUser.role == UserRole.provider || currentUser.role == UserRole.both);
         final isOpen = task.status == TaskStatus.open;
         final isInProgress = task.status == TaskStatus.inProgress ||
             task.status == TaskStatus.assigned;

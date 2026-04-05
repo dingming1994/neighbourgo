@@ -1,3 +1,32 @@
 # Ralph Progress Log
 Started: Mon  6 Apr 2026 00:19:02 +08
 ---
+
+## Codebase Patterns
+- All `.when()` calls on AsyncValue already have `skipLoadingOnReload: true`
+- All `fromFirestore()` methods already convert Timestamps to ISO-8601 strings
+- Row children with Text must be wrapped in Expanded/Flexible to prevent overflow
+- Never use `Expanded(flex: 0)` — use the child widget directly in the Row instead
+- Use `.withValues(alpha: X)` instead of `.withOpacity(X)` (deprecated)
+- Firebase emulators require Java installed to run; integration tests need emulators + simulator
+---
+
+## 2026-04-06 ~01:00 - UX-217
+- Fixed 3 rendering exception sources in task_detail_screen.dart:
+  1. `Expanded(flex: 0)` in _TaskTimeline — connector Container got 0px from flex but wanted 20px → removed Expanded wrapper
+  2. _PosterInfo Column not in Expanded → wrapped in Expanded, added maxLines/overflow on posterName Text
+  3. "Bid accepted — get ready to start!" Text in _ProviderBidView Row → wrapped in Expanded
+- Replaced `withOpacity` with `withValues(alpha:)` in 5 files on the poster journey path
+- Files changed:
+  - lib/features/tasks/presentation/screens/task_detail_screen.dart
+  - lib/features/auth/presentation/screens/splash_screen.dart
+  - lib/features/auth/presentation/screens/welcome_screen.dart
+  - lib/features/home/presentation/screens/main_shell_screen.dart
+  - lib/features/tasks/presentation/screens/post_task_screen.dart
+- **Learnings for future iterations:**
+  - Codebase is generally well-structured for Flutter rendering — most Rows use Expanded properly
+  - The `Expanded(flex: 0)` pattern is a subtle bug: the child gets constrained to 0 width, causing silent overflow
+  - Java is not installed on this machine — Firebase emulators cannot start; integration tests cannot run directly
+  - flutter analyze shows 109 issues (all warnings/infos in test files, 0 errors in lib/)
+  - All 332 unit tests pass
+---
