@@ -92,15 +92,16 @@ class TaskDetailScreen extends ConsumerWidget {
             ));
           }
         } else if (isProvider) {
+          final providerUid = currentUser.uid;
           if (task.isDirectHire &&
-              task.assignedProviderId == currentUser?.uid &&
+              task.assignedProviderId == providerUid &&
               task.status == TaskStatus.assigned) {
             // Direct hire buttons handled inline (Accept/Decline)
           } else if (isOpen) {
             final bidsAsync = ref.watch(bidsStreamProvider(taskId));
             final hasBid = bidsAsync.whenOrNull(
                   data: (bids) =>
-                      bids.any((b) => b.providerId == currentUser!.uid),
+                      bids.any((b) => b.providerId == providerUid),
                 ) ??
                 false;
             if (!hasBid) {
@@ -119,16 +120,16 @@ class TaskDetailScreen extends ConsumerWidget {
               ));
             }
           }
-          if (task.assignedProviderId == currentUser?.uid &&
+          if (task.assignedProviderId == providerUid &&
               task.status == TaskStatus.assigned &&
               !task.isDirectHire) {
             bottomActions.add(_StartWorkButton(taskId: taskId));
           }
-          if (task.assignedProviderId == currentUser?.uid) {
+          if (task.assignedProviderId == providerUid) {
             bottomActions.add(_MessageButton(
               taskId: taskId,
               posterId: task.posterId,
-              providerId: currentUser!.uid,
+              providerId: providerUid,
               label: 'Message Poster',
             ));
           }
@@ -1203,17 +1204,17 @@ class _TaskTimeline extends StatelessWidget {
         color: AppColors.success,
         timestamp: task.createdAt,
       ),
-      _TimelineStep(
+      const _TimelineStep(
         label: 'Bidding',
         icon: Icons.gavel,
         color: AppColors.success,
       ),
-      _TimelineStep(
+      const _TimelineStep(
         label: 'Matched',
         icon: Icons.handshake,
         color: AppColors.success,
       ),
-      _TimelineStep(
+      const _TimelineStep(
         label: 'In Progress',
         icon: Icons.play_circle_filled,
         color: AppColors.success,
