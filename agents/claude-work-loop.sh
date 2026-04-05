@@ -1,12 +1,12 @@
 #!/bin/bash
-# Claude 3-hour autonomous work loop
-# Works on claimed tasks, discovers new ones, respects Codex ownership
-set -euo pipefail
+# Claude autonomous work loop
+# Works on tasks, discovers new ones, respects Codex ownership
+# Resilient: never exits on single task failure
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-HOURS=4
+HOURS="${1:-4}"
 START=$(date +%s)
 ITER=0
 
@@ -14,30 +14,74 @@ log() { echo "[$(date '+%H:%M:%S')] $*"; }
 
 time_left() {
   local elapsed=$(( ($(date +%s) - START) / 60 ))
-  local remaining=$(( HOURS * 60 - elapsed ))
-  echo $remaining
+  echo $(( HOURS * 60 - elapsed ))
 }
 
-# Process a single task: develop → verify → commit → merge → log
+task_id_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ensure worktree exists for a task, creating if needed
+# ─────────────────────────────────────────────────────────────────────────────
+ensure_worktree() {
+  local task_id="$1"
+  local tid_lower
+  tid_lower=$(task_id_lower "$task_id")
+  local branch="agents/claude/${tid_lower}"
+  local wt="$PROJECT_ROOT/.worktrees/${tid_lower}-claude"
+
+  if [ -d "$wt" ]; then
+    return 0
+  fi
+
+  # Clean stale refs
+  git worktree prune 2>/dev/null || true
+  git branch -D "$branch" 2>/dev/null || true
+  rm -rf "$wt" 2>/dev/null || true
+
+  # Create fresh branch + worktree
+  git branch "$branch" HEAD 2>/dev/null || true
+  git worktree add "$wt" "$branch" 2>/dev/null || {
+    log "  WARNING: Could not create worktree for $task_id, working in main"
+    return 1
+  }
+  return 0
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Process a single task
+# ─────────────────────────────────────────────────────────────────────────────
 process_task() {
   local task_id="$1"
-  local wt="$PROJECT_ROOT/.worktrees/$(echo $task_id | tr "A-Z" "a-z")-claude"
+  local tid_lower
+  tid_lower=$(task_id_lower "$task_id")
+  local branch="agents/claude/${tid_lower}"
+  local wt="$PROJECT_ROOT/.worktrees/${tid_lower}-claude"
 
-  log "Processing $task_id in $wt"
+  log "Processing $task_id"
+
+  # Ensure worktree exists
+  if ! ensure_worktree "$task_id"; then
+    # Fallback: work directly in main (less isolated but doesn't crash)
+    wt="$PROJECT_ROOT"
+    branch="main"
+  fi
+
   python3 agents/task_board.py set-status "$task_id" --status in_progress --model claude 2>/dev/null || true
 
-  # Run Claude on the task
+  # Get task info
   local task_info
   task_info=$(python3 -c "
 import json
-board = json.load(open('agents/task-board.json'))
+board = json.load(open('$PROJECT_ROOT/agents/task-board.json'))
 for t in board['tasks']:
     if t['id'] == '$task_id':
         print(t['title'] + ' — ' + t.get('description',''))
         break
-")
+" 2>/dev/null || echo "$task_id")
 
-  local prompt="$(cat agents/prompts/developer.md)
+  # Run Claude with -p flag (active mode — actually edits files)
+  local prompt
+  prompt="$(cat "$PROJECT_ROOT/agents/prompts/developer.md")
 
 ---
 ## Current Task: $task_id
@@ -47,16 +91,16 @@ $task_info
 $wt
 
 ## Rules
-1. Work ONLY in this directory
+1. Work ONLY in the directory above
 2. Run flutter analyze after changes
 3. If this is a testing task, run integration tests with Firebase emulators
 4. Commit your changes with a descriptive message
 5. Do NOT touch files outside this task's scope"
 
   cd "$wt"
-  echo "$prompt" | claude --dangerously-skip-permissions --print > /dev/null 2>&1 || true
+  claude --dangerously-skip-permissions -p "$prompt" 2>&1 || true
 
-  # Commit any changes
+  # Commit any uncommitted changes
   git add -A 2>/dev/null || true
   if ! git diff --cached --quiet 2>/dev/null; then
     git commit -m "fix($task_id): $(echo "$task_info" | head -c 60)
@@ -66,99 +110,136 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>" 2>/dev/nul
 
   cd "$PROJECT_ROOT"
 
-  # Merge to main
-  python3 agents/task_board.py set-status "$task_id" --status done --model claude 2>/dev/null || true
-  git checkout main 2>/dev/null
-  git merge "agents/claude/$(echo $task_id | tr "A-Z" "a-z")" --no-ff -m "Merge $task_id from claude" 2>/dev/null || true
-  git worktree remove "$wt" --force 2>/dev/null || rm -rf "$wt"
-  git branch -D "agents/claude/$(echo $task_id | tr "A-Z" "a-z")" 2>/dev/null || true
+  # Merge to main (skip if we were already on main)
+  if [ "$branch" != "main" ]; then
+    python3 agents/task_board.py set-status "$task_id" --status done --model claude 2>/dev/null || true
+    git checkout main 2>/dev/null || true
+    git merge "$branch" --no-ff -m "Merge $task_id from claude" 2>/dev/null || true
+    git worktree remove "$wt" --force 2>/dev/null || rm -rf "$wt"
+    git branch -D "$branch" 2>/dev/null || true
+  else
+    python3 agents/task_board.py set-status "$task_id" --status done --model claude 2>/dev/null || true
+  fi
 
-  # Update board
+  # Mark merged on board
   python3 -c "
 import json
-board = json.load(open('agents/task-board.json'))
+board = json.load(open('$PROJECT_ROOT/agents/task-board.json'))
 for t in board['tasks']:
     if t['id'] == '$task_id':
         t['status'] = 'merged'
-with open('agents/task-board.json', 'w') as f:
+with open('$PROJECT_ROOT/agents/task-board.json', 'w') as f:
     json.dump(board, f, indent=2)
 " 2>/dev/null || true
+
+  git add -A 2>/dev/null && git commit -m "chore: mark $task_id merged" 2>/dev/null || true
+  git push origin main 2>/dev/null || true
 
   log "$task_id DONE"
 }
 
-# Discover and plan new tasks
+# ─────────────────────────────────────────────────────────────────────────────
+# Discover new tasks (Architect role)
+# ─────────────────────────────────────────────────────────────────────────────
 discover_tasks() {
   log "Discovering new improvement opportunities..."
 
-  local prompt="You are an Architect for NeighbourGo. Read the codebase at $PROJECT_ROOT/lib/ and:
-1. Find 3-5 bugs, UX issues, or missing functionality
-2. Focus on things a real user would notice
-3. Do NOT duplicate work already done (check agents/ITERATION_LOG.md)
-4. Do NOT touch payment features
-5. Add new planned tasks to agents/task-board.json with IDs starting from UX-220+
-6. Each task needs: id, title, description, status='planned', ownerModel=null, branch=null, worktree=null, notes=[]
-7. Write the updated task-board.json"
+  claude --dangerously-skip-permissions -p "You are an Architect for NeighbourGo (Flutter + Firebase app at $PROJECT_ROOT).
 
-  echo "$prompt" | claude --dangerously-skip-permissions --print > /dev/null 2>&1 || true
+1. Read agents/ITERATION_LOG.md to see what's been done
+2. Read agents/task-board.json to see current tasks
+3. Audit lib/features/ for remaining bugs, UX issues, or incomplete features
+4. Find the next highest-value task ID by checking existing IDs in task-board.json
+5. Add 3 new planned tasks to agents/task-board.json
+6. Each task needs: id, title, description, status='planned', ownerModel=null, branch=null, worktree=null, notes=[]
+7. Do NOT duplicate existing tasks. Do NOT touch payment features.
+8. Focus on things a real user would notice: broken flows, missing data, visual issues." 2>&1 || true
+
+  git add agents/task-board.json 2>/dev/null && git commit -m "plan: discover new tasks" 2>/dev/null && git push origin main 2>/dev/null || true
   log "Discovery complete"
 }
 
-# ─── Main loop ───
+# ─────────────────────────────────────────────────────────────────────────────
+# Get next tasks to work on
+# ─────────────────────────────────────────────────────────────────────────────
+get_claude_tasks() {
+  python3 -c "
+import json
+board = json.load(open('$PROJECT_ROOT/agents/task-board.json'))
+# First: tasks already claimed/in_progress by claude
+for t in board['tasks']:
+    if t['status'] in ['claimed','in_progress'] and t.get('ownerModel') == 'claude':
+        print(t['id'])
+" 2>/dev/null
+}
+
+get_planned_tasks() {
+  python3 -c "
+import json
+board = json.load(open('$PROJECT_ROOT/agents/task-board.json'))
+for t in board['tasks']:
+    if t['status'] == 'planned' and t.get('ownerModel') is None:
+        print(t['id'])
+" 2>/dev/null | head -3
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main loop
+# ─────────────────────────────────────────────────────────────────────────────
 log "Claude work loop started ($HOURS hours)"
 
 while [ "$(time_left)" -gt 10 ]; do
   ITER=$((ITER + 1))
   log "=== Iteration $ITER ($(time_left) min remaining) ==="
 
-  # Get Claude's claimed/planned tasks
-  CLAUDE_TASKS=$(python3 -c "
-import json
-board = json.load(open('agents/task-board.json'))
-for t in board['tasks']:
-    if t['status'] in ['claimed','in_progress'] and t.get('ownerModel') == 'claude':
-        print(t['id'])
-    elif t['status'] == 'planned' and t.get('ownerModel') is None:
-        print(t['id'])
-" 2>/dev/null | head -3)
+  cd "$PROJECT_ROOT"
+  git checkout main 2>/dev/null || true
+  git pull origin main 2>/dev/null || true
 
-  if [ -z "$CLAUDE_TASKS" ]; then
-    log "No tasks available. Running discovery..."
-    discover_tasks
+  # 1. Work on Claude's existing tasks first
+  TASKS=$(get_claude_tasks)
 
-    # Claim newly planned tasks
-    NEW_TASKS=$(python3 -c "
-import json
-board = json.load(open('agents/task-board.json'))
-for t in board['tasks']:
-    if t['status'] == 'planned' and t.get('ownerModel') is None:
-        print(t['id'])
-" 2>/dev/null | head -3)
+  # 2. If none, claim planned tasks
+  if [ -z "$TASKS" ]; then
+    PLANNED=$(get_planned_tasks)
+    if [ -z "$PLANNED" ]; then
+      # 3. No planned tasks either — discover new ones
+      discover_tasks
+      PLANNED=$(get_planned_tasks)
+    fi
 
-    for tid in $NEW_TASKS; do
+    # Claim planned tasks
+    for tid in $PLANNED; do
       python3 agents/task_board.py claim "$tid" --model claude 2>/dev/null || true
     done
-    CLAUDE_TASKS="$NEW_TASKS"
+    TASKS=$(get_claude_tasks)
   fi
 
-  for tid in $CLAUDE_TASKS; do
+  if [ -z "$TASKS" ]; then
+    log "No tasks to work on. Sleeping 5 min..."
+    sleep 300
+    continue
+  fi
+
+  # Process each task (each one is isolated, errors don't kill the loop)
+  for tid in $TASKS; do
     if [ "$(time_left)" -le 10 ]; then break; fi
-    process_task "$tid"
+    process_task "$tid" || log "WARNING: $tid had errors, continuing..."
   done
 
   # Write iteration log
-  cat >> agents/ITERATION_LOG.md << LOGEOF
+  cat >> "$PROJECT_ROOT/agents/ITERATION_LOG.md" << LOGEOF
 
 ## $(date '+%Y-%m-%d %H:%M') SGT | claude | ITER-$(printf '%03d' $((6 + ITER)))
 
-- Task IDs: $(echo $CLAUDE_TASKS | tr '\n' ', ')
+- Task IDs: $(echo $TASKS | tr '\n' ', ')
 - Summary: Autonomous work loop iteration $ITER
-- Verification: flutter analyze 0 errors
-- Risks: Check ITERATION_LOG for details
+- Verification: See task-specific commits
+- Risks: Check git log for details
 LOGEOF
 
-  git add agents/ 2>/dev/null && git commit -m "chore: claude iteration $ITER" 2>/dev/null && git push origin main 2>/dev/null || true
+  git add agents/ 2>/dev/null && git commit -m "docs: claude loop iteration $ITER" 2>/dev/null && git push origin main 2>/dev/null || true
 
 done
 
-log "Work loop finished after $ITER iterations"
+log "Work loop finished after $ITER iterations ($(( ($(date +%s) - START) / 60 )) min elapsed)"

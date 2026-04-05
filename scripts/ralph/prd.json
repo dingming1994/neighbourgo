@@ -1,105 +1,46 @@
 {
-  "featureName": "Sprint 31-37 — Bug Fixes, Validation & UX Hardening (6-hour cycle)",
-  "description": "As both a Client and Provider using NeighbourGo daily, fix real bugs (broken delete-account flow, exposed dev login), harden form validation, add error-retry states, improve search UX, and let providers manage their own service listings.",
-  "branchName": "ralph/overnight-cycle-2",
+  "featureName": "Sprint — Fix Rendering + Integration Tests + Discovery",
+  "branchName": "ralph/fix-and-test",
+  "description": "Fix rendering exceptions, run comprehensive integration tests, discover and fix remaining issues.",
   "userStories": [
     {
-      "id": "US-101",
-      "title": "Fix Delete Account — Require Typing DELETE to Confirm",
-      "description": "The delete-account dialog says 'Type DELETE to confirm' but doesn't actually require the user to type anything — a single tap deletes the account. Add a real TextField that validates the input before enabling the delete button.",
+      "id": "UX-217",
+      "title": "Fix rendering exceptions found during integration tests",
+      "description": "Integration tests pass but stderr shows EXCEPTION CAUGHT BY RENDERING/SCHEDULER LIBRARY. Capture full stack traces, identify which widgets cause them, and fix.",
       "acceptanceCriteria": [
-        "Delete account dialog contains a TextField with hint 'Type DELETE to confirm'",
-        "Delete button is disabled (greyed out) until TextField value equals 'DELETE' (case-sensitive)",
-        "Pressing delete with correct input shows a loading spinner, then signs out on success",
-        "Pressing delete with incorrect input does nothing (button stays disabled)",
-        "Cancel button closes the dialog without side effects",
-        "flutter analyze — 0 errors"
+        "Run poster_journey integration test, capture all EXCEPTION lines with full stack traces",
+        "Identify each unique rendering exception source (file + line)",
+        "Fix each one — common causes: unconstrained widgets, missing Expanded, overflow",
+        "Re-run test — verify 0 rendering exceptions in stderr",
+        "flutter analyze 0 errors"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-102",
-      "title": "Hide Dev Login Button in Release Builds",
-      "description": "The welcome screen exposes a 'Dev Login (Skip Auth)' button that bypasses authentication. This must only be visible in debug/profile mode, never in release builds.",
+      "id": "UX-218",
+      "title": "Comprehensive bid flow integration test",
+      "description": "Write and run integration test covering full bid lifecycle with latest code: provider bids, poster reviews with confirmation dialog, accepts, provider starts work, poster marks complete, both review.",
       "acceptanceCriteria": [
-        "Dev Login button is wrapped in a kDebugMode or kReleaseMode check",
-        "In debug mode: button appears and functions as before",
-        "In release mode: button is completely absent from the widget tree (not just hidden)",
-        "No other auth bypass paths exist in welcome_screen.dart",
-        "flutter analyze — 0 errors"
+        "Run existing flow1_task_bidding_test.dart and flow2_direct_hire_test.dart",
+        "If they fail, fix the failures",
+        "If they pass, verify no rendering exceptions",
+        "Run all 5 integration tests as regression check",
+        "flutter analyze 0 errors, flutter test all pass"
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-103",
-      "title": "Error States with Retry on Key Screens",
-      "description": "TaskDetailScreen, PublicProfileScreen, ServiceDetailScreen, and ChatThreadScreen show generic 'Error: $e' text with no way to recover. Add a consistent error widget with a Retry button that re-fetches the data.",
+      "id": "UX-221",
+      "title": "Discover and fix remaining user-facing bugs",
+      "description": "Audit all screens for remaining issues: missing loading states, broken navigation, visual glitches, data not displaying correctly.",
       "acceptanceCriteria": [
-        "Create or reuse an ErrorRetryWidget(message, onRetry) in core/widgets/",
-        "TaskDetailScreen error state shows ErrorRetryWidget; tapping Retry calls ref.invalidate on the task provider",
-        "PublicProfileScreen error state shows ErrorRetryWidget; tapping Retry re-fetches the profile",
-        "ServiceDetailScreen error state shows ErrorRetryWidget; tapping Retry re-fetches the listing",
-        "ChatThreadScreen error state shows ErrorRetryWidget; tapping Retry re-fetches messages",
-        "Error message is user-friendly (e.g. 'Something went wrong') not raw exception text",
-        "flutter analyze — 0 errors"
+        "Grep for remaining e.toString(), empty catch blocks, Size(double.infinity)",
+        "Check all .when() have skipLoadingOnReload: true",
+        "Check all fromFirestore() convert Timestamps",
+        "Fix any issues found",
+        "flutter analyze 0 errors, flutter test all pass"
       ],
-      "passes": true
-    },
-    {
-      "id": "US-104",
-      "title": "Discover Search — Loading Indicator, No-Results State, Result Count",
-      "description": "When searching in Discover, there's no feedback during the debounce/loading period, no message when no results match, and no indication of how many results were found.",
-      "acceptanceCriteria": [
-        "While search query is debouncing or loading, show a subtle LinearProgressIndicator below the search bar",
-        "When search returns 0 results, show an empty-state illustration with 'No results for \"query\"' and a suggestion to adjust filters",
-        "When search returns results, show a count label (e.g. '12 tasks found') between search bar and list",
-        "Clearing the search field resets to the default unfiltered view",
-        "Works for all Discover tabs (Tasks, Providers, Services)",
-        "flutter analyze — 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-105",
-      "title": "Service Listing Management — Edit and Delete Own Listings",
-      "description": "Providers can create service listings but cannot edit or delete them afterwards. Add edit and delete capabilities accessible from ServiceDetailScreen when the viewer is the listing owner.",
-      "acceptanceCriteria": [
-        "ServiceDetailScreen shows Edit (pencil) and Delete (trash) icons in the AppBar when currentUser is the listing owner",
-        "Edit navigates to CreateServiceScreen pre-populated with existing listing data (title, description, category, pricing, photos)",
-        "Saving edits updates the Firestore document and shows a success snackbar",
-        "Delete shows a confirmation dialog; confirming deletes the document and navigates back",
-        "Non-owners see no edit/delete buttons",
-        "flutter analyze — 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-106",
-      "title": "Form Validation Hardening — Email, Bids, Budget, Profile Rates",
-      "description": "Multiple forms accept invalid input: email validation is too loose, bid amounts have no upper bound warning, task budget has no min/max guidance, and provider rates accept non-numeric values.",
-      "acceptanceCriteria": [
-        "Email auth uses a proper regex that rejects addresses without valid domain (e.g. 'user@' or 'user@.com')",
-        "Submit bid sheet shows a warning chip when bid exceeds 2x the task budget (still allows submission)",
-        "Post task budget step enforces minimum S$5 and shows helper text 'Min S$5'",
-        "EditProfileScreen rate fields only accept numeric input (InputFormatter) and enforce S$1–S$500 range",
-        "All validation errors show inline red helper text below the field",
-        "flutter analyze — 0 errors"
-      ],
-      "passes": true
-    },
-    {
-      "id": "US-107",
-      "title": "Actionable Empty States — Chat List, My Tasks, My Bids",
-      "description": "Empty screens show minimal text with no clear call to action. Add contextual empty-state illustrations and CTA buttons that guide users to the logical next step.",
-      "acceptanceCriteria": [
-        "ChatListScreen empty state: illustration + 'No conversations yet' + 'Browse Tasks' button (navigates to Discover)",
-        "MyTasksScreen empty state (provider): illustration + 'No assigned tasks' + 'Find Tasks' button",
-        "MyBidsScreen empty state: illustration + 'No bids yet' + 'Browse Open Tasks' button",
-        "PosterHomeScreen empty state: illustration + 'Post your first task' + 'Post a Task' button",
-        "Each empty state uses a Lottie animation or SVG illustration consistent with app design",
-        "flutter analyze — 0 errors"
-      ],
-      "passes": true
+      "passes": false
     }
   ]
 }
