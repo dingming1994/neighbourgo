@@ -106,6 +106,15 @@ class _BidCardState extends ConsumerState<_BidCard> {
   bool _isRejecting = false;
   bool _isMessaging = false;
 
+  void _showActionError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
   void _viewProfile() {
     context.push(
       AppRoutes.publicProfile.replaceFirst(':userId', widget.bid.providerId),
@@ -122,9 +131,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open chat: $e')),
-        );
+        _showActionError('Could not open chat right now. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isMessaging = false);
@@ -183,12 +190,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showActionError('Could not accept this bid right now. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isAccepting = false);
@@ -203,12 +205,7 @@ class _BidCardState extends ConsumerState<_BidCard> {
           .rejectBid(widget.taskId, widget.bid.bidId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to reject bid: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showActionError('Could not reject this bid right now. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isRejecting = false);

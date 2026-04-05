@@ -42,6 +42,7 @@ class FakeFirebaseStorage extends Fake implements FirebaseStorage {}
 class FakeAuthRepository extends AuthRepository {
   UserModel? userToReturn;
   bool shouldThrow = false;
+  bool shouldThrowOnUpdateRole = false;
 
   FakeAuthRepository()
       : super(
@@ -64,6 +65,11 @@ class FakeAuthRepository extends AuthRepository {
   Future<void> createOrUpdateUser(UserModel user) async {
     if (shouldThrow) throw Exception('update failed');
     userToReturn = user;
+  }
+
+  @override
+  Future<void> updateUserRole(String uid, String role) async {
+    if (shouldThrowOnUpdateRole) throw Exception('update role failed');
   }
 
   @override
@@ -99,6 +105,7 @@ class FakeChatRepository extends ChatRepository {
   ChatModel? chatToReturn;
   bool shouldThrowOnSend;
   bool shouldThrowOnGetChats;
+  bool shouldThrowOnCreateOrGetChat;
 
   FakeChatRepository({
     this.chatsToReturn = const [],
@@ -106,6 +113,7 @@ class FakeChatRepository extends ChatRepository {
     this.chatToReturn,
     this.shouldThrowOnSend = false,
     this.shouldThrowOnGetChats = false,
+    this.shouldThrowOnCreateOrGetChat = false,
   }) : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
@@ -136,6 +144,9 @@ class FakeChatRepository extends ChatRepository {
   @override
   Future<String> createOrGetChat(
       String taskId, String posterId, String providerId) async {
+    if (shouldThrowOnCreateOrGetChat) {
+      throw Exception('chat create failed');
+    }
     return 'fake-chat-id';
   }
 }
@@ -350,6 +361,31 @@ void main() {
       expect(find.text('Your profile is unavailable right now.'),
           findsOneWidget);
       expect(find.text('Try Again'), findsOneWidget);
+    });
+
+    testScreen('shows friendly error when role update fails', (tester) async {
+      fakeAuthRepo.shouldThrowOnUpdateRole = true;
+      await tester.pumpWidget(buildTestWidget(
+        const ProfileScreen(),
+        overrides: [
+          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          currentUserProvider.overrideWith((_) => Stream.value(user)),
+          signOutProvider.overrideWithValue(() async {}),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Change Role').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Task Poster'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not update your role right now. Please try again.'),
+        findsOneWidget,
+      );
     });
   });
 

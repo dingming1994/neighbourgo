@@ -104,7 +104,12 @@ Future<void> _confirmDelete(
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete: $e')),
+          const SnackBar(
+            content: Text(
+              'Could not delete this service listing right now. Please try again.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }

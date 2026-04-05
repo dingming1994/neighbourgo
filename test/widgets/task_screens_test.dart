@@ -103,12 +103,18 @@ class FakeBidRepository extends BidRepository {
 }
 
 class FakeChatRepository extends ChatRepository {
+  bool shouldThrowOnCreateOrGetChat;
+
   FakeChatRepository()
-      : super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
+      : shouldThrowOnCreateOrGetChat = false,
+        super(db: FakeFirebaseFirestore(), storage: FakeFirebaseStorage());
 
   @override
   Future<String> createOrGetChat(
       String taskId, String posterId, String providerId) async {
+    if (shouldThrowOnCreateOrGetChat) {
+      throw Exception('chat create failed');
+    }
     return 'fake-chat-id';
   }
 }
@@ -498,6 +504,33 @@ void main() {
 
       expect(find.text('Submit Bid'), findsNothing);
     });
+
+    testTask('shows friendly error when opening chat fails', (tester) async {
+      final task = _testTask(
+        status: TaskStatus.assigned,
+        assignedProviderId: 'provider-1',
+        assignedProviderName: 'Provider',
+      );
+      fakeTaskRepo = FakeTaskRepository(tasksToReturn: [task]);
+      fakeChatRepo.shouldThrowOnCreateOrGetChat = true;
+
+      await tester.pumpWidget(buildTestWidget(
+        TaskDetailScreen(taskId: task.id),
+        overrides: baseOverrides(
+          user: _testUser(uid: 'user-1', role: UserRole.poster),
+          taskRepo: fakeTaskRepo,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Message Provider'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not open chat right now. Please try again.'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('BidListSection', () {
@@ -521,6 +554,46 @@ void main() {
       expect(find.text('Could not load bids for this task right now.'),
           findsOneWidget);
       expect(find.text('Try Again'), findsOneWidget);
+    });
+
+    testTask('shows friendly error when bidder chat fails to open',
+        (tester) async {
+      final chatRepo = FakeChatRepository()
+        ..shouldThrowOnCreateOrGetChat = true;
+      await tester.pumpWidget(buildTestWidget(
+        Scaffold(
+          body: BidListSection(
+            taskId: 'task-1',
+            posterId: 'user-1',
+          ),
+        ),
+        overrides: [
+          bidRepositoryProvider.overrideWithValue(
+            FakeBidRepository(
+              bidsToReturn: [
+                BidModel(
+                  bidId: 'bid-1',
+                  taskId: 'task-1',
+                  providerId: 'provider-1',
+                  providerName: 'Provider',
+                  amount: 60,
+                  status: BidStatus.pending,
+                ),
+              ],
+            ),
+          ),
+          chatRepositoryProvider.overrideWithValue(chatRepo),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Message'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not open chat right now. Please try again.'),
+        findsOneWidget,
+      );
     });
   });
 }

@@ -505,8 +505,8 @@ class _MarkCompleteButtonState extends ConsumerState<_MarkCompleteButton> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
+          const SnackBar(
+            content: Text('Could not start work right now. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -578,8 +578,8 @@ class _StartWorkButtonState extends ConsumerState<_StartWorkButton> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
+          const SnackBar(
+            content: Text('Could not accept this job right now. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -652,8 +652,8 @@ class _DirectHireResponseButtonsState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
+          const SnackBar(
+            content: Text('Could not decline this job right now. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -824,7 +824,10 @@ class _MessageButtonState extends ConsumerState<_MessageButton> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open chat: $e')),
+          const SnackBar(
+            content: Text('Could not open chat right now. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
