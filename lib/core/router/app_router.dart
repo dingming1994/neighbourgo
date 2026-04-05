@@ -159,8 +159,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.serviceDetail,
-        builder: (_, state) =>
-            ServiceDetailScreen(listingId: state.pathParameters['listingId']!),
+        builder: (_, state) {
+          final id = state.pathParameters['listingId'];
+          if (id == null) return const _MissingParamScreen(param: 'listingId');
+          return ServiceDetailScreen(listingId: id);
+        },
       ),
 
       // ── Task screens (full-screen, outside shell) ──────────────────────────
@@ -178,7 +181,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.taskDetail,
-        builder: (_, state) => TaskDetailScreen(taskId: state.pathParameters['taskId']!),
+        builder: (_, state) {
+          final id = state.pathParameters['taskId'];
+          if (id == null) return const _MissingParamScreen(param: 'taskId');
+          return TaskDetailScreen(taskId: id);
+        },
       ),
 
       // ── Profile screens (edit before :userId to avoid wildcard match) ────
@@ -196,13 +203,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.publicProfile,
-        builder: (_, state) => PublicProfileScreen(userId: state.pathParameters['userId']!),
+        builder: (_, state) {
+          final id = state.pathParameters['userId'];
+          if (id == null) return const _MissingParamScreen(param: 'userId');
+          return PublicProfileScreen(userId: id);
+        },
       ),
 
       // ── Chat ──────────────────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.chatThread,
-        builder: (_, state) => ChatThreadScreen(chatId: state.pathParameters['chatId']!),
+        builder: (_, state) {
+          final id = state.pathParameters['chatId'];
+          if (id == null) return const _MissingParamScreen(param: 'chatId');
+          return ChatThreadScreen(chatId: id);
+        },
       ),
 
       // ── Checkout ───────────────────────────────────────────────────────────
@@ -251,4 +266,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// (Stubs removed – real screens imported from feature modules)
+// Fallback screen when a route parameter is missing (prevents force-unwrap crash)
+class _MissingParamScreen extends StatelessWidget {
+  final String param;
+  const _MissingParamScreen({required this.param});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Error')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text('Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('Missing parameter: $param', style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.go(AppRoutes.home),
+              child: const Text('Go Home'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
