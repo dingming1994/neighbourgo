@@ -398,3 +398,24 @@ Do not replace older entries.
 - Risks / follow-up:
   - Some non-fatal rendering/scheduler exceptions still appear during integration tests (exit code 0 but stderr has EXCEPTION lines). These are likely layout edge cases in less-tested screens.
   - Next valuable work: visual polish pass, or new feature development based on user feedback.
+
+## 2026-04-05 11:00 SGT | claude | ITER-006
+
+- Task IDs: UX-214, UX-215
+- Branches: agents/claude/ux-214, agents/claude/ux-215
+- Summary:
+  - Fixed two bugs found during code audit.
+- Key changes:
+  - UX-214: Firestore security rules now allow direct hire task creation (status=assigned on create) and provider decline (clearing assignedProviderId). Deployed to production.
+  - UX-215: All 4 GoRouter pathParameter force-unwraps replaced with null checks + _MissingParamScreen fallback. Prevents crash on malformed deep links.
+- Files touched:
+  - `firestore.rules`
+  - `lib/core/router/app_router.dart`
+- Verification:
+  - `flutter analyze` on app_router.dart: 0 errors
+  - `firebase deploy --only firestore:rules`: success
+  - UX-214 rules: verified by checking that `status in ["open", "assigned"]` is accepted
+  - UX-215: verified by code review — all 4 force-unwraps replaced
+- Risks / follow-up:
+  - UX-216 (manual screen walkthrough), UX-217 (rendering exceptions), UX-218 (bid flow test) still planned.
+  - The `bidCount` on direct-hire tasks won't increment (no bids involved). This is correct behavior.

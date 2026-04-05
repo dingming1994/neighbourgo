@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-04T16:28:33+00:00",
+  "updatedAt": "2026-04-05T03:25:52+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -267,21 +267,27 @@
       "id": "UX-214",
       "title": "Fix Firestore rules blocking direct hire task creation",
       "description": "Security rules require status==open on task create, but direct hire creates with status=assigned. Fix rules to allow both. Also fix rules to allow assigned provider status updates beyond just status+updatedAt.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "done",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-214",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-214-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-05T03:22:33+00:00"
+      ],
+      "claimedAt": "2026-04-05T03:22:33+00:00"
     },
     {
       "id": "UX-215",
       "title": "Fix GoRouter force-unwraps on route parameters",
       "description": "app_router.dart uses ! on pathParameters for taskId, chatId, userId, listingId. If deep link or back navigation delivers null, app crashes. Add null checks with fallback navigation.",
-      "status": "planned",
-      "ownerModel": null,
-      "branch": null,
-      "worktree": null,
-      "notes": []
+      "status": "merged",
+      "ownerModel": "claude",
+      "branch": "agents/claude/ux-215",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-215-claude",
+      "notes": [
+        "Claimed by claude from base main at 2026-04-05T03:23:32+00:00"
+      ],
+      "claimedAt": "2026-04-05T03:23:32+00:00"
     },
     {
       "id": "UX-216",
@@ -312,6 +318,25 @@
       "branch": null,
       "worktree": null,
       "notes": []
+    },
+    {
+      "id": "UX-219",
+      "title": "Polish high-frequency action failure messaging",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "claimed",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-219",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-219-codex",
+      "claimedAt": "2026-04-05T03:25:08+00:00",
+      "mergedAt": null,
+      "notes": [
+        "Claimed by codex from base main at 2026-04-05T03:25:08+00:00"
+      ]
     }
   ]
 }
