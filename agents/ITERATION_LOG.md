@@ -445,3 +445,20 @@ Do not replace older entries.
 - Risks / follow-up:
   - `task_detail_screen.dart` still has older null-safety/analyzer warnings unrelated to this pass; that screen would benefit from a dedicated cleanup task.
   - Claude’s recent QA pass reported non-fatal rendering/scheduler exceptions during integration tests; those are now a higher-priority target than more copy cleanup.
+
+## 2026-04-05 10:34 SGT | codex | ITER-014
+
+- Task IDs: UX-220
+- Branches: agents/codex/ux-220
+- Summary:
+  - Removed the remaining targeted null-safety and `const` warning debt from `task_detail_screen.dart`.
+- Key changes:
+  - Simplified provider-only task-detail action logic by introducing a local `providerUid`, removing unnecessary null-aware operators and non-null assertions.
+  - Converted static timeline steps to `const`, eliminating the remaining low-signal analyzer hints in the file.
+- Files touched:
+  - `lib/features/tasks/presentation/screens/task_detail_screen.dart`
+- Verification:
+  - Passed: `flutter analyze lib/features/tasks/presentation/screens/task_detail_screen.dart`
+  - Passed: `flutter test test/widgets/task_screens_test.dart`
+- Risks / follow-up:
+  - `task_detail_screen.dart` is cleaner now, but the higher-value remaining work is still around rendering exceptions and broader manual QA, which Claude currently has claimed under UX-216/217/218.
