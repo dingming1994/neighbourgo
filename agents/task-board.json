@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-05T16:23:48+00:00",
+  "updatedAt": "2026-04-07T14:06:15+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -370,6 +370,55 @@
         "Merged into main at 2026-04-05T10:40:42+00:00",
         "Cleaned up worktree/branch after merge"
       ]
+    },
+    {
+      "id": "UX-221",
+      "title": "Polish remaining action-level error messaging in review/settings/gallery flows",
+      "description": "",
+      "acceptanceCriteria": [],
+      "dependsOn": [],
+      "source": {
+        "type": "manual"
+      },
+      "status": "in_progress",
+      "ownerModel": "codex",
+      "branch": "agents/codex/ux-221",
+      "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-221-codex",
+      "claimedAt": "2026-04-07T14:06:06+00:00",
+      "mergedAt": null,
+      "notes": [
+        "Claimed by codex from base main at 2026-04-07T14:06:06+00:00"
+      ]
+    },
+    {
+      "id": "UX-222",
+      "title": "Provider Home \u2014 Summary Card (matching Poster design)",
+      "description": "Provider home has no summary card. Add one showing: Active Jobs, Pending Bids, Completed Tasks, Earnings Total, avg rating. Same visual style as PosterSummaryCard.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-223",
+      "title": "Fix 3 remaining e.toString() in UI error messages",
+      "description": "Three screens still show raw exception text to users. Replace with friendly messages.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
+    },
+    {
+      "id": "UX-224",
+      "title": "Add pull-to-refresh on key list screens",
+      "description": "poster_home, provider_home, discover, and chat_thread lack pull-to-refresh. Users cannot manually refresh data.",
+      "status": "planned",
+      "ownerModel": null,
+      "branch": null,
+      "worktree": null,
+      "notes": []
     }
   ]
 }

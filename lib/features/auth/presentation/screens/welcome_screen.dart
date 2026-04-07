@@ -47,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Dev login failed: $e')),
+          const SnackBar(content: Text('Login failed. Please try again.')),
         );
       }
     }

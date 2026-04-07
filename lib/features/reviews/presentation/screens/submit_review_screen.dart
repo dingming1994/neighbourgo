@@ -136,7 +136,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit review: $e'),
+            content: const Text('Could not submit review. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );

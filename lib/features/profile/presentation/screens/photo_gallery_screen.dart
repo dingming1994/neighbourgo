@@ -91,7 +91,7 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Upload failed: $e'),
+              content: const Text('Upload failed. Please check your connection and try again.'),
               backgroundColor: AppColors.error),
         );
       }
@@ -127,7 +127,7 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Delete failed: $e'),
+              content: const Text('Could not delete photo. Please try again.'),
               backgroundColor: AppColors.error),
         );
       }
@@ -167,7 +167,7 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-                content: Text('Failed to set cover: $e'),
+                content: const Text('Could not set cover photo. Please try again.'),
                 backgroundColor: AppColors.error),
           );
       }

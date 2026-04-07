@@ -10,7 +10,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
-import '../../../profile/presentation/widgets/provider_stats_widget.dart';
+import '../widgets/provider_summary_card.dart';
 import '../../../services/data/models/service_listing_model.dart';
 import '../../../services/data/repositories/service_listing_repository.dart';
 import '../../../services/presentation/widgets/service_card.dart';
@@ -157,9 +157,9 @@ class ProviderHomeScreen extends ConsumerWidget {
             ],
           ),
 
-          // ── Provider stats ─────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: ProviderStatsWidget(stats: user?.stats),
+          // ── Provider summary card ────────────────────────────────────────
+          const SliverToBoxAdapter(
+            child: ProviderSummaryCard(),
           ),
 
           // ── Profile completion checklist ───────────────────────────────
