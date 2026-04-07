@@ -49,7 +49,7 @@ class PosterSummaryCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -140,7 +140,7 @@ class _StatTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -160,7 +160,7 @@ class _StatTile extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: color.withOpacity(0.8),
+                color: color.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,

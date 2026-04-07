@@ -123,7 +123,7 @@ class PublicProfileScreen extends ConsumerWidget {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withOpacity(0.5)
+                              Colors.black.withValues(alpha: 0.5)
                             ],
                           ),
                         ),
@@ -150,7 +150,7 @@ class PublicProfileScreen extends ConsumerWidget {
                               border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withOpacity(0.12),
+                                    color: Colors.black.withValues(alpha: 0.12),
                                     blurRadius: 8)
                               ],
                             ),
@@ -528,7 +528,7 @@ class _BadgeRow extends StatelessWidget {
                       color: AppColors.bgMint,
                       borderRadius: AppRadius.chip,
                       border:
-                          Border.all(color: AppColors.primary.withOpacity(0.3)),
+                          Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Text(b.emoji, style: const TextStyle(fontSize: 14)),
@@ -620,7 +620,7 @@ class _ShowcaseBlock extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: (cat?.color ?? AppColors.primary).withOpacity(0.08),
+              color: (cat?.color ?? AppColors.primary).withValues(alpha: 0.08),
               borderRadius: BorderRadius.only(
                   topLeft: AppRadius.md, topRight: AppRadius.md),
             ),
@@ -778,7 +778,7 @@ class _RatesAvailabilitySection extends StatelessWidget {
                           color: AppColors.bgMint,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: AppColors.primary.withOpacity(0.3)),
+                              color: AppColors.primary.withValues(alpha: 0.3)),
                         ),
                         child: Text(day,
                             style: const TextStyle(

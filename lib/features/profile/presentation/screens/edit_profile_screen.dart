@@ -280,7 +280,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           }
                         });
                       },
-                      selectedColor: AppColors.primary.withOpacity(0.15),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
                       checkmarkColor: AppColors.primary,
                       labelStyle: TextStyle(
                         color: selected
@@ -366,10 +366,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               label: Text(tag,
                                   style: const TextStyle(fontSize: 13)),
                               backgroundColor:
-                                  AppColors.accent.withOpacity(0.12),
+                                  AppColors.accent.withValues(alpha: 0.12),
                               side: BorderSide(
                                   color:
-                                      AppColors.accent.withOpacity(0.3)),
+                                      AppColors.accent.withValues(alpha: 0.3)),
                               deleteIcon: const Icon(Icons.close, size: 16),
                               onDeleted: () =>
                                   setState(() => _skillTags.remove(tag)),
@@ -482,7 +482,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           }
                         });
                       },
-                      selectedColor: AppColors.primary.withOpacity(0.15),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
                       checkmarkColor: AppColors.primary,
                       labelStyle: TextStyle(
                         color: selected
@@ -545,7 +545,7 @@ class _AvatarPicker extends StatelessWidget {
     } else {
       avatar = CircleAvatar(
         radius: 50,
-        backgroundColor: AppColors.primary.withOpacity(0.12),
+        backgroundColor: AppColors.primary.withValues(alpha: 0.12),
         child: const Icon(Icons.person, size: 48, color: AppColors.primary),
       );
     }
