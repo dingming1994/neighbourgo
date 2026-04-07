@@ -210,7 +210,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
-              value: _categoryId,
+              initialValue: _categoryId,
               decoration: const InputDecoration(hintText: 'Select a category'),
               items: AppCategories.all
                   .map((c) => DropdownMenuItem(

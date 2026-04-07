@@ -98,8 +98,8 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not submit your bid. Please try again.'),
+          const SnackBar(
+            content: Text('Could not submit your bid. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -253,8 +253,9 @@ class _SubmitBidSheetState extends ConsumerState<SubmitBidSheet> {
                   ),
                   validator: (v) {
                     if (_selectedDuration != _BidDuration.custom) return null;
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Enter duration in minutes';
+                    }
                     final n = int.tryParse(v);
                     if (n == null || n <= 0) return 'Enter a valid duration';
                     return null;

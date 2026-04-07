@@ -802,7 +802,7 @@ class _SearchResultCount extends StatelessWidget {
       ),
       color: AppColors.bgLight,
       child: Text(
-        '$count ${label}${count != 1 ? 's' : ''} found',
+        '$count $label${count != 1 ? 's' : ''} found',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,

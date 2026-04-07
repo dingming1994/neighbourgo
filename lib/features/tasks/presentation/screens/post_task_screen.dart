@@ -576,7 +576,7 @@ class _StepLocationState extends State<_StepLocation> {
               style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _hood,
+            initialValue: _hood,
             decoration: const InputDecoration(hintText: 'Select neighbourhood'),
             items: _hoods
                 .map((h) => DropdownMenuItem(value: h, child: Text(h)))
@@ -793,10 +793,10 @@ class _StepReview extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
             color: AppColors.bgMint, borderRadius: AppRadius.card),
-        child: Row(children: [
-          const Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
-          const SizedBox(width: 10),
-          const Expanded(
+        child: const Row(children: [
+          Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
+          SizedBox(width: 10),
+          Expanded(
               child: Text(
                   'Payment is held in escrow and released only after you confirm the task is complete.',
                   style: TextStyle(fontSize: 13, height: 1.5))),

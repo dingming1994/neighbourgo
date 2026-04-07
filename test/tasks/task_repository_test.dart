@@ -246,7 +246,7 @@ void main() {
         final db = FakeFirebaseFirestore();
         final repo = TaskRepository(db: db, storage: FakeFirebaseStorage());
 
-        final task = TaskModel(
+        const task = TaskModel(
           id: '',
           posterId: 'poster-1',
           title: 'Fix my sink',

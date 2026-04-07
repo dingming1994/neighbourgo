@@ -707,8 +707,8 @@ class _DirectHireResponseButtonsState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Something went wrong. Please try again.'),
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );

@@ -230,7 +230,7 @@ void main() {
         final db = FakeFirebaseFirestore();
         final repo = AuthRepository(auth: FakeFirebaseAuth(), db: db);
 
-        final user = UserModel(uid: 'user-123', phone: '+6591234567');
+        const user = UserModel(uid: 'user-123', phone: '+6591234567');
         await repo.createOrUpdateUser(user);
 
         final docRef = db.getCollection('users').docs['user-123']!;
@@ -250,7 +250,7 @@ void main() {
         );
         final repo = AuthRepository(auth: FakeFirebaseAuth(), db: db);
 
-        final user = UserModel(uid: 'user-123', phone: '+6591234567');
+        const user = UserModel(uid: 'user-123', phone: '+6591234567');
         await repo.createOrUpdateUser(user);
 
         final docRef = db.getCollection('users').docs['user-123']!;

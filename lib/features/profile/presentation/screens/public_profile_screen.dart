@@ -302,7 +302,7 @@ class PublicProfileScreen extends ConsumerWidget {
 
                       // ── Bio ───────────────────────────────────────────────
                       const SizedBox(height: 24),
-                      _SectionHeader(title: 'About Me'),
+                      const _SectionHeader(title: 'About Me'),
                       const SizedBox(height: 8),
                       if (user.bio != null && user.bio!.isNotEmpty)
                         Text(user.bio!,
@@ -317,7 +317,7 @@ class PublicProfileScreen extends ConsumerWidget {
 
                       // ── Skill tags ────────────────────────────────────────
                       const SizedBox(height: 24),
-                      _SectionHeader(title: 'Skills'),
+                      const _SectionHeader(title: 'Skills'),
                       const SizedBox(height: 10),
                       if (user.skillTags.isNotEmpty)
                         Wrap(
@@ -339,7 +339,7 @@ class PublicProfileScreen extends ConsumerWidget {
                       // ── Category Showcases ────────────────────────────────
                       if (user.categoryShowcases.isNotEmpty) ...[
                         const SizedBox(height: 24),
-                        _SectionHeader(title: 'Services & Portfolio'),
+                        const _SectionHeader(title: 'Services & Portfolio'),
                         const SizedBox(height: 12),
                         ...user.categoryShowcases.map(
                           (s) =>
@@ -352,7 +352,7 @@ class PublicProfileScreen extends ConsumerWidget {
                           .where((p) => p.categoryId == null)
                           .isNotEmpty) ...[
                         const SizedBox(height: 24),
-                        _SectionHeader(title: 'Photo Gallery'),
+                        const _SectionHeader(title: 'Photo Gallery'),
                         const SizedBox(height: 12),
                         _PhotoGrid(
                           photos: user.photos
@@ -621,7 +621,7 @@ class _ShowcaseBlock extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: (cat?.color ?? AppColors.primary).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                   topLeft: AppRadius.md, topRight: AppRadius.md),
             ),
             child: Row(
@@ -666,7 +666,7 @@ class _PhotoGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 6,
         mainAxisSpacing: 6,

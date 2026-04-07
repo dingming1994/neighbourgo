@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
-import '../../../bids/data/repositories/bid_repository.dart';
 
 class ProviderSummaryCard extends ConsumerWidget {
   const ProviderSummaryCard({super.key});
@@ -104,13 +102,13 @@ class ProviderSummaryCard extends ConsumerWidget {
             // ── New provider nudge ──────────────────────────────────
             if (completedTasks == 0) ...[
               const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
                 child: Row(
                   children: [
                     Icon(Icons.rocket_launch_rounded,
                         size: 18, color: AppColors.primary),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Complete your first job to start building your reputation!',

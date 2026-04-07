@@ -55,7 +55,9 @@ void main() {
       });
 
       await tester.pumpWidget(const ProviderScope(child: NeighbourGoApp()));
-      for (int i = 0; i < 20; i++) await tester.pump(const Duration(milliseconds: 500));
+      for (int i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
       await tester.pumpAndSettle(const Duration(milliseconds: 200),
           EnginePhase.sendSemanticsUpdate, const Duration(seconds: 10));
 

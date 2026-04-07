@@ -27,7 +27,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   List<String> _selectedCategories = [];
   List<String> _skillTags = [];
-  Map<String, TextEditingController> _rateControllers = {};
+  final Map<String, TextEditingController> _rateControllers = {};
   List<String> _availableDays = [];
   final _availableHoursCtrl = TextEditingController();
   File? _pickedAvatar;
@@ -219,7 +219,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 24),
 
                 // ── Basic Info ────────────────────────────────────────
-                _SectionHeader('Basic Info'),
+                const _SectionHeader('Basic Info'),
                 const SizedBox(height: 12),
                 _Field(
                   controller: _nameCtrl,
@@ -252,7 +252,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 24),
 
                 // ── Service Categories ────────────────────────────────
-                _SectionHeader('Service Categories'),
+                const _SectionHeader('Service Categories'),
                 const SizedBox(height: 4),
                 const Text(
                   'Select what services you offer',
@@ -305,7 +305,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 24),
 
                 // ── Skill Tags ────────────────────────────────────────
-                _SectionHeader('Skill Tags'),
+                const _SectionHeader('Skill Tags'),
                 const SizedBox(height: 4),
                 const Text(
                   'Add tags like #DogWalking, #Mandarin',
@@ -381,7 +381,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                 // ── Rates ────────────────────────────────────────────
                 if (_selectedCategories.isNotEmpty) ...[
-                  _SectionHeader('Rates'),
+                  const _SectionHeader('Rates'),
                   const SizedBox(height: 4),
                   const Text(
                     'Set your hourly rate per service category (S\$)',
@@ -456,7 +456,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ],
 
                 // ── Availability ─────────────────────────────────────
-                _SectionHeader('Availability'),
+                const _SectionHeader('Availability'),
                 const SizedBox(height: 4),
                 const Text(
                   'Select which days you are available',

@@ -153,70 +153,70 @@ void main() {
     });
 
     test('cleaning category has correct properties', () {
-      final cat = AppCategories.cleaning;
+      const cat = AppCategories.cleaning;
       expect(cat.id, 'cleaning');
       expect(cat.label, 'Home Cleaning');
       expect(cat.emoji, '🧹');
     });
 
     test('tutoring category has correct properties', () {
-      final cat = AppCategories.tutoring;
+      const cat = AppCategories.tutoring;
       expect(cat.id, 'tutoring');
       expect(cat.label, 'Tutoring');
       expect(cat.emoji, '📚');
     });
 
     test('petCare category has correct properties', () {
-      final cat = AppCategories.petCare;
+      const cat = AppCategories.petCare;
       expect(cat.id, 'pet_care');
       expect(cat.label, 'Pet Care');
       expect(cat.emoji, '🐾');
     });
 
     test('errands category has correct properties', () {
-      final cat = AppCategories.errands;
+      const cat = AppCategories.errands;
       expect(cat.id, 'errands');
       expect(cat.label, 'Errands');
       expect(cat.emoji, '🛍️');
     });
 
     test('queuing category has correct properties', () {
-      final cat = AppCategories.queuing;
+      const cat = AppCategories.queuing;
       expect(cat.id, 'queuing');
       expect(cat.label, 'Queue Standing');
       expect(cat.emoji, '🧍');
     });
 
     test('handyman category has correct properties', () {
-      final cat = AppCategories.handyman;
+      const cat = AppCategories.handyman;
       expect(cat.id, 'handyman');
       expect(cat.label, 'Handyman');
       expect(cat.emoji, '🔧');
     });
 
     test('moving category has correct properties', () {
-      final cat = AppCategories.moving;
+      const cat = AppCategories.moving;
       expect(cat.id, 'moving');
       expect(cat.label, 'Moving');
       expect(cat.emoji, '📦');
     });
 
     test('personalCare category has correct properties', () {
-      final cat = AppCategories.personalCare;
+      const cat = AppCategories.personalCare;
       expect(cat.id, 'personal_care');
       expect(cat.label, 'Personal Care');
       expect(cat.emoji, '🤝');
     });
 
     test('admin category has correct properties', () {
-      final cat = AppCategories.admin;
+      const cat = AppCategories.admin;
       expect(cat.id, 'admin');
       expect(cat.label, 'Admin & Digital');
       expect(cat.emoji, '💻');
     });
 
     test('events category has correct properties', () {
-      final cat = AppCategories.events;
+      const cat = AppCategories.events;
       expect(cat.id, 'events');
       expect(cat.label, 'Event Help');
       expect(cat.emoji, '🎉');

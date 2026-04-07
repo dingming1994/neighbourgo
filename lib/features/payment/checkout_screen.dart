@@ -81,8 +81,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Payment could not be processed. Please try again.'),
+          const SnackBar(
+            content: Text('Payment could not be processed. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );

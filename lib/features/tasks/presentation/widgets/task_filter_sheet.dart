@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/category_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/providers/task_list_provider.dart';
 
@@ -194,7 +193,7 @@ class _TaskFilterSheetState extends State<_TaskFilterSheet> {
               ),
               const SizedBox(height: AppSpacing.sm),
               DropdownButtonFormField<String>(
-                value: _neighbourhood,
+                initialValue: _neighbourhood,
                 decoration: const InputDecoration(
                   hintText: 'Any neighbourhood',
                   isDense: true,

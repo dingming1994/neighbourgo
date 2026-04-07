@@ -561,7 +561,7 @@ void main() {
       final chatRepo = FakeChatRepository()
         ..shouldThrowOnCreateOrGetChat = true;
       await tester.pumpWidget(buildTestWidget(
-        Scaffold(
+        const Scaffold(
           body: BidListSection(
             taskId: 'task-1',
             posterId: 'user-1',
@@ -571,7 +571,7 @@ void main() {
           bidRepositoryProvider.overrideWithValue(
             FakeBidRepository(
               bidsToReturn: [
-                BidModel(
+                const BidModel(
                   bidId: 'bid-1',
                   taskId: 'task-1',
                   providerId: 'provider-1',

@@ -181,7 +181,7 @@ class _ProviderFilterSheetState extends State<_ProviderFilterSheet> {
               ),
               const SizedBox(height: AppSpacing.sm),
               DropdownButtonFormField<String>(
-                value: _neighbourhood,
+                initialValue: _neighbourhood,
                 decoration: const InputDecoration(
                   hintText: 'Any neighbourhood',
                   isDense: true,

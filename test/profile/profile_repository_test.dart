@@ -408,7 +408,7 @@ void main() {
             data: _makeUserData(), exists: true);
 
         final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
-        final user = UserModel(
+        const user = UserModel(
           uid: 'user-1',
           phone: '+6591234567',
           displayName: 'Updated Name',
@@ -552,7 +552,7 @@ void main() {
       test('updates categoryShowcases in user doc', () async {
         final db = FakeFirebaseFirestore();
         // User with an existing showcase
-        final existingShowcase = CategoryShowcase(
+        const existingShowcase = CategoryShowcase(
           categoryId: 'cleaning',
           description: 'Old description',
         );
@@ -566,7 +566,7 @@ void main() {
             data: userData, exists: true);
 
         final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
-        final newShowcase = CategoryShowcase(
+        const newShowcase = CategoryShowcase(
           categoryId: 'cleaning',
           description: 'Updated description',
           photoIds: ['photo-1'],
@@ -586,7 +586,7 @@ void main() {
 
       test('appends new showcase if categoryId does not exist', () async {
         final db = FakeFirebaseFirestore();
-        final existingShowcase = CategoryShowcase(
+        const existingShowcase = CategoryShowcase(
           categoryId: 'cleaning',
           description: 'Cleaning desc',
         );
@@ -600,7 +600,7 @@ void main() {
             data: userData, exists: true);
 
         final repo = ProfileRepository(db: db, storage: FakeFirebaseStorage());
-        final newShowcase = CategoryShowcase(
+        const newShowcase = CategoryShowcase(
           categoryId: 'tutoring',
           description: 'Tutoring desc',
         );
