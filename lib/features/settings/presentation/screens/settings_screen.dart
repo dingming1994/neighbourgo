@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +75,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // dismiss spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete account: ${e.message}')),
+          SnackBar(
+            content: Text(_deleteAccountErrorMessage(e)),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -122,9 +124,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              e.message ?? 'Could not send the password reset email.',
-            ),
+            content: Text(_passwordResetErrorMessage(e)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -147,6 +147,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  String _deleteAccountErrorMessage(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'requires-recent-login':
+        return 'Please sign in again before deleting your account.';
+      case 'network-request-failed':
+        return 'Could not delete your account right now. Check your connection and try again.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment before trying again.';
+      default:
+        return 'Could not delete your account right now.';
+    }
+  }
+
+  String _passwordResetErrorMessage(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-email':
+        return 'Your account email looks invalid. Please update it and try again.';
+      case 'user-not-found':
+        return 'We could not find an email account to reset.';
+      case 'network-request-failed':
+        return 'Could not send the password reset email right now. Check your connection and try again.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment before trying again.';
+      default:
+        return 'Could not send the password reset email.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,7 +190,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         children: [
           // ── Notifications ─────────────────────────────────────────────
-          _SectionHeader(title: 'Notifications'),
+          const _SectionHeader(title: 'Notifications'),
           _ToggleTile(
             icon: Icons.notifications_outlined,
             label: 'Push Notifications',
@@ -185,7 +213,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
 
           // ── Account ───────────────────────────────────────────────────
-          _SectionHeader(title: 'Account'),
+          const _SectionHeader(title: 'Account'),
           _ActionTile(
             icon: Icons.lock_outline,
             label: 'Change Password',
@@ -202,13 +230,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
 
           // ── About ─────────────────────────────────────────────────────
-          _SectionHeader(title: 'About'),
-          _ActionTile(
+          const _SectionHeader(title: 'About'),
+          const _ActionTile(
             icon: Icons.info_outline,
             label: 'Version',
             trailing: Text(
               AppConstants.appVersion,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textHint,
               ),
@@ -227,9 +255,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _ActionTile(
             icon: Icons.mail_outline,
             label: 'Contact Support',
-            trailing: Text(
+            trailing: const Text(
               AppConstants.supportEmail,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textHint,
               ),
@@ -292,7 +320,7 @@ class _ToggleTile extends StatelessWidget {
       title: Text(label, style: const TextStyle(fontSize: 15)),
       trailing: Switch.adaptive(
         value: value,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
         onChanged: onChanged,
       ),
     );

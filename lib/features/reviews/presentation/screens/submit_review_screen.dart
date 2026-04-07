@@ -136,7 +136,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Could not submit review. Please try again.'),
+            content: Text(_reviewSubmitErrorMessage(e)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -276,6 +276,14 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
     if (rating <= 3) return 'Good';
     if (rating <= 4) return 'Very Good';
     return 'Excellent';
+  }
+
+  String _reviewSubmitErrorMessage(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('already reviewed')) {
+      return 'You have already submitted a review for this task.';
+    }
+    return 'Could not submit your review right now.';
   }
 }
 

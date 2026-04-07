@@ -90,8 +90,8 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: const Text('Upload failed. Please check your connection and try again.'),
+          const SnackBar(
+              content: Text('Could not upload your photos right now.'),
               backgroundColor: AppColors.error),
         );
       }
@@ -126,8 +126,8 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: const Text('Could not delete photo. Please try again.'),
+          const SnackBar(
+              content: Text('Could not delete that photo right now.'),
               backgroundColor: AppColors.error),
         );
       }
@@ -166,8 +166,8 @@ class _PhotoGalleryScreenState extends ConsumerState<PhotoGalleryScreen> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(
-                content: const Text('Could not set cover photo. Please try again.'),
+            const SnackBar(
+                content: Text('Could not update your cover photo right now.'),
                 backgroundColor: AppColors.error),
           );
       }

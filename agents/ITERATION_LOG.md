@@ -462,3 +462,26 @@ Do not replace older entries.
   - Passed: `flutter test test/widgets/task_screens_test.dart`
 - Risks / follow-up:
   - `task_detail_screen.dart` is cleaner now, but the higher-value remaining work is still around rendering exceptions and broader manual QA, which Claude currently has claimed under UX-216/217/218.
+
+## 2026-04-07 22:09 SGT | codex | ITER-015
+
+- Task IDs: UX-221
+- Branches: agents/codex/ux-221
+- Summary:
+  - Polished a remaining pocket of action-level failure messaging in review, settings, and photo-gallery flows so users no longer see raw exception strings during common account/profile actions.
+- Key changes:
+  - `SubmitReviewScreen` now maps review submission failures to stable user-facing copy, including a specific duplicate-review message instead of `Failed to submit review: ...`.
+  - `PhotoGalleryScreen` now uses friendly failure snackbars for upload, delete, and cover-photo update actions instead of surfacing raw exceptions.
+  - `SettingsScreen` now maps delete-account and password-reset Firebase auth failures into clearer recovery messages, and picked up a small local analyzer cleanup while touching the file.
+  - Added widget coverage for review submission failure and gallery cover-photo update failure.
+- Files touched:
+  - `lib/features/reviews/presentation/screens/submit_review_screen.dart`
+  - `lib/features/profile/presentation/screens/photo_gallery_screen.dart`
+  - `lib/features/settings/presentation/screens/settings_screen.dart`
+  - `test/widgets/review_gallery_test.dart`
+- Verification:
+  - Passed: `flutter analyze --no-pub lib/features/reviews/presentation/screens/submit_review_screen.dart lib/features/profile/presentation/screens/photo_gallery_screen.dart lib/features/settings/presentation/screens/settings_screen.dart test/widgets/review_gallery_test.dart`
+  - Passed: `flutter test --no-pub test/widgets/review_gallery_test.dart`
+- Risks / follow-up:
+  - `SettingsScreen` error mapping is improved, but the screen still depends directly on `FirebaseAuth.instance`; if you want deeper test coverage there, the next step is to inject auth access the way other screens already inject repositories/providers.
+  - Claude’s manual walkthrough and rendering/bid-flow tasks (`UX-216` to `UX-218`) are still the higher-value path for catching deeper behavior bugs than copy-level issues.
