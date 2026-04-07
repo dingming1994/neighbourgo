@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-07T14:10:23+00:00",
+  "updatedAt": "2026-04-07T14:11:17+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -380,22 +380,23 @@
       "source": {
         "type": "manual"
       },
-      "status": "done",
+      "status": "merged",
       "ownerModel": "codex",
       "branch": "agents/codex/ux-221",
       "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-221-codex",
       "claimedAt": "2026-04-07T14:06:06+00:00",
       "mergedAt": null,
       "notes": [
-        "Claimed by codex from base main at 2026-04-07T14:06:06+00:00"
+        "Claimed by codex from base main at 2026-04-07T14:06:06+00:00",
+        "2026-04-07T14:11:17+00:00 Merged to main in commit 1898352 after conflict resolution."
       ]
     },
     {
       "id": "UX-222",
       "title": "Provider Home \u2014 Summary Card (matching Poster design)",
       "description": "Provider home has no summary card. Add one showing: Active Jobs, Pending Bids, Completed Tasks, Earnings Total, avg rating. Same visual style as PosterSummaryCard.",
-      "status": "planned",
-      "ownerModel": null,
+      "status": "merged",
+      "ownerModel": "claude",
       "branch": null,
       "worktree": null,
       "notes": []
@@ -404,8 +405,8 @@
       "id": "UX-223",
       "title": "Fix 3 remaining e.toString() in UI error messages",
       "description": "Three screens still show raw exception text to users. Replace with friendly messages.",
-      "status": "planned",
-      "ownerModel": null,
+      "status": "merged",
+      "ownerModel": "claude",
       "branch": null,
       "worktree": null,
       "notes": []

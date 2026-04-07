@@ -48,8 +48,14 @@ class PosterHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(_posterActiveTasksProvider);
+          ref.invalidate(currentUserProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          slivers: [
           // ── App Bar ──────────────────────────────────────────────────────
           SliverAppBar(
             floating: true,
@@ -177,6 +183,7 @@ class PosterHomeScreen extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+        ),
       ),
     );
   }

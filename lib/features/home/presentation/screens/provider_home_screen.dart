@@ -113,10 +113,16 @@ class ProviderHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgLight,
-      body: CustomScrollView(
-        slivers: [
-          // ── App Bar ────────────────────────────────────────────────────────
-          SliverAppBar(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(_openTasksProvider);
+          ref.invalidate(currentUserProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          slivers: [
+            // ── App Bar ────────────────────────────────────────────────────────
+            SliverAppBar(
             floating: true,
             snap: true,
             backgroundColor: AppColors.bgCard,
@@ -259,6 +265,7 @@ class ProviderHomeScreen extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+        ),
       ),
     );
   }
