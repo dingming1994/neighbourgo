@@ -74,13 +74,22 @@ class BidRepository {
       .snapshots()
       .map((s) => s.docs.map(_fromFirestore).toList());
 
-  /// Real-time stream of all bids submitted by a provider (collection group).
-  Stream<List<BidModel>> watchMyBids(String providerId) => _db
-      .collectionGroup(AppConstants.bidsCol)
-      .where('providerId', isEqualTo: providerId)
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((s) => s.docs.map(_fromFirestore).toList());
+  /// Real-time stream of all bids submitted by a provider.
+  /// Uses collectionGroup query with fallback to empty list on error
+  /// (index may not exist yet or collectionGroup rules may not apply).
+  Stream<List<BidModel>> watchMyBids(String providerId) {
+    try {
+      return _db
+          .collectionGroup(AppConstants.bidsCol)
+          .where('providerId', isEqualTo: providerId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map(_fromFirestore).toList())
+          .handleError((_) => <BidModel>[]);
+    } catch (_) {
+      return Stream.value(<BidModel>[]);
+    }
+  }
 
   // ── Accept / Reject ───────────────────────────────────────────────────────
   /// Accept a bid: sets bid → accepted, all other pending bids → rejected,

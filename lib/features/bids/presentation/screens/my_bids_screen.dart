@@ -19,7 +19,9 @@ import '../../domain/models/bid_model.dart';
 final _myBidsProvider = StreamProvider.autoDispose<List<BidModel>>((ref) {
   final user = ref.watch(currentUserProvider).valueOrNull;
   if (user == null) return Stream.value([]);
-  return ref.watch(bidRepositoryProvider).watchMyBids(user.uid);
+  return ref.watch(bidRepositoryProvider).watchMyBids(user.uid).handleError((e) {
+    debugPrint('MyBids error: $e');
+  });
 });
 
 /// Cache task titles by taskId to avoid redundant fetches.
