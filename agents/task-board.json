@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-10T07:43:34+00:00",
+  "updatedAt": "2026-04-10T07:44:03+00:00",
   "notes": [
     "Architect is model-neutral and plans work without claiming tasks.",
     "Each task can be claimed by only one model: claude or codex.",
@@ -471,14 +471,16 @@
       "source": {
         "type": "manual"
       },
-      "status": "done",
+      "status": "merged",
       "ownerModel": "codex",
       "branch": "agents/codex/ux-227",
       "worktree": "/Users/brucedmm/.openclaw/workspace/neighbourgo/.worktrees/ux-227-codex",
       "claimedAt": "2026-04-10T07:42:15+00:00",
-      "mergedAt": null,
+      "mergedAt": "2026-04-10T07:44:03+00:00",
       "notes": [
-        "Claimed by codex from base main at 2026-04-10T07:42:15+00:00"
+        "Claimed by codex from base main at 2026-04-10T07:42:15+00:00",
+        "Merged into main at 2026-04-10T07:44:03+00:00",
+        "Cleaned up worktree/branch after merge"
       ]
     }
   ]
