@@ -485,3 +485,31 @@ Do not replace older entries.
 - Risks / follow-up:
   - `SettingsScreen` error mapping is improved, but the screen still depends directly on `FirebaseAuth.instance`; if you want deeper test coverage there, the next step is to inject auth access the way other screens already inject repositories/providers.
   - Claude’s manual walkthrough and rendering/bid-flow tasks (`UX-216` to `UX-218`) are still the higher-value path for catching deeper behavior bugs than copy-level issues.
+
+## 2026-04-10 23:05 SGT | codex | ITER-016
+
+- Task IDs: UX-225, UX-226
+- Branches: agents/codex/ux-225, agents/codex/ux-226
+- Summary:
+  - Ran a fresh automated regression pass on current home/profile/error-state changes, found a real My Bids regression, and fixed it so bid query failures render the intended retryable error state again.
+- Key changes:
+  - Verified the local environment cannot currently run Firebase emulators because Java is not installed, so simulator integration tests remain blocked unless emulators are already running externally.
+  - Identified a Flutter tool issue in Codex worktrees: `flutter test` crashes with `Bad state: No element` until `flutter pub get` creates `.dart_tool/package_config.json` in the worktree.
+  - Ran widget/repository regression suites covering auth, profile, task screens, feature regressions, chat repository, task list provider, and review/gallery recovery states.
+  - Found that `MyBidsScreen` had regressed: recent `handleError` changes swallowed bid stream failures, leaving the screen stuck in loading instead of showing `ErrorState`.
+  - Restored error propagation by removing the fallback-swallowing `handleError` logic from both `BidRepository.watchMyBids` and `_myBidsProvider`.
+- Files touched:
+  - `lib/features/bids/data/repositories/bid_repository.dart`
+  - `lib/features/bids/presentation/screens/my_bids_screen.dart`
+- Verification:
+  - Passed: `flutter test --no-pub --no-test-assets test/widgets/auth_screens_test.dart`
+  - Passed: `flutter test --no-pub --no-test-assets test/widgets/profile_chat_nav_test.dart`
+  - Passed: `flutter test --no-pub --no-test-assets test/widgets/task_screens_test.dart`
+  - Passed: `flutter test --no-pub test/features/new_features_test.dart`
+  - Passed: `flutter test --no-pub --no-test-assets test/widgets/review_gallery_test.dart`
+  - Passed: `flutter test --no-pub --no-test-assets test/chat/chat_repository_test.dart test/tasks/task_list_provider_test.dart`
+  - Passed: `flutter test --no-pub --no-test-assets test/features/new_features_test.dart --plain-name "shows friendly error when bids fail to load"`
+  - Passed: `flutter analyze --no-pub lib/features/bids/data/repositories/bid_repository.dart lib/features/bids/presentation/screens/my_bids_screen.dart`
+- Risks / follow-up:
+  - Integration tests are still blocked locally unless Java is installed or Firebase emulators are already running elsewhere. The app code is not the blocker there.
+  - `UX-216` to `UX-218` remain the higher-value next steps for deeper simulator walkthroughs and bid lifecycle coverage.
