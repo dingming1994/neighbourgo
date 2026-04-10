@@ -513,3 +513,25 @@ Do not replace older entries.
 - Risks / follow-up:
   - Integration tests are still blocked locally unless Java is installed or Firebase emulators are already running elsewhere. The app code is not the blocker there.
   - `UX-216` to `UX-218` remain the higher-value next steps for deeper simulator walkthroughs and bid lifecycle coverage.
+
+## 2026-04-10 23:28 SGT | codex | ITER-017
+
+- Task IDs: UX-227
+- Branches: agents/codex/ux-227
+- Summary:
+  - Aligned `EditProfileScreen` save-failure handling with the more stable recovery copy already used by `ProfileSetupScreen`, and added regression coverage for permission failures.
+- Key changes:
+  - Replaced the old `e.toString().contains(...)` inline branching in `EditProfileScreen` with a dedicated `_friendlySaveError` helper.
+  - Normalized permission-denied copy to `You do not have permission to update this profile right now.`
+  - Normalized network/unavailable copy to the same recovery style already used in profile setup.
+  - Extended the profile widget fake repository so tests can inject save failures directly.
+  - Added widget coverage for edit-profile permission failures.
+- Files touched:
+  - `lib/features/profile/presentation/screens/edit_profile_screen.dart`
+  - `test/widgets/profile_chat_nav_test.dart`
+- Verification:
+  - Passed: `flutter analyze --no-pub lib/features/profile/presentation/screens/edit_profile_screen.dart test/widgets/profile_chat_nav_test.dart`
+  - Passed: `flutter test --no-pub test/widgets/profile_chat_nav_test.dart --plain-name "shows friendly permission error when save fails"`
+  - Passed: `flutter test --no-pub test/widgets/profile_chat_nav_test.dart`
+- Risks / follow-up:
+  - `EditProfileScreen` still returns early when no current user is available, without an explicit recovery message. If that path appears in real usage, it should be turned into a retryable sign-in recovery state like other top-level screens.

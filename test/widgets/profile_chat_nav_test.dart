@@ -81,6 +81,7 @@ class FakeAuthRepository extends AuthRepository {
 
 class FakeProfileRepository extends ProfileRepository {
   bool updateCalled = false;
+  Object? updateError;
 
   FakeProfileRepository()
       : super(
@@ -90,6 +91,7 @@ class FakeProfileRepository extends ProfileRepository {
 
   @override
   Future<void> updateProfile(UserModel user) async {
+    if (updateError != null) throw updateError!;
     updateCalled = true;
   }
 
@@ -444,6 +446,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Save'), findsOneWidget);
       expect(find.text('Edit Profile'), findsOneWidget);
+    });
+
+    testScreen('shows friendly permission error when save fails', (tester) async {
+      fakeProfileRepo.updateError = Exception('PERMISSION_DENIED');
+
+      await tester.pumpWidget(buildTestWidget(
+        const EditProfileScreen(),
+        overrides: overrides(),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+
+      expect(
+        find.text('You do not have permission to update this profile right now.'),
+        findsOneWidget,
+      );
     });
   });
 
