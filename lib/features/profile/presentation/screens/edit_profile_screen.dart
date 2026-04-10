@@ -133,13 +133,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final message = e.toString().contains('PERMISSION_DENIED')
-            ? 'Permission denied. Please sign in again.'
-            : e.toString().contains('UNAVAILABLE')
-                ? 'Network error. Please check your connection and try again.'
-                : 'Failed to save profile. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(content: Text(_friendlySaveError(e))),
         );
       }
     } finally {
@@ -160,6 +155,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   UserModel? _user;
+
+  String _friendlySaveError(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('permission_denied') ||
+        message.contains('permission-denied')) {
+      return 'You do not have permission to update this profile right now.';
+    }
+    if (message.contains('unavailable') || message.contains('network')) {
+      return 'Could not save your profile right now. Please check your connection and try again.';
+    }
+    return 'Could not save your profile right now. Please try again.';
+  }
 
   @override
   void initState() {
